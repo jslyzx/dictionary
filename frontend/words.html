@@ -1,143 +1,702 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>单词管理 - 英语词典系统</title>
-    <!-- 引入 layui CSS -->
-    <link rel="stylesheet" href="layui/css/layui.css">
+    <!-- 引入Ant Design CSS -->
+    <link rel="stylesheet" href="css/antd.min.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f0f2f5;
+        }
+        .header {
+            background-color: #fff;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+        }
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 24px;
+            height: 64px;
+        }
+        .logo {
+            font-size: 20px;
+            font-weight: bold;
+            color: #1890ff;
+        }
+        .nav-menu {
+            display: flex;
+            gap: 16px;
+        }
+        .nav-item {
+            padding: 8px 16px;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.3s;
+            text-decoration: none;
+            color: #333;
+        }
+        .nav-item:hover {
+            background-color: #f5f5f5;
+        }
+        .nav-item.active {
+            color: #1890ff;
+            border-bottom: 2px solid #1890ff;
+        }
+        .content {
+            padding: 84px 24px 24px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+        }
+        .card-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .card-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 8px;
+        }
+        .card-description {
+            color: #666;
+            font-size: 14px;
+        }
+        .card-body {
+            padding: 24px;
+        }
+        .filter-section {
+            display: flex;
+            gap: 16px;
+            align-items: flex-end;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            flex: 1;
+            min-width: 200px;
+        }
+        .filter-label {
+            font-weight: 500;
+            color: #333;
+            font-size: 14px;
+        }
+        .filter-input,
+        .filter-select {
+            padding: 8px 12px;
+            border: 1px solid #d9d9d9;
+            border-radius: 6px;
+            font-size: 14px;
+            outline: none;
+            transition: all 0.3s;
+            width: 100%;
+        }
+        .filter-input:focus,
+        .filter-select:focus {
+            border-color: #1890ff;
+            box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+        }
+        .btn {
+            padding: 8px 16px;
+            border: 1px solid #d9d9d9;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn-primary {
+            background-color: #1890ff;
+            color: white;
+            border-color: #1890ff;
+        }
+        .btn-primary:hover {
+            background-color: #40a9ff;
+            border-color: #40a9ff;
+        }
+        .btn-danger {
+            background-color: #ff4d4f;
+            color: white;
+            border-color: #ff4d4f;
+        }
+        .btn-danger:hover {
+            background-color: #ff7875;
+            border-color: #ff7875;
+        }
+        .btn-warm {
+            background-color: #fa8c16;
+            color: white;
+            border-color: #fa8c16;
+        }
+        .btn-warm:hover {
+            background-color: #ff7a45;
+            border-color: #ff7a45;
+        }
+        .btn-default:hover {
+            border-color: #1890ff;
+            color: #1890ff;
+        }
+        .table-container {
+            overflow-x: auto;
+        }
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .table th,
+        .table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .table th {
+            background-color: #fafafa;
+            font-weight: 600;
+            color: #333;
+        }
+        .table tr:hover {
+            background-color: #fafafa;
+        }
+        .table-btn {
+            padding: 4px 12px;
+            margin-right: 8px;
+            font-size: 12px;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .edit-btn {
+            background-color: #fff7e6;
+            color: #fa8c16;
+        }
+        .delete-btn {
+            background-color: #fff2f0;
+            color: #ff4d4f;
+        }
+        .sound-btn {
+            background-color: #e6f7ff;
+            color: #1890ff;
+        }
+        .table-btn:hover {
+            opacity: 0.8;
+        }
+        .footer {
+            text-align: center;
+            padding: 24px;
+            margin-top: 64px;
+            color: #666;
+            border-top: 1px solid #f0f0f0;
+        }
+        /* 模态框样式 */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1001;
+        }
+        .modal-content {
+            background: white;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 700px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+        }
+        .modal-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+        }
+        .modal-body {
+            padding: 24px;
+        }
+        .modal-footer {
+            padding: 16px 24px;
+            border-top: 1px solid #f0f0f0;
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+        /* 表单样式 */
+        .form-item {
+            margin-bottom: 24px;
+        }
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #333;
+        }
+        .form-input,
+        .form-textarea,
+        .form-select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #d9d9d9;
+            border-radius: 6px;
+            font-size: 14px;
+            outline: none;
+            transition: all 0.3s;
+        }
+        .form-textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        .form-input:focus,
+        .form-textarea:focus,
+        .form-select:focus {
+            border-color: #1890ff;
+            box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+        }
+        .required {
+            color: #ff4d4f;
+            margin-left: 4px;
+        }
+        .multi-select {
+            height: 120px;
+        }
+        .select-hint {
+            font-size: 12px;
+            color: #999;
+            margin-top: 4px;
+        }
+    </style>
 </head>
-<body class="layui-layout-body">
-    <div class="layui-layout layui-layout-admin">
-        <!-- 顶部导航栏 -->
-        <div class="layui-header">
-            <div class="layui-logo">英语词典系统</div>
-            <ul class="layui-nav layui-layout-left">
-                <li class="layui-nav-item"><a href="index.html">首页</a></li>
-                <li class="layui-nav-item"><a href="dictionaries.html">字典管理</a></li>
-                <li class="layui-nav-item layui-this"><a href="words.html">单词管理</a></li>
-                <li class="layui-nav-item"><a href="word_search.html">单词查询</a></li>
-            </ul>
-        </div>
 
-        <!-- 主内容区域 -->
-        <div class="layui-body" style="padding: 20px;">
-            <div class="layui-card">
-                <div class="layui-card-header" style="font-size: 18px; font-weight: bold;">
-                    单词管理
-                    <p style="font-size: 14px; font-weight: normal; color: #666; margin-top: 5px;">管理单词库和单词信息</p>
-                </div>
-                <div class="layui-card-body">
-                    <!-- 操作栏 -->
-                    <div class="layui-form-item">
-                        <div class="layui-row">
-                            <div class="layui-col-xs12 layui-col-sm6 layui-col-md4">
-                                <label class="layui-form-label">选择字典</label>
-                                <div class="layui-input-block">
-                                    <select id="dictionary-select" lay-verify="" class="layui-select">
-                                        <option value="0">全部字典</option>
-                                        <!-- 字典选项将通过JavaScript动态加载 -->
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="layui-col-xs12 layui-col-sm6 layui-col-md4">
-                                <label class="layui-form-label">单词搜索</label>
-                                <div class="layui-input-block">
-                                    <input type="text" id="word-filter" class="layui-input" placeholder="搜索单词...">
-                                </div>
-                            </div>
-                            <div class="layui-col-xs12 layui-col-sm6 layui-col-md4" style="margin-top: 20px;">
-                                <div class="layui-input-block">
-                                    <button id="add-word-btn" class="layui-btn layui-btn-normal">
-                                        <i class="layui-icon layui-icon-add-circle"></i> 添加单词
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
+<body>
+    <!-- 顶部导航栏 -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">英语词典系统</div>
+            <nav class="nav-menu">
+                <a href="index.html" class="nav-item">首页</a>
+                <a href="dictionaries.html" class="nav-item">字典管理</a>
+                <a href="words.html" class="nav-item active">单词管理</a>
+                <a href="word_search.html" class="nav-item">单词查询</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- 内容区域 -->
+    <main class="content">
+        <!-- 单词管理卡片 -->
+        <div class="card">
+            <!-- 卡片头部 -->
+            <div class="card-header">
+                <h1 class="card-title">单词管理</h1>
+                <p class="card-description">管理单词库和单词信息</p>
+            </div>
+            
+            <!-- 卡片内容 -->
+            <div class="card-body">
+                <!-- 筛选和操作区域 -->
+                <div class="filter-section">
+                    <div class="filter-group">
+                        <label class="filter-label">选择字典</label>
+                        <select id="dictionary-select" class="filter-select">
+                            <option value="0">全部字典</option>
+                            <!-- 字典选项将通过JavaScript动态加载 -->
+                        </select>
                     </div>
+                    <div class="filter-group">
+                        <label class="filter-label">单词搜索</label>
+                        <input type="text" id="word-filter" class="filter-input" placeholder="搜索单词...">
+                    </div>
+                    <div style="margin-bottom: 16px;">
+                        <button id="add-word-btn" class="btn btn-primary">
+                            ➕ 添加单词
+                        </button>
+                    </div>
+                </div>
 
-                    <!-- 单词列表 -->
-                    <table id="words-table" lay-filter="words-table"></table>
+                <!-- 单词列表 -->
+                <div class="table-container">
+                    <table class="table" id="words-table">
+                        <thead>
+                            <tr>
+                                <th>单词</th>
+                                <th>音标</th>
+                                <th>中文释义</th>
+                                <th>所属字典</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-body">
+                            <!-- 表格数据将通过JavaScript动态加载 -->
+                            <tr>
+                                <td colspan="5" style="text-align: center; padding: 40px; color: #999;">
+                                    加载中...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- 分页控件 -->
+                <div style="margin-top: 16px; text-align: right;">
+                    <div id="pagination"></div>
                 </div>
             </div>
         </div>
+    </main>
 
-        <!-- 底部信息 -->
-        <div class="layui-footer" style="text-align: center;">
-            &copy; 2024 英语词典系统. 保留所有权利.
+    <!-- 底部信息 -->
+    <footer class="footer">
+        &copy; 2024 英语词典系统. 保留所有权利.
+    </footer>
+
+    <!-- 添加/编辑单词模态框 -->
+    <div id="word-form-container" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header" id="modal-title">添加单词</div>
+            <div class="modal-body">
+                <form id="word-form">
+                    <input type="hidden" id="word-id">
+                    <div class="form-item">
+                        <label class="form-label">单词 <span class="required">*</span></label>
+                        <input type="text" id="word-text" class="form-input" placeholder="输入英文单词" required>
+                    </div>
+                    <div class="form-item">
+                        <label class="form-label">音标 <span class="required">*</span></label>
+                        <input type="text" id="word-phonetic" class="form-input" placeholder="例如: /ˈæpl/" required>
+                    </div>
+                    <div class="form-item">
+                        <label class="form-label">中文释义 <span class="required">*</span></label>
+                        <input type="text" id="word-meaning" class="form-input" placeholder="单词的中文解释" required>
+                    </div>
+                    <div class="form-item">
+                        <label class="form-label">发音链接1（英音）</label>
+                        <input type="text" id="word-pronunciation1" class="form-input" placeholder="英音发音URL">
+                    </div>
+                    <div class="form-item">
+                        <label class="form-label">发音链接2（美音）</label>
+                        <input type="text" id="word-pronunciation2" class="form-input" placeholder="美音发音URL">
+                    </div>
+                    <div class="form-item">
+                        <label class="form-label">发音链接3（例句）</label>
+                        <input type="text" id="word-pronunciation3" class="form-input" placeholder="例句发音URL">
+                    </div>
+                    <div class="form-item">
+                        <label class="form-label">所属字典</label>
+                        <select id="word-dictionaries" class="form-select multi-select" multiple>
+                            <!-- 字典选项将通过JavaScript动态加载 -->
+                        </select>
+                        <div class="select-hint">按住Ctrl键可多选</div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button id="cancel-word-modal" class="btn btn-default">取消</button>
+                <button id="save-word" class="btn btn-primary">保存</button>
+            </div>
         </div>
     </div>
 
-    <!-- 添加/编辑单词表单（用于layui modal） -->
-    <div id="word-form-container" style="display: none;">
-        <form class="layui-form" id="word-form" lay-filter="word-form">
-            <input type="hidden" name="word_id" id="word-id">
-            <div class="layui-form-item">
-                <label class="layui-form-label">单词 <span style="color: red;">*</span></label>
-                <div class="layui-input-block">
-                    <input type="text" name="text" id="word-text" lay-verify="required" placeholder="输入英文单词" class="layui-input">
-                </div>
-            </div>
-            <div class="layui-form-item">
-                <label class="layui-form-label">音标 <span style="color: red;">*</span></label>
-                <div class="layui-input-block">
-                    <input type="text" name="phonetic" id="word-phonetic" lay-verify="required" placeholder="例如: /ˈæpl/" class="layui-input">
-                </div>
-            </div>
-            <div class="layui-form-item">
-                <label class="layui-form-label">中文释义 <span style="color: red;">*</span></label>
-                <div class="layui-input-block">
-                    <input type="text" name="meaning" id="word-meaning" lay-verify="required" placeholder="单词的中文解释" class="layui-input">
-                </div>
-            </div>
-            <div class="layui-form-item">
-                <label class="layui-form-label">发音链接1（英音）</label>
-                <div class="layui-input-block">
-                    <input type="text" name="pronunciation1" id="word-pronunciation1" placeholder="英音发音URL" class="layui-input">
-                </div>
-            </div>
-            <div class="layui-form-item">
-                <label class="layui-form-label">发音链接2（美音）</label>
-                <div class="layui-input-block">
-                    <input type="text" name="pronunciation2" id="word-pronunciation2" placeholder="美音发音URL" class="layui-input">
-                </div>
-            </div>
-            <div class="layui-form-item">
-                <label class="layui-form-label">发音链接3（例句）</label>
-                <div class="layui-input-block">
-                    <input type="text" name="pronunciation3" id="word-pronunciation3" placeholder="例句发音URL" class="layui-input">
-                </div>
-            </div>
-            <div class="layui-form-item">
-                <label class="layui-form-label">所属字典</label>
-                <div class="layui-input-block">
-                    <select id="word-dictionaries" name="dictionaries[]" multiple lay-verify="" lay-filter="dictionaries" class="layui-select" style="height: 120px;">
-                        <!-- 字典选项将通过JavaScript动态加载 -->
-                    </select>
-                    <div class="layui-form-mid layui-word-aux">按住Ctrl键可多选</div>
-                </div>
-            </div>
-            <div class="layui-form-item layui-form-text">
-                <div class="layui-input-block" style="text-align: right; margin-top: 30px;">
-                    <button type="button" class="layui-btn layui-btn-primary" id="cancel-word-modal">取消</button>
-                    <button type="submit" class="layui-btn" lay-submit lay-filter="save-word">保存</button>
-                </div>
-            </div>
-        </form>
-    </div>
-
-    <!-- 工具栏模板 -->
-    <script type="text/html" id="word-toolbar">
-        <a class="layui-btn layui-btn-xs" lay-event="edit">编辑</a>
-        <a class="layui-btn layui-btn-xs layui-btn-danger" lay-event="del">删除</a>
-        {{# if(d.pronunciation1){ }}
-        <a class="layui-btn layui-btn-xs layui-btn-warm" lay-event="playSound">播放发音</a>
-        {{# } }}
+    <script>
+        // 页面加载完成后的初始化逻辑
+        document.addEventListener('DOMContentLoaded', function() {
+            // 获取DOM元素
+            const addWordBtn = document.getElementById('add-word-btn');
+            const dictionarySelect = document.getElementById('dictionary-select');
+            const wordFilter = document.getElementById('word-filter');
+            const formContainer = document.getElementById('word-form-container');
+            const cancelWordModal = document.getElementById('cancel-word-modal');
+            const saveWord = document.getElementById('save-word');
+            const modalTitle = document.getElementById('modal-title');
+            const tableBody = document.getElementById('table-body');
+            
+            // 初始化字典选项
+            function initDictionaries() {
+                // 模拟加载字典数据
+                const dictionaries = [
+                    { id: 1, name: '英语四级词汇' },
+                    { id: 2, name: '英语六级词汇' },
+                    { id: 3, name: '考研词汇' },
+                    { id: 4, name: '日常英语' }
+                ];
+                
+                // 填充字典选择器
+                dictionaries.forEach(dict => {
+                    const option1 = document.createElement('option');
+                    option1.value = dict.id;
+                    option1.textContent = dict.name;
+                    dictionarySelect.appendChild(option1);
+                    
+                    const option2 = document.createElement('option');
+                    option2.value = dict.id;
+                    option2.textContent = dict.name;
+                    document.getElementById('word-dictionaries').appendChild(option2);
+                });
+            }
+            
+            // 初始化表格数据
+            function loadWords() {
+                // 显示加载状态
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="5" style="text-align: center; padding: 40px; color: #999;">
+                            加载中...
+                        </td>
+                    </tr>
+                `;
+                
+                // 模拟AJAX请求
+                setTimeout(() => {
+                    // 实际项目中应该从API获取数据
+                    const words = [
+                        {
+                            id: 1,
+                            text: 'apple',
+                            phonetic: '/ˈæpl/',
+                            meaning: 'n. 苹果',
+                            dictionaries: ['英语四级词汇', '日常英语'],
+                            pronunciation1: 'https://example.com/audio/apple1.mp3'
+                        },
+                        {
+                            id: 2,
+                            text: 'banana',
+                            phonetic: '/bəˈnɑːnə/',
+                            meaning: 'n. 香蕉',
+                            dictionaries: ['日常英语'],
+                            pronunciation1: 'https://example.com/audio/banana1.mp3'
+                        },
+                        {
+                            id: 3,
+                            text: 'ambiguous',
+                            phonetic: '/æmˈbɪɡjuəs/',
+                            meaning: 'adj. 模糊不清的；不明确的',
+                            dictionaries: ['英语六级词汇', '考研词汇']
+                        },
+                        {
+                            id: 4,
+                            text: 'eloquent',
+                            phonetic: '/ˈeləkwənt/',
+                            meaning: 'adj. 雄辩的；有口才的',
+                            dictionaries: ['考研词汇']
+                        },
+                        {
+                            id: 5,
+                            text: 'computer',
+                            phonetic: '/kəmˈpjuːtə/',
+                            meaning: 'n. 计算机；电脑',
+                            dictionaries: ['英语四级词汇', '日常英语'],
+                            pronunciation1: 'https://example.com/audio/computer1.mp3'
+                        }
+                    ];
+                    
+                    // 渲染表格
+                    renderWordsTable(words);
+                }, 500);
+            }
+            
+            // 渲染单词表格
+            function renderWordsTable(words) {
+                if (words.length === 0) {
+                    tableBody.innerHTML = `
+                        <tr>
+                            <td colspan="5" style="text-align: center; padding: 40px; color: #999;">
+                                暂无单词数据
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+                
+                tableBody.innerHTML = words.map(word => `
+                    <tr>
+                        <td style="font-weight: 500;">${word.text}</td>
+                        <td style="color: #666;">${word.phonetic}</td>
+                        <td>${word.meaning}</td>
+                        <td>${word.dictionaries.join(', ')}</td>
+                        <td>
+                            <button class="table-btn edit-btn" onclick="editWord(${word.id})")>编辑</button>
+                            <button class="table-btn delete-btn" onclick="deleteWord(${word.id})")>删除</button>
+                            ${word.pronunciation1 ? `
+                                <button class="table-btn sound-btn" onclick="playSound('${word.pronunciation1}')")>播放发音</button>
+                            ` : ''}
+                        </td>
+                    </tr>
+                `).join('');
+            }
+            
+            // 显示单词表单模态框
+            function showWordModal(title, isEdit = false, word = null) {
+                modalTitle.textContent = title;
+                
+                if (!isEdit) {
+                    // 添加模式，清空表单
+                    document.getElementById('word-id').value = '';
+                    document.getElementById('word-text').value = '';
+                    document.getElementById('word-phonetic').value = '';
+                    document.getElementById('word-meaning').value = '';
+                    document.getElementById('word-pronunciation1').value = '';
+                    document.getElementById('word-pronunciation2').value = '';
+                    document.getElementById('word-pronunciation3').value = '';
+                    
+                    // 清空多选框
+                    const dictionarySelect = document.getElementById('word-dictionaries');
+                    for (let i = 0; i < dictionarySelect.options.length; i++) {
+                        dictionarySelect.options[i].selected = false;
+                    }
+                } else if (word) {
+                    // 编辑模式，填充表单
+                    document.getElementById('word-id').value = word.id;
+                    document.getElementById('word-text').value = word.text;
+                    document.getElementById('word-phonetic').value = word.phonetic;
+                    document.getElementById('word-meaning').value = word.meaning;
+                    document.getElementById('word-pronunciation1').value = word.pronunciation1 || '';
+                    document.getElementById('word-pronunciation2').value = word.pronunciation2 || '';
+                    document.getElementById('word-pronunciation3').value = word.pronunciation3 || '';
+                    
+                    // 设置所属字典
+                    // 实际项目中应该根据word.dictionary_ids来设置选中项
+                }
+                
+                formContainer.style.display = 'flex';
+            }
+            
+            // 隐藏单词表单模态框
+            function hideWordModal() {
+                formContainer.style.display = 'none';
+            }
+            
+            // 全局函数，供表格按钮调用
+            window.editWord = function(id) {
+                // 模拟获取单词数据
+                const word = {
+                    id,
+                    text: '示例单词',
+                    phonetic: '/ˈeksæmpl/',
+                    meaning: 'n. 例子',
+                    pronunciation1: 'https://example.com/audio/example1.mp3',
+                    pronunciation2: 'https://example.com/audio/example2.mp3',
+                    pronunciation3: 'https://example.com/audio/example3.mp3',
+                    dictionary_ids: [1, 3]
+                };
+                showWordModal('编辑单词', true, word);
+            }
+            
+            window.deleteWord = function(id) {
+                if (confirm(`确定要删除ID为 ${id} 的单词吗？`)) {
+                    // 这里应该发送删除请求
+                    alert(`删除单词ID: ${id}`);
+                    loadWords(); // 重新加载数据
+                }
+            }
+            
+            window.playSound = function(audioUrl) {
+                // 实际项目中应该播放音频
+                alert(`播放发音: ${audioUrl}`);
+            }
+            
+            // 事件监听
+            addWordBtn.addEventListener('click', function() {
+                showWordModal('添加单词', false);
+            });
+            
+            cancelWordModal.addEventListener('click', hideWordModal);
+            
+            saveWord.addEventListener('click', function() {
+                const id = document.getElementById('word-id').value;
+                const text = document.getElementById('word-text').value;
+                const phonetic = document.getElementById('word-phonetic').value;
+                const meaning = document.getElementById('word-meaning').value;
+                
+                if (!text.trim()) {
+                    alert('请输入单词');
+                    return;
+                }
+                
+                if (!phonetic.trim()) {
+                    alert('请输入音标');
+                    return;
+                }
+                
+                if (!meaning.trim()) {
+                    alert('请输入中文释义');
+                    return;
+                }
+                
+                // 获取选中的字典
+                const selectedDictionaries = Array.from(document.getElementById('word-dictionaries').selectedOptions)
+                    .map(option => option.value);
+                
+                const isEdit = id !== '';
+                const wordData = {
+                    id,
+                    text,
+                    phonetic,
+                    meaning,
+                    pronunciation1: document.getElementById('word-pronunciation1').value,
+                    pronunciation2: document.getElementById('word-pronunciation2').value,
+                    pronunciation3: document.getElementById('word-pronunciation3').value,
+                    dictionaries: selectedDictionaries
+                };
+                
+                console.log(isEdit ? '更新单词' : '添加单词', wordData);
+                
+                // 这里应该发送添加或更新请求
+                alert(isEdit ? `更新单词成功: ${text}` : `添加单词成功: ${text}`);
+                hideWordModal();
+                loadWords(); // 重新加载数据
+            });
+            
+            wordFilter.addEventListener('input', function() {
+                const searchText = this.value.toLowerCase();
+                console.log('搜索单词:', searchText);
+                // 实际项目中应该根据输入实时过滤或添加搜索按钮
+            });
+            
+            dictionarySelect.addEventListener('change', function() {
+                const selectedDictionary = this.value;
+                console.log('选择字典:', selectedDictionary);
+                // 实际项目中应该根据选择的字典过滤单词
+            });
+            
+            // 点击模态框外部关闭模态框
+            formContainer.addEventListener('click', function(e) {
+                if (e.target === formContainer) {
+                    hideWordModal();
+                }
+            });
+            
+            // 初始化
+            initDictionaries();
+            loadWords();
+        });
     </script>
-
-    <!-- 引入 layui JS -->
-    <script src="layui/layui.js"></script>
-    <script src="js/script.js"></script>
-    <script src="js/words.js"></script>
 </body>
+
 </html>

@@ -5,95 +5,205 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>英语词典系统</title>
-    <link rel="stylesheet" href="layui/css/layui.css">
-    <script src="layui/layui.js"></script>
-    <script src="js/script.js"></script>
+    <!-- 引入Ant Design CSS -->
+    <link rel="stylesheet" href="css/antd.min.css">
+    <!-- 引入Ant Design JavaScript -->
+    <script src="https://unpkg.com/antd@5.12.8/dist/antd.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f0f2f5;
+        }
+        .header {
+            background-color: #fff;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+        }
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 24px;
+            height: 64px;
+        }
+        .logo {
+            font-size: 20px;
+            font-weight: bold;
+            color: #1890ff;
+        }
+        .nav-menu {
+            display: flex;
+            gap: 16px;
+        }
+        .nav-item {
+            padding: 8px 16px;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.3s;
+        }
+        .nav-item:hover {
+            background-color: #f5f5f5;
+        }
+        .nav-item.active {
+            color: #1890ff;
+            border-bottom: 2px solid #1890ff;
+        }
+        .content {
+            padding: 84px 24px 24px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .welcome-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 60px 40px;
+            border-radius: 16px;
+            text-align: center;
+            margin-bottom: 32px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        .welcome-title {
+            font-size: 36px;
+            font-weight: bold;
+            margin-bottom: 16px;
+        }
+        .welcome-subtitle {
+            font-size: 18px;
+            margin-bottom: 32px;
+            opacity: 0.9;
+        }
+        .btn-group {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+        }
+        .feature-section {
+            margin-top: 32px;
+        }
+        .feature-title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 24px;
+            color: #333;
+        }
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 24px;
+        }
+        .feature-card {
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s;
+        }
+        .feature-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+        }
+        .feature-icon {
+            font-size: 32px;
+            color: #1890ff;
+            margin-bottom: 16px;
+        }
+        .feature-card-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 12px;
+            color: #333;
+        }
+        .feature-description {
+            color: #666;
+            line-height: 1.6;
+        }
+        .footer {
+            text-align: center;
+            padding: 24px;
+            margin-top: 64px;
+            color: #666;
+            border-top: 1px solid #f0f0f0;
+        }
+    </style>
 </head>
 
-<body class="layui-layout-body">
-    <div class="layui-layout layui-layout-admin">
-        <!-- 顶部导航栏 -->
-        <div class="layui-header">
-            <div class="layui-logo" style="font-size: 20px;">英语词典系统</div>
-            <!-- 导航菜单 -->
-            <ul class="layui-nav layui-layout-left">
-                <li class="layui-nav-item layui-this"><a href="index.html">首页</a></li>
-                <li class="layui-nav-item"><a href="dictionaries.html">字典管理</a></li>
-                <li class="layui-nav-item"><a href="words.html">单词管理</a></li>
-                <li class="layui-nav-item"><a href="word_search.html">单词查询</a></li>
-            </ul>
+<body>
+    <!-- 顶部导航栏 -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">英语词典系统</div>
+            <nav class="nav-menu">
+                <a href="index.html" class="nav-item active">首页</a>
+                <a href="dictionaries.html" class="nav-item">字典管理</a>
+                <a href="words.html" class="nav-item">单词管理</a>
+                <a href="word_search.html" class="nav-item">单词查询</a>
+            </nav>
         </div>
+    </header>
 
-        <!-- 内容区域 -->
-        <div class="layui-body">
-            <div class="layui-container" style="padding: 20px;">
-                <!-- 欢迎区域 -->
-                <div class="layui-card">
-                    <div class="layui-card-body" style="text-align: center; padding: 50px 0;">
-                        <h2 style="font-size: 28px; margin-bottom: 20px; color: #1E9FFF;">欢迎使用英语词典系统</h2>
-                        <p style="font-size: 16px; margin-bottom: 30px; color: #666;">高效管理你的单词库，提升英语学习效率</p>
-                        <div class="layui-btn-container">
-                            <a href="word_search.html" class="layui-btn layui-btn-primary layui-btn-lg">
-                                <i class="layui-icon layui-icon-search"></i> 查询单词
-                            </a>
-                            <a href="dictionaries.html" class="layui-btn layui-btn-lg">
-                                <i class="layui-icon layui-icon-app"></i> 查看字典
-                            </a>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 功能介绍 -->
-                <div style="margin-top: 30px;">
-                    <h3 class="layui-card-header" style="font-size: 18px;">系统功能</h3>
-                    <div class="layui-row layui-col-space20">
-                        <div class="layui-col-md3">
-                            <div class="layui-card">
-                                <div class="layui-card-body">
-                                    <h4 class="layui-card-title" style="color: #1E9FFF;">多字典管理</h4>
-                                    <p style="color: #666; margin-top: 10px;">创建和管理多个单词字典，如CET4、考研核心词汇等</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="layui-col-md3">
-                            <div class="layui-card">
-                                <div class="layui-card-body">
-                                    <h4 class="layui-card-title" style="color: #1E9FFF;">单词查询</h4>
-                                    <p style="color: #666; margin-top: 10px;">快速查询单词的释义、音标和发音</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="layui-col-md3">
-                            <div class="layui-card">
-                                <div class="layui-card-body">
-                                    <h4 class="layui-card-title" style="color: #1E9FFF;">单词管理</h4>
-                                    <p style="color: #666; margin-top: 10px;">添加、编辑和删除单词及其相关信息</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="layui-col-md3">
-                            <div class="layui-card">
-                                <div class="layui-card-body">
-                                    <h4 class="layui-card-title" style="color: #1E9FFF;">单词发音</h4>
-                                    <p style="color: #666; margin-top: 10px;">支持多种发音类型，帮助学习正确读音</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+    <!-- 内容区域 -->
+    <main class="content">
+        <!-- 欢迎区域 -->
+        <div class="welcome-card">
+            <h1 class="welcome-title">欢迎使用英语词典系统</h1>
+            <p class="welcome-subtitle">高效管理你的单词库，提升英语学习效率</p>
+            <div class="btn-group">
+                <a href="word_search.html">
+                    <button style="background: white; color: #667eea; border: none; padding: 12px 24px; border-radius: 8px; font-size: 16px; cursor: pointer; transition: all 0.3s;">
+                        查询单词
+                    </button>
+                </a>
+                <a href="dictionaries.html">
+                    <button style="background: rgba(255, 255, 255, 0.2); color: white; border: 1px solid white; padding: 12px 24px; border-radius: 8px; font-size: 16px; cursor: pointer; transition: all 0.3s;">
+                        查看字典
+                    </button>
+                </a>
             </div>
         </div>
 
-        <!-- 底部信息 -->
-        <div class="layui-footer" style="text-align: center;">
-            &copy; 2024 英语词典系统. 保留所有权利.
-        </div>
-    </div>
+        <!-- 功能介绍 -->
+        <section class="feature-section">
+            <h2 class="feature-title">系统功能</h2>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">📚</div>
+                    <h3 class="feature-card-title">多字典管理</h3>
+                    <p class="feature-description">创建和管理多个单词字典，如CET4、考研核心词汇等</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔍</div>
+                    <h3 class="feature-card-title">单词查询</h3>
+                    <p class="feature-description">快速查询单词的释义、音标和发音</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">✏️</div>
+                    <h3 class="feature-card-title">单词管理</h3>
+                    <p class="feature-description">添加、编辑和删除单词及其相关信息</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔊</div>
+                    <h3 class="feature-card-title">单词发音</h3>
+                    <p class="feature-description">支持多种发音类型，帮助学习正确读音</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- 底部信息 -->
+    <footer class="footer">
+        &copy; 2024 英语词典系统. 保留所有权利.
+    </footer>
 
     <script>
-        layui.use('element', function () {
-            var element = layui.element;
-            // 初始化layui组件
+        // 页面加载完成后的初始化逻辑
+        document.addEventListener('DOMContentLoaded', function() {
+            // 可以在这里添加一些初始化代码
         });
     </script>
 </body>

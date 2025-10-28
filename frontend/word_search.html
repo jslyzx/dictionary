@@ -1,109 +1,659 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>单词查询 - 英语词典系统</title>
-    <link rel="stylesheet" href="layui/css/layui.css">
+    <!-- 引入Ant Design CSS -->
+    <link rel="stylesheet" href="css/antd.min.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f0f2f5;
+            color: #333;
+        }
+        .header {
+            background-color: #fff;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+        }
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 24px;
+            height: 64px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .logo {
+            font-size: 20px;
+            font-weight: bold;
+            color: #1890ff;
+        }
+        .nav-menu {
+            display: flex;
+            gap: 16px;
+        }
+        .nav-item {
+            padding: 8px 16px;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.3s;
+            text-decoration: none;
+            color: #333;
+        }
+        .nav-item:hover {
+            background-color: #f5f5f5;
+        }
+        .nav-item.active {
+            color: #1890ff;
+            border-bottom: 2px solid #1890ff;
+        }
+        .content {
+            padding: 84px 24px 24px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            margin-bottom: 24px;
+        }
+        .card-header {
+            padding: 24px 24px 16px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .card-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            margin: 0 0 8px 0;
+        }
+        .card-description {
+            color: #666;
+            font-size: 14px;
+            margin: 0;
+        }
+        .card-body {
+            padding: 24px;
+        }
+        .search-container {
+            position: relative;
+            display: flex;
+            gap: 0;
+        }
+        .search-input {
+            flex: 1;
+            padding: 12px 20px;
+            border: 1px solid #d9d9d9;
+            border-right: none;
+            border-radius: 8px 0 0 8px;
+            font-size: 16px;
+            outline: none;
+            transition: all 0.3s;
+        }
+        .search-input:focus {
+            border-color: #1890ff;
+        }
+        .search-btn {
+            padding: 12px 24px;
+            background-color: #1890ff;
+            color: white;
+            border: none;
+            border-radius: 0 8px 8px 0;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .search-btn:hover {
+            background-color: #40a9ff;
+        }
+        .search-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 24px;
+            margin-top: 20px;
+            align-items: center;
+        }
+        .radio-group {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+        }
+        .radio-label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            user-select: none;
+        }
+        .radio-input {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+        .filter-select {
+            padding: 8px 12px;
+            border: 1px solid #d9d9d9;
+            border-radius: 6px;
+            font-size: 14px;
+            outline: none;
+            transition: all 0.3s;
+            min-width: 200px;
+        }
+        .filter-select:focus {
+            border-color: #1890ff;
+            box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+        }
+        .result-item {
+            padding: 16px;
+            border-bottom: 1px solid #f0f0f0;
+            transition: all 0.3s;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .result-item:hover {
+            background-color: #fafafa;
+        }
+        .result-item:last-child {
+            border-bottom: none;
+        }
+        .result-word {
+            font-weight: 500;
+            font-size: 18px;
+            color: #333;
+            margin-bottom: 4px;
+        }
+        .result-phonetic {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+        .result-meaning {
+            color: #333;
+            font-size: 14px;
+        }
+        .word-details-header {
+            margin-bottom: 24px;
+        }
+        .word-text {
+            font-size: 32px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 8px;
+        }
+        .word-phonetic {
+            font-size: 18px;
+            color: #666;
+            margin-bottom: 16px;
+        }
+        .sound-button {
+            padding: 8px 16px;
+            background-color: #f0f9ff;
+            color: #1890ff;
+            border: 1px solid #91d5ff;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-right: 12px;
+            transition: all 0.3s;
+        }
+        .sound-button:hover {
+            background-color: #e6f7ff;
+        }
+        .meaning-section {
+            margin-bottom: 24px;
+        }
+        .meaning-title {
+            font-size: 16px;
+            font-weight: 500;
+            color: #333;
+            margin-bottom: 12px;
+        }
+        .meaning-content {
+            line-height: 1.8;
+            color: #333;
+        }
+        .dictionaries-section {
+            margin-bottom: 24px;
+        }
+        .dictionary-tag {
+            display: inline-block;
+            padding: 4px 12px;
+            background-color: #f0f0f0;
+            border-radius: 16px;
+            font-size: 12px;
+            color: #666;
+            margin-right: 8px;
+            margin-bottom: 8px;
+        }
+        .recommendations-title {
+            font-size: 18px;
+            font-weight: 500;
+            color: #333;
+            margin-bottom: 16px;
+        }
+        .recommendations-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 12px;
+        }
+        .recommendation-item {
+            padding: 12px;
+            background-color: #fafafa;
+            border-radius: 6px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .recommendation-item:hover {
+            background-color: #f0f9ff;
+            color: #1890ff;
+        }
+        .no-results {
+            padding: 40px;
+            text-align: center;
+            color: #999;
+        }
+        .empty-state {
+            padding: 60px 20px;
+            text-align: center;
+            color: #999;
+        }
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+        .footer {
+            text-align: center;
+            padding: 24px;
+            margin-top: 64px;
+            color: #666;
+            border-top: 1px solid #f0f0f0;
+        }
+    </style>
 </head>
-<body>
-    <!-- 头部导航 -->
-    <div class="layui-header">
-        <div class="layui-container">
-            <div class="layui-logo">英语词典系统</div>
-            <ul class="layui-nav layui-layout-left">
-                <li class="layui-nav-item"><a href="index.html">首页</a></li>
-                <li class="layui-nav-item"><a href="dictionaries.html">字典管理</a></li>
-                <li class="layui-nav-item"><a href="words.html">单词管理</a></li>
-                <li class="layui-nav-item layui-this"><a href="word_search.html">单词查询</a></li>
-            </ul>
-        </div>
-    </div>
 
-    <!-- 主要内容区 -->
-    <div class="layui-body">
-        <div class="layui-container">
-            <div style="padding: 20px 0;">
-                <div class="layui-card">
-                    <div class="layui-card-header">
-                        <h2 style="margin: 0; font-size: 24px;">单词查询</h2>
-                        <p style="margin: 5px 0 0 0; color: #666;">快速查询单词释义、音标和发音</p>
-                    </div>
-                    
-                    <!-- 搜索区域 -->
-                    <div class="layui-card-body">
-                        <form class="layui-form">
-                            <div class="layui-form-item">
-                                <div class="layui-input-group">
-                                    <input type="text" id="search-input" name="search-input" placeholder="输入要查询的单词..." autocomplete="off" class="layui-input layui-input-lg">
-                                    <div class="layui-input-group-btn">
-                                        <button type="button" id="search-btn" class="layui-btn layui-btn-lg layui-btn-primary">
-                                            <i class="layui-icon layui-icon-search"></i> 查询
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="layui-form-item">
-                                <div class="layui-row">
-                                    <div class="layui-col-xs4 layui-col-sm4 layui-col-md2">
-                                        <div class="layui-input-inline">
-                                            <input type="radio" name="search-type" value="exact" title="精确查询" checked>
-                                            <input type="radio" name="search-type" value="contains" title="包含查询">
-                                        </div>
-                                    </div>
-                                    <div class="layui-col-xs8 layui-col-sm8 layui-col-md4">
-                                        <div class="layui-input-inline" style="width: 200px;">
-                                            <select id="dictionary-filter" name="dictionary-filter" lay-verify="required">
-                                                <option value="0">全部字典</option>
-                                                <!-- 字典选项将通过JavaScript动态加载 -->
-                                            </select>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </form>
-                    </div>
+<body>
+    <!-- 顶部导航栏 -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">英语词典系统</div>
+            <nav class="nav-menu">
+                <a href="index.html" class="nav-item">首页</a>
+                <a href="dictionaries.html" class="nav-item">字典管理</a>
+                <a href="words.html" class="nav-item">单词管理</a>
+                <a href="word_search.html" class="nav-item active">单词查询</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- 内容区域 -->
+    <main class="content">
+        <!-- 搜索卡片 -->
+        <div class="card">
+            <!-- 卡片头部 -->
+            <div class="card-header">
+                <h1 class="card-title">单词查询</h1>
+                <p class="card-description">快速查询单词释义、音标和发音</p>
+            </div>
+            
+            <!-- 卡片内容 -->
+            <div class="card-body">
+                <!-- 搜索表单 -->
+                <div class="search-container">
+                    <input type="text" id="search-input" class="search-input" placeholder="输入要查询的单词..." autocomplete="off">
+                    <button id="search-btn" class="search-btn">🔍 查询</button>
                 </div>
                 
-                <!-- 查询结果 -->
-                <div id="search-results" style="margin-top: 20px; display: none;">
-                    <div class="layui-card">
-                        <div class="layui-card-header">
-                            <h3>查询结果</h3>
-                        </div>
-                        <div class="layui-card-body">
-                            <div id="results-content">
-                                <!-- 查询结果将通过JavaScript动态加载 -->
-                            </div>
-                        </div>
+                <!-- 搜索选项 -->
+                <div class="search-options">
+                    <!-- 查询类型 -->
+                    <div class="radio-group">
+                        <label class="radio-label">
+                            <input type="radio" name="search-type" value="exact" class="radio-input" checked>
+                            <span>精确查询</span>
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="search-type" value="contains" class="radio-input">
+                            <span>包含查询</span>
+                        </label>
                     </div>
-                </div>
-
-                <!-- 单词详情 -->
-                <div id="word-details" class="layui-card" style="margin-top: 20px; display: none;">
-                    <div class="layui-card-body">
-                        <!-- 单词详情将通过JavaScript动态加载 -->
-                    </div>
-                </div>
-
-                <!-- 推荐单词 -->
-                <div id="recommended-words" style="margin-top: 40px; display: none;">
-                    <h3>相关推荐</h3>
-                    <div class="layui-row" id="recommendations-container">
-                        <!-- 推荐单词将通过JavaScript动态加载 -->
-                    </div>
+                    
+                    <!-- 字典筛选 -->
+                    <select id="dictionary-filter" class="filter-select">
+                        <option value="0">全部字典</option>
+                        <!-- 字典选项将通过JavaScript动态加载 -->
+                    </select>
                 </div>
             </div>
         </div>
-    </div>
+        
+        <!-- 查询结果 -->
+        <div id="search-results" class="card" style="display: none;">
+            <div class="card-header">
+                <h3 class="card-title">查询结果</h3>
+            </div>
+            <div class="card-body">
+                <div id="results-content">
+                    <!-- 查询结果将通过JavaScript动态加载 -->
+                </div>
+            </div>
+        </div>
+
+        <!-- 单词详情 -->
+        <div id="word-details" class="card" style="display: none;">
+            <div class="card-body">
+                <div class="word-details-header">
+                    <h2 class="word-text" id="detail-word"></h2>
+                    <p class="word-phonetic" id="detail-phonetic"></p>
+                    <div id="sound-buttons"></div>
+                </div>
+                
+                <div class="meaning-section">
+                    <h3 class="meaning-title">中文释义</h3>
+                    <p class="meaning-content" id="detail-meaning"></p>
+                </div>
+                
+                <div class="dictionaries-section">
+                    <h3 class="meaning-title">所属字典</h3>
+                    <div id="detail-dictionaries"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 推荐单词 -->
+        <div id="recommended-words" style="display: none;">
+            <h3 class="recommendations-title">相关推荐</h3>
+            <div class="recommendations-grid" id="recommendations-container">
+                <!-- 推荐单词将通过JavaScript动态加载 -->
+            </div>
+        </div>
+    </main>
 
     <!-- 底部信息 -->
-    <div class="layui-footer" style="text-align: center;">
+    <footer class="footer">
         © 2024 英语词典系统. 保留所有权利.
-    </div>
+    </footer>
 
-    <script src="layui/layui.js"></script>
-    <script src="js/word_search.js"></script>
+    <script>
+        // 页面加载完成后的初始化逻辑
+        document.addEventListener('DOMContentLoaded', function() {
+            // 获取DOM元素
+            const searchInput = document.getElementById('search-input');
+            const searchBtn = document.getElementById('search-btn');
+            const searchTypeRadios = document.querySelectorAll('input[name="search-type"]');
+            const dictionaryFilter = document.getElementById('dictionary-filter');
+            const searchResults = document.getElementById('search-results');
+            const resultsContent = document.getElementById('results-content');
+            const wordDetails = document.getElementById('word-details');
+            const recommendedWords = document.getElementById('recommended-words');
+            const recommendationsContainer = document.getElementById('recommendations-container');
+            
+            // 初始化字典选项
+            function initDictionaries() {
+                // 模拟加载字典数据
+                const dictionaries = [
+                    { id: 1, name: '英语四级词汇' },
+                    { id: 2, name: '英语六级词汇' },
+                    { id: 3, name: '考研词汇' },
+                    { id: 4, name: '日常英语' }
+                ];
+                
+                // 填充字典选择器
+                dictionaries.forEach(dict => {
+                    const option = document.createElement('option');
+                    option.value = dict.id;
+                    option.textContent = dict.name;
+                    dictionaryFilter.appendChild(option);
+                });
+            }
+            
+            // 执行搜索
+            function performSearch() {
+                const searchTerm = searchInput.value.trim();
+                if (!searchTerm) {
+                    alert('请输入要查询的单词');
+                    return;
+                }
+                
+                // 获取搜索选项
+                let searchType = 'exact';
+                searchTypeRadios.forEach(radio => {
+                    if (radio.checked) {
+                        searchType = radio.value;
+                    }
+                });
+                const selectedDictionary = dictionaryFilter.value;
+                
+                // 显示加载状态
+                resultsContent.innerHTML = '<div class="empty-state">搜索中...</div>';
+                searchResults.style.display = 'block';
+                wordDetails.style.display = 'none';
+                recommendedWords.style.display = 'none';
+                
+                // 模拟搜索请求
+                setTimeout(() => {
+                    // 模拟搜索结果
+                    const mockResults = searchType === 'exact' ? 
+                        getExactSearchResults(searchTerm) : 
+                        getContainsSearchResults(searchTerm);
+                    
+                    // 根据选择的字典过滤结果
+                    const filteredResults = selectedDictionary === '0' ? 
+                        mockResults : 
+                        mockResults.filter(word => word.dictionaryIds.includes(parseInt(selectedDictionary)));
+                    
+                    // 显示结果
+                    if (filteredResults.length === 0) {
+                        resultsContent.innerHTML = '<div class="no-results">未找到相关单词</div>';
+                    } else {
+                        displayResults(filteredResults);
+                    }
+                }, 500);
+            }
+            
+            // 获取精确搜索结果
+            function getExactSearchResults(term) {
+                // 模拟数据库中的单词数据
+                const allWords = getMockWords();
+                return allWords.filter(word => word.text.toLowerCase() === term.toLowerCase());
+            }
+            
+            // 获取包含查询结果
+            function getContainsSearchResults(term) {
+                // 模拟数据库中的单词数据
+                const allWords = getMockWords();
+                const lowerTerm = term.toLowerCase();
+                return allWords.filter(word => 
+                    word.text.toLowerCase().includes(lowerTerm) || 
+                    word.meaning.toLowerCase().includes(lowerTerm)
+                );
+            }
+            
+            // 获取模拟单词数据
+            function getMockWords() {
+                return [
+                    {
+                        id: 1,
+                        text: 'apple',
+                        phonetic: '/ˈæpl/',
+                        meaning: 'n. 苹果；苹果树',
+                        pronunciation1: 'https://example.com/audio/apple1.mp3',
+                        pronunciation2: 'https://example.com/audio/apple2.mp3',
+                        dictionaryIds: [1, 4],
+                        dictionaries: ['英语四级词汇', '日常英语']
+                    },
+                    {
+                        id: 2,
+                        text: 'application',
+                        phonetic: '/ˌæplɪˈkeɪʃn/',
+                        meaning: 'n. 应用；申请；应用程序',
+                        pronunciation1: 'https://example.com/audio/application1.mp3',
+                        dictionaryIds: [2, 3],
+                        dictionaries: ['英语六级词汇', '考研词汇']
+                    },
+                    {
+                        id: 3,
+                        text: 'banana',
+                        phonetic: '/bəˈnɑːnə/',
+                        meaning: 'n. 香蕉；香蕉树',
+                        pronunciation1: 'https://example.com/audio/banana1.mp3',
+                        dictionaryIds: [4],
+                        dictionaries: ['日常英语']
+                    },
+                    {
+                        id: 4,
+                        text: 'ambiguous',
+                        phonetic: '/æmˈbɪɡjuəs/',
+                        meaning: 'adj. 模糊不清的；不明确的；有歧义的',
+                        pronunciation1: 'https://example.com/audio/ambiguous1.mp3',
+                        dictionaryIds: [2, 3],
+                        dictionaries: ['英语六级词汇', '考研词汇']
+                    },
+                    {
+                        id: 5,
+                        text: 'computer',
+                        phonetic: '/kəmˈpjuːtə/',
+                        meaning: 'n. 计算机；电脑；电子计算器',
+                        pronunciation1: 'https://example.com/audio/computer1.mp3',
+                        pronunciation2: 'https://example.com/audio/computer2.mp3',
+                        dictionaryIds: [1, 4],
+                        dictionaries: ['英语四级词汇', '日常英语']
+                    }
+                ];
+            }
+            
+            // 显示搜索结果
+            function displayResults(results) {
+                resultsContent.innerHTML = '';
+                
+                results.forEach(word => {
+                    const resultItem = document.createElement('div');
+                    resultItem.className = 'result-item';
+                    resultItem.onclick = () => showWordDetails(word);
+                    
+                    const contentDiv = document.createElement('div');
+                    contentDiv.innerHTML = `
+                        <div class="result-word">${word.text}</div>
+                        <div class="result-phonetic">${word.phonetic}</div>
+                        <div class="result-meaning">${word.meaning}</div>
+                    `;
+                    
+                    resultItem.appendChild(contentDiv);
+                    resultsContent.appendChild(resultItem);
+                });
+            }
+            
+            // 显示单词详情
+            function showWordDetails(word) {
+                // 填充单词详情
+                document.getElementById('detail-word').textContent = word.text;
+                document.getElementById('detail-phonetic').textContent = word.phonetic;
+                document.getElementById('detail-meaning').textContent = word.meaning;
+                
+                // 创建发音按钮
+                const soundButtons = document.getElementById('sound-buttons');
+                soundButtons.innerHTML = '';
+                
+                if (word.pronunciation1) {
+                    const btn1 = document.createElement('button');
+                    btn1.className = 'sound-button';
+                    btn1.textContent = '🔊 英音';
+                    btn1.onclick = (e) => {
+                        e.stopPropagation();
+                        playSound(word.pronunciation1);
+                    };
+                    soundButtons.appendChild(btn1);
+                }
+                
+                if (word.pronunciation2) {
+                    const btn2 = document.createElement('button');
+                    btn2.className = 'sound-button';
+                    btn2.textContent = '🔊 美音';
+                    btn2.onclick = (e) => {
+                        e.stopPropagation();
+                        playSound(word.pronunciation2);
+                    };
+                    soundButtons.appendChild(btn2);
+                }
+                
+                // 显示所属字典
+                const detailDictionaries = document.getElementById('detail-dictionaries');
+                detailDictionaries.innerHTML = '';
+                
+                word.dictionaries.forEach(dict => {
+                    const dictTag = document.createElement('span');
+                    dictTag.className = 'dictionary-tag';
+                    dictTag.textContent = dict;
+                    detailDictionaries.appendChild(dictTag);
+                });
+                
+                // 显示单词详情和相关推荐
+                wordDetails.style.display = 'block';
+                showRecommendations(word);
+            }
+            
+            // 显示相关推荐
+            function showRecommendations(word) {
+                // 获取所有单词
+                const allWords = getMockWords();
+                
+                // 过滤出不包含当前单词的其他单词，并按相关性排序
+                const recommendations = allWords
+                    .filter(w => w.id !== word.id)
+                    .slice(0, 6); // 只取前6个作为推荐
+                
+                // 显示推荐
+                recommendationsContainer.innerHTML = '';
+                
+                recommendations.forEach(recommendedWord => {
+                    const item = document.createElement('div');
+                    item.className = 'recommendation-item';
+                    item.textContent = recommendedWord.text;
+                    item.onclick = () => showWordDetails(recommendedWord);
+                    recommendationsContainer.appendChild(item);
+                });
+                
+                recommendedWords.style.display = 'block';
+            }
+            
+            // 播放发音
+            function playSound(audioUrl) {
+                // 实际项目中应该播放音频
+                alert(`播放发音: ${audioUrl}`);
+            }
+            
+            // 事件监听
+            searchBtn.addEventListener('click', performSearch);
+            
+            searchInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    performSearch();
+                }
+            });
+            
+            // 初始化
+            initDictionaries();
+        });
+    </script>
 </body>
+
 </html>
