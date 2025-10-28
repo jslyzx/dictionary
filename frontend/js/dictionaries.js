@@ -25,10 +25,10 @@ layui.use(['table', 'form', 'layer', 'jquery'], function () {
         },
         parseData: function (res) {
             return {
-                "code": res.status === 'success' ? 0 : 1,
+                "code": res.success ? 0 : 1,
                 "msg": res.message || '',
-                "count": res.data.total || 0,
-                "data": res.data.list || res.data || []
+                "count": res.data.length || 0,
+                "data": res.data || []
             };
         },
         cols: [[

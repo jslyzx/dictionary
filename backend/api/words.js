@@ -1,7 +1,7 @@
 // 单词相关API路由
 const express = require('express');
 const router = express.Router();
-const db = require('../database');
+const db = require('../../database');
 
 // 获取所有单词
 router.get('/', async (req, res) => {

@@ -16,12 +16,12 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // 静态文件服务
-app.use(express.static(path.join(__dirname)));
+app.use(express.static(path.join(__dirname, 'frontend')));
 
 // API路由
-const dictionariesRouter = require('./api/dictionaries');
-const wordsRouter = require('./api/words');
-const dictionaryWordsRouter = require('./api/dictionary_words');
+const dictionariesRouter = require('./backend/api/dictionaries');
+const wordsRouter = require('./backend/api/words');
+const dictionaryWordsRouter = require('./backend/api/dictionary_words');
 
 // 注册路由
 app.use('/api/dictionaries', dictionariesRouter);
@@ -30,25 +30,25 @@ app.use('/api/dictionary', dictionaryWordsRouter);
 
 // 主页面路由
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
+    res.sendFile(path.join(__dirname, 'frontend', 'index.html'));
 });
 
 // 其他页面路由（SPA路由支持）
 app.get('/dictionaries', (req, res) => {
-    res.sendFile(path.join(__dirname, 'dictionaries.html'));
+    res.sendFile(path.join(__dirname, 'frontend', 'dictionaries.html'));
 });
 
 app.get('/words', (req, res) => {
-    res.sendFile(path.join(__dirname, 'words.html'));
+    res.sendFile(path.join(__dirname, 'frontend', 'words.html'));
 });
 
 app.get('/word_search', (req, res) => {
-    res.sendFile(path.join(__dirname, 'word_search.html'));
+    res.sendFile(path.join(__dirname, 'frontend', 'word_search.html'));
 });
 
 // 404处理
 app.use((req, res) => {
-    res.status(404).sendFile(path.join(__dirname, 'index.html'));
+    res.status(404).sendFile(path.join(__dirname, 'frontend', 'index.html'));
 });
 
 // 启动服务器
@@ -57,7 +57,7 @@ async function startServer() {
         // 测试数据库连接
         await db.testConnection();
         console.log('数据库连接成功');
-        
+
         // 启动服务器
         app.listen(PORT, HOST, () => {
             console.log(`服务器运行在 http://${HOST}:${PORT}`);

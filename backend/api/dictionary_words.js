@@ -1,7 +1,7 @@
 // 字典-单词关联相关API路由
 const express = require('express');
 const router = express.Router();
-const db = require('../database');
+const db = require('../../database');
 
 // 获取字典中的所有单词
 router.get('/:dictionaryId/words', async (req, res) => {

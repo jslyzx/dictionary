@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>单词查询 - 英语词典系统</title>
+    <link rel="stylesheet" href="layui/css/layui.css">
+</head>
+<body>
+    <!-- 头部导航 -->
+    <div class="layui-header">
+        <div class="layui-container">
+            <div class="layui-logo">英语词典系统</div>
+            <ul class="layui-nav layui-layout-left">
+                <li class="layui-nav-item"><a href="index.html">首页</a></li>
+                <li class="layui-nav-item"><a href="dictionaries.html">字典管理</a></li>
+                <li class="layui-nav-item"><a href="words.html">单词管理</a></li>
+                <li class="layui-nav-item layui-this"><a href="word_search.html">单词查询</a></li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- 主要内容区 -->
+    <div class="layui-body">
+        <div class="layui-container">
+            <div style="padding: 20px 0;">
+                <div class="layui-card">
+                    <div class="layui-card-header">
+                        <h2 style="margin: 0; font-size: 24px;">单词查询</h2>
+                        <p style="margin: 5px 0 0 0; color: #666;">快速查询单词释义、音标和发音</p>
+                    </div>
+                    
+                    <!-- 搜索区域 -->
+                    <div class="layui-card-body">
+                        <form class="layui-form">
+                            <div class="layui-form-item">
+                                <div class="layui-input-group">
+                                    <input type="text" id="search-input" name="search-input" placeholder="输入要查询的单词..." autocomplete="off" class="layui-input layui-input-lg">
+                                    <div class="layui-input-group-btn">
+                                        <button type="button" id="search-btn" class="layui-btn layui-btn-lg layui-btn-primary">
+                                            <i class="layui-icon layui-icon-search"></i> 查询
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="layui-form-item">
+                                <div class="layui-row">
+                                    <div class="layui-col-xs4 layui-col-sm4 layui-col-md2">
+                                        <div class="layui-input-inline">
+                                            <input type="radio" name="search-type" value="exact" title="精确查询" checked>
+                                            <input type="radio" name="search-type" value="contains" title="包含查询">
+                                        </div>
+                                    </div>
+                                    <div class="layui-col-xs8 layui-col-sm8 layui-col-md4">
+                                        <div class="layui-input-inline" style="width: 200px;">
+                                            <select id="dictionary-filter" name="dictionary-filter" lay-verify="required">
+                                                <option value="0">全部字典</option>
+                                                <!-- 字典选项将通过JavaScript动态加载 -->
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                
+                <!-- 查询结果 -->
+                <div id="search-results" style="margin-top: 20px; display: none;">
+                    <div class="layui-card">
+                        <div class="layui-card-header">
+                            <h3>查询结果</h3>
+                        </div>
+                        <div class="layui-card-body">
+                            <div id="results-content">
+                                <!-- 查询结果将通过JavaScript动态加载 -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 单词详情 -->
+                <div id="word-details" class="layui-card" style="margin-top: 20px; display: none;">
+                    <div class="layui-card-body">
+                        <!-- 单词详情将通过JavaScript动态加载 -->
+                    </div>
+                </div>
+
+                <!-- 推荐单词 -->
+                <div id="recommended-words" style="margin-top: 40px; display: none;">
+                    <h3>相关推荐</h3>
+                    <div class="layui-row" id="recommendations-container">
+                        <!-- 推荐单词将通过JavaScript动态加载 -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 底部信息 -->
+    <div class="layui-footer" style="text-align: center;">
+        © 2024 英语词典系统. 保留所有权利.
+    </div>
+
+    <script src="layui/layui.js"></script>
+    <script src="js/word_search.js"></script>
+</body>
+</html>

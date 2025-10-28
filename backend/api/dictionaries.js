@@ -1,7 +1,7 @@
 // 字典相关API路由
 const express = require('express');
 const router = express.Router();
-const db = require('../database');
+const db = require('../../database');
 
 // 获取所有字典
 router.get('/', async (req, res) => {

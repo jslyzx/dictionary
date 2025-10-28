@@ -71,8 +71,8 @@ function hideLoading(element) {
 // 简单的API请求封装
 async function apiRequest(endpoint, method = 'GET', data = null) {
     try {
-        const baseUrl = '/api';
-        const url = `${baseUrl}/${endpoint}`;
+        // 直接使用传入的完整URL路径
+        const url = endpoint;
         const options = {
             method,
             headers: {
