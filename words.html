@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>单词管理 - 英语词典系统</title>
+    <!-- 引入 layui CSS -->
+    <link rel="stylesheet" href="https://cdn.staticfile.org/layui/2.8.15/css/layui.css">
+</head>
+<body class="layui-layout-body">
+    <div class="layui-layout layui-layout-admin">
+        <!-- 顶部导航栏 -->
+        <div class="layui-header">
+            <div class="layui-logo">英语词典系统</div>
+            <ul class="layui-nav layui-layout-left">
+                <li class="layui-nav-item"><a href="index.html">首页</a></li>
+                <li class="layui-nav-item"><a href="dictionaries.html">字典管理</a></li>
+                <li class="layui-nav-item layui-this"><a href="words.html">单词管理</a></li>
+                <li class="layui-nav-item"><a href="word_search.html">单词查询</a></li>
+            </ul>
+        </div>
+
+        <!-- 主内容区域 -->
+        <div class="layui-body" style="padding: 20px;">
+            <div class="layui-card">
+                <div class="layui-card-header" style="font-size: 18px; font-weight: bold;">
+                    单词管理
+                    <p style="font-size: 14px; font-weight: normal; color: #666; margin-top: 5px;">管理单词库和单词信息</p>
+                </div>
+                <div class="layui-card-body">
+                    <!-- 操作栏 -->
+                    <div class="layui-form-item">
+                        <div class="layui-row">
+                            <div class="layui-col-xs12 layui-col-sm6 layui-col-md4">
+                                <label class="layui-form-label">选择字典</label>
+                                <div class="layui-input-block">
+                                    <select id="dictionary-select" lay-verify="" class="layui-select">
+                                        <option value="0">全部字典</option>
+                                        <!-- 字典选项将通过JavaScript动态加载 -->
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="layui-col-xs12 layui-col-sm6 layui-col-md4">
+                                <label class="layui-form-label">单词搜索</label>
+                                <div class="layui-input-block">
+                                    <input type="text" id="word-filter" class="layui-input" placeholder="搜索单词...">
+                                </div>
+                            </div>
+                            <div class="layui-col-xs12 layui-col-sm6 layui-col-md4" style="margin-top: 20px;">
+                                <div class="layui-input-block">
+                                    <button id="add-word-btn" class="layui-btn layui-btn-normal">
+                                        <i class="layui-icon layui-icon-add-circle"></i> 添加单词
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 单词列表 -->
+                    <table id="words-table" lay-filter="words-table"></table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 底部信息 -->
+        <div class="layui-footer" style="text-align: center;">
+            &copy; 2024 英语词典系统. 保留所有权利.
+        </div>
+    </div>
+
+    <!-- 添加/编辑单词表单（用于layui modal） -->
+    <div id="word-form-container" style="display: none;">
+        <form class="layui-form" id="word-form" lay-filter="word-form">
+            <input type="hidden" name="word_id" id="word-id">
+            <div class="layui-form-item">
+                <label class="layui-form-label">单词 <span style="color: red;">*</span></label>
+                <div class="layui-input-block">
+                    <input type="text" name="text" id="word-text" lay-verify="required" placeholder="输入英文单词" class="layui-input">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">音标 <span style="color: red;">*</span></label>
+                <div class="layui-input-block">
+                    <input type="text" name="phonetic" id="word-phonetic" lay-verify="required" placeholder="例如: /ˈæpl/" class="layui-input">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">中文释义 <span style="color: red;">*</span></label>
+                <div class="layui-input-block">
+                    <input type="text" name="meaning" id="word-meaning" lay-verify="required" placeholder="单词的中文解释" class="layui-input">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">发音链接1（英音）</label>
+                <div class="layui-input-block">
+                    <input type="text" name="pronunciation1" id="word-pronunciation1" placeholder="英音发音URL" class="layui-input">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">发音链接2（美音）</label>
+                <div class="layui-input-block">
+                    <input type="text" name="pronunciation2" id="word-pronunciation2" placeholder="美音发音URL" class="layui-input">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">发音链接3（例句）</label>
+                <div class="layui-input-block">
+                    <input type="text" name="pronunciation3" id="word-pronunciation3" placeholder="例句发音URL" class="layui-input">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">所属字典</label>
+                <div class="layui-input-block">
+                    <select id="word-dictionaries" name="dictionaries[]" multiple lay-verify="" lay-filter="dictionaries" class="layui-select" style="height: 120px;">
+                        <!-- 字典选项将通过JavaScript动态加载 -->
+                    </select>
+                    <div class="layui-form-mid layui-word-aux">按住Ctrl键可多选</div>
+                </div>
+            </div>
+            <div class="layui-form-item layui-form-text">
+                <div class="layui-input-block" style="text-align: right; margin-top: 30px;">
+                    <button type="button" class="layui-btn layui-btn-primary" id="cancel-word-modal">取消</button>
+                    <button type="submit" class="layui-btn" lay-submit lay-filter="save-word">保存</button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- 工具栏模板 -->
+    <script type="text/html" id="word-toolbar">
+        <a class="layui-btn layui-btn-xs" lay-event="edit">编辑</a>
+        <a class="layui-btn layui-btn-xs layui-btn-danger" lay-event="del">删除</a>
+        {{# if(d.pronunciation1){ }}
+        <a class="layui-btn layui-btn-xs layui-btn-warm" lay-event="playSound">播放发音</a>
+        {{# } }}
+    </script>
+
+    <!-- 引入 layui JS -->
+    <script src="https://cdn.staticfile.org/layui/2.8.15/layui.js"></script>
+    <script src="words.js"></script>
+</body>
+</html>

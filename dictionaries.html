@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>字典管理 - 英语词典系统</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/layui@2.9.11/dist/css/layui.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/layui@2.9.11/dist/layui.min.js"></script>
+</head>
+<body class="layui-layout-body">
+    <div class="layui-layout layui-layout-admin">
+        <!-- 顶部导航栏 -->
+        <div class="layui-header">
+            <div class="layui-logo" style="font-size: 20px;">英语词典系统</div>
+            <!-- 导航菜单 -->
+            <ul class="layui-nav layui-layout-left">
+                <li class="layui-nav-item"><a href="index.html">首页</a></li>
+                <li class="layui-nav-item layui-this"><a href="dictionaries.html">字典管理</a></li>
+                <li class="layui-nav-item"><a href="words.html">单词管理</a></li>
+                <li class="layui-nav-item"><a href="word_search.html">单词查询</a></li>
+            </ul>
+        </div>
+
+        <!-- 内容区域 -->
+        <div class="layui-body">
+            <div class="layui-container" style="padding: 20px;">
+                <!-- 页面标题 -->
+                <div class="layui-row">
+                    <div class="layui-col-md12">
+                        <div style="margin-bottom: 20px;">
+                            <h2 class="layui-breadcrumb" lay-separator="/">
+                                <span>系统管理</span>
+                                <span><cite>字典管理</cite></span>
+                            </h2>
+                            <p style="color: #666;">管理你的英语单词字典集合</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 工具条 -->
+                <div class="layui-row">
+                    <div class="layui-col-md12">
+                        <div class="layui-btn-container" style="margin-bottom: 10px; text-align: right;">
+                            <button id="add-dictionary-btn" class="layui-btn layui-btn-sm">
+                                <i class="layui-icon layui-icon-add-circle"></i> 添加字典
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 字典列表 -->
+                <div class="layui-card">
+                    <div class="layui-card-header">字典列表</div>
+                    <div class="layui-card-body">
+                        <!-- 搜索框 -->
+                        <div class="layui-input-inline" style="margin-bottom: 10px; width: 300px;">
+                            <input type="text" id="dictionary-filter" class="layui-input" placeholder="搜索字典...">
+                        </div>
+
+                        <!-- 表格容器 -->
+                        <table id="dictionaries-table" lay-filter="dictionaries-table"></table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 添加/编辑字典表单（用于layui modal） -->
+    <div id="dictionary-form-container" style="display: none;">
+        <form class="layui-form" id="dictionary-form" lay-filter="dictionary-form">
+            <input type="hidden" name="dictionary_id" id="dictionary-id">
+            <div class="layui-form-item">
+                <label class="layui-form-label">字典名称 <span style="color: red;">*</span></label>
+                <div class="layui-input-block">
+                    <input type="text" name="name" id="dictionary-name" lay-verify="required" placeholder="例如: CET4/考研核心词" class="layui-input">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">字典描述</label>
+                <div class="layui-input-block">
+                    <textarea name="description" id="dictionary-description" rows="3" placeholder="详细介绍字典内容和用途" class="layui-textarea"></textarea>
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">字典状态</label>
+                <div class="layui-input-block">
+                    <input type="checkbox" name="enabled" id="dictionary-enabled" lay-skin="switch" lay-text="启用|禁用" checked>
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">是否掌握</label>
+                <div class="layui-input-block">
+                    <input type="checkbox" name="mastered" id="dictionary-mastered" lay-skin="switch" lay-text="是|否">
+                </div>
+            </div>
+            <div class="layui-form-item layui-form-text">
+                <div class="layui-input-block" style="text-align: right; margin-top: 30px;">
+                    <button type="button" class="layui-btn layui-btn-primary" id="cancel-modal">取消</button>
+                    <button type="submit" class="layui-btn" lay-submit lay-filter="save-dictionary">保存</button>
+                </div>
+            </div>
+        </form>
+    </div>
+    
+    <!-- 查看字典单词模态框 -->
+    <div id="dictionary-words-container" style="display: none;">
+        <div class="layui-form-item">
+            <label class="layui-form-label">单词搜索</label>
+            <div class="layui-input-block">
+                <input type="text" id="words-search" placeholder="搜索单词..." class="layui-input">
+            </div>
+        </div>
+        <div class="layui-btn-container" style="margin-bottom: 10px;">
+            <button class="layui-btn layui-btn-sm" id="add-words-to-dict">
+                <i class="layui-icon layui-icon-add-circle"></i> 添加单词
+            </button>
+        </div>
+        <table id="dictionary-words-table" lay-filter="dictionary-words-table"></table>
+    </div>
+
+    <!-- 底部信息 -->
+    <div class="layui-footer" style="text-align: center;">
+        &copy; 2024 英语词典系统. 保留所有权利.
+    </div>
+</div>
+
+<script>
+    layui.use(['element', 'table', 'form', 'layer'], function() {
+        var element = layui.element;
+        var table = layui.table;
+        var form = layui.form;
+        var layer = layui.layer;
+        
+        // 页面加载完成后初始化
+        $(function() {
+            // 这里将由dictionaries.js接管
+        });
+    });
+</script>
+    </div>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2024 英语词典系统. 保留所有权利.</p>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+    <script src="dictionaries.js"></script>
+</body>
+</html>
