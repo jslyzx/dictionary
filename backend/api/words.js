@@ -17,11 +17,12 @@ router.get('/', async (req, res) => {
                 FROM words w
                 JOIN dictionary_words dw ON w.word_id = dw.word_id
                 WHERE dw.dictionary_id = ?
+                ORDER BY w.word ASC
             `;
             params.push(dictionary_id);
+        } else {
+            sql += ' ORDER BY word ASC';
         }
-        
-        sql += ' ORDER BY w.word ASC';
         
         const words = await db.query(sql, params);
         res.json({

@@ -2,12 +2,13 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const fs = require('fs');
 const config = require('./config');
 const db = require('./database');
 
 // 创建Express应用
 const app = express();
-const PORT = config.server.port || 3000;
+const PORT = config.server.port || 8080;
 const HOST = config.server.host || 'localhost';
 
 // 中间件配置
@@ -15,8 +16,12 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// 静态文件服务
-app.use(express.static(path.join(__dirname, 'frontend')));
+// 静态文件服务 - 优先处理build文件夹(如果存在)
+if (fs.existsSync(path.join(__dirname, 'frontend', 'dist'))) {
+    app.use(express.static(path.join(__dirname, 'frontend', 'dist')));
+} else {
+    app.use(express.static(path.join(__dirname, 'frontend')));
+}
 
 // API路由
 const dictionariesRouter = require('./backend/api/dictionaries');
@@ -28,27 +33,20 @@ app.use('/api/dictionaries', dictionariesRouter);
 app.use('/api/words', wordsRouter);
 app.use('/api/dictionary', dictionaryWordsRouter);
 
-// 主页面路由
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'frontend', 'index.html'));
-});
-
-// 其他页面路由（SPA路由支持）
-app.get('/dictionaries', (req, res) => {
-    res.sendFile(path.join(__dirname, 'frontend', 'dictionaries.html'));
-});
-
-app.get('/words', (req, res) => {
-    res.sendFile(path.join(__dirname, 'frontend', 'words.html'));
-});
-
-app.get('/word_search', (req, res) => {
-    res.sendFile(path.join(__dirname, 'frontend', 'word_search.html'));
-});
-
-// 404处理
-app.use((req, res) => {
-    res.status(404).sendFile(path.join(__dirname, 'frontend', 'index.html'));
+// SPA路由支持 - 所有非API路由都指向index.html
+const staticFilesRegex = /\.(js|css|html|ico|png|jpg|jpeg|gif|svg|json|txt|woff|woff2|ttf|eot)$/;
+app.get('*', (req, res, next) => {
+    // 如果是API路径或者静态文件，继续处理
+    if (req.path.startsWith('/api/') || staticFilesRegex.test(req.path)) {
+        return next();
+    }
+    
+    // 否则返回index.html，让Vue Router处理路由
+    const indexPath = fs.existsSync(path.join(__dirname, 'frontend', 'dist', 'index.html')) 
+        ? path.join(__dirname, 'frontend', 'dist', 'index.html')
+        : path.join(__dirname, 'frontend', 'index.html');
+    
+    res.sendFile(indexPath);
 });
 
 // 启动服务器
