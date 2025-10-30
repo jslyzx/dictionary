@@ -398,13 +398,13 @@ const createWord = async (req, res, next) => {
     ];
 
     optionalFields.forEach(([field, value]) => {
-      if (hasOwn(body, field)) {
+      if (hasOwn(body, field) && value !== undefined) {
         columns.push(field);
         values.push(value);
       }
     });
 
-    if (hasOwn(body, 'createdAt')) {
+    if (hasOwn(body, 'createdAt') && body.createdAt !== undefined) {
       columns.push('created_at');
       values.push(body.createdAt);
     }

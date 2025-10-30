@@ -17,6 +17,15 @@ interface ApiMessageResponse {
   message: string
 }
 
+export const fetchDictionaries = async (): Promise<Dictionary[]> => {
+  const response = await request<ApiResponse<Dictionary[]>>({
+    method: 'GET',
+    url: '/api/dictionaries',
+  })
+
+  return response.data
+}
+
 export const fetchDictionary = async (id: number): Promise<Dictionary> => {
   const response = await request<ApiResponse<Dictionary>>({
     method: 'GET',
