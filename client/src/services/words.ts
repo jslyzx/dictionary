@@ -82,7 +82,7 @@ const adaptUpsertPayload = (payload: UpsertWordPayload) => {
     phonetic: payload.phonetic,
     meaning: payload.meaning,
     difficulty: payload.difficulty,
-    masteryStatus: payload.isMastered ? 1 : 0,
+    isMastered: payload.isMastered,
   }
 
   if (payload.pronunciationUrl !== undefined) {

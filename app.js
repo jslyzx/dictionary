@@ -1,4 +1,5 @@
 const express = require('express');
+const cors = require('cors');
 
 const dictionariesRouter = require('./routes/dictionaries');
 const wordsRouter = require('./routes/words');
@@ -8,6 +9,7 @@ const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
 
+app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
