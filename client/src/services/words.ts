@@ -145,3 +145,24 @@ export const deleteWord = async (id: number): Promise<void> => {
     url: `/api/words/${id}`,
   })
 }
+
+// Added for compatibility with existing components
+export const fetchWords = async (params: ListWordsParams): Promise<{
+  items: import('../types/word').Word[]
+  total: number
+  page: number
+  limit: number
+}> => {
+  const result = await listWords(params)
+  
+  // Transform results to be compatible with types/word.ts interface
+  return {
+    ...result,
+    items: result.items.map(item => ({
+      ...item,
+      createdAt: item.createdAt || '', // Ensure non-null string
+      difficulty: item.difficulty as import('../types/word').WordDifficulty, // Ensure correct difficulty type
+      isMastered: item.isMastered as boolean | null // Ensure boolean | null type
+    }))
+  }
+}

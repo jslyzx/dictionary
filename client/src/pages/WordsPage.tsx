@@ -1,4 +1,4 @@
-import { ChangeEvent, FormEvent, useCallback, useEffect, useMemo, useState } from 'react'
+import { type ChangeEvent, type FormEvent, useCallback, useEffect, useMemo, useState } from 'react'
 import type { ApiError } from '../services/apiClient'
 import { createWord, deleteWord, listWords, updateWord, type ListWordsParams, type Word } from '../services/words'
 
@@ -774,7 +774,8 @@ const WordForm = ({ formId, mode, initialValues, submitting, onSubmit }: WordFor
   const handleChange = (
     event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
   ) => {
-    const { name, value, type, checked } = event.target
+    const { name, value, type } = event.target
+    const checked = type === 'checkbox' || type === 'radio' ? (event.target as HTMLInputElement).checked : undefined
     setValues((prev) => ({
       ...prev,
       [name]: type === 'checkbox' ? checked : name === 'difficulty' ? Number(value) : value,
