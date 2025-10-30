@@ -1,133 +1,40 @@
-# Dictionary Management API
+# 基于单词的词典管理
 
-This project provides a simple Express-based REST API for managing dictionaries stored in a MySQL database. The SQL schema is located in `English.sql` and defines the `dictionaries`, `words`, and `dictionary_words` tables.
+该仓库提供了词典管理系统所需的 `English.sql` 数据库结构，并新增了基于 Node.js + Express 的后端脚手架。
 
-## Getting started
+## 运行要求
 
-### Prerequisites
+- Node.js 18 或更高版本
+- MySQL 8 或兼容版本
 
-- Node.js 18+
-- MySQL 8+ (or compatible)
+## 本地开发步骤
 
-### Installation
+1. 复制环境变量文件并根据本地环境填写：
+   ```bash
+   cp .env.example .env
+   ```
+2. 安装依赖：
+   ```bash
+   npm install
+   ```
+3. 启动开发服务器：
+   ```bash
+   npm run dev
+   ```
+4. 默认情况下服务器会在 `.env` 中配置的 `PORT`（默认为 3000）启动，并提供健康检查接口 `GET /api/health`。
 
-```bash
-npm install
-```
+生产模式可以通过 `npm start` 启动。
 
-Create a `.env` file in the project root to configure the database connection:
+## 导入 `English.sql`
 
-```dotenv
-DB_HOST=localhost
-DB_PORT=3306
-DB_USER=root
-DB_PASSWORD=changeme
-DB_NAME=english
-PORT=3000
-```
+1. 在 MySQL 中创建目标数据库，例如：
+   ```sql
+   CREATE DATABASE dictionary_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+   ```
+2. 使用 MySQL 命令行或 GUI 工具导入根目录下的 `English.sql`：
+   ```bash
+   mysql -u <用户名> -p dictionary_db < English.sql
+   ```
+   将 `<用户名>` 和 `dictionary_db` 替换为实际的数据库用户名与库名。
 
-The database defaults match the schema provided in `English.sql`.
-
-### Running the server
-
-```bash
-npm run start
-```
-
-For development with automatic reloads:
-
-```bash
-npm run dev
-```
-
-The service exposes a health probe at `GET /health`.
-
-## API Endpoints
-
-All dictionary endpoints are available under the `/api/dictionaries` prefix.
-
-| Method | Endpoint            | Description                     |
-|--------|---------------------|---------------------------------|
-| GET    | `/api/dictionaries` | List all dictionaries           |
-| GET    | `/api/dictionaries/:id` | Fetch a dictionary by ID  |
-| POST   | `/api/dictionaries` | Create a new dictionary          |
-| PUT    | `/api/dictionaries/:id` | Update an existing dictionary |
-| DELETE | `/api/dictionaries/:id` | Remove a dictionary          |
-
-### Request body
-
-`POST` and `PUT` accept JSON payloads containing:
-
-```json
-{
-  "name": "CET4",
-  "description": "College English Test Band 4 vocabulary",
-  "isEnabled": true,
-  "isMastered": false
-}
-```
-
-`name` is required when creating a dictionary; other properties are optional. Boolean flags accept `true`/`false`, `1`/`0`, or similar string equivalents.
-
-### Response format
-
-Every endpoint returns JSON with the shape:
-
-```json
-{
-  "success": true,
-  "data": {}
-}
-```
-
-When an error occurs the response looks like:
-
-```json
-{
-  "success": false,
-  "error": {
-    "message": "Dictionary not found"
-  }
-}
-```
-
-## Manual testing
-
-Below are example `curl` commands you can use to verify the CRUD workflow. Replace placeholder values as needed.
-
-```bash
-# Create
-curl -X POST http://localhost:3000/api/dictionaries \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "CET4",
-    "description": "College English Test vocabulary",
-    "isEnabled": true,
-    "isMastered": false
-  }'
-
-# List
-curl http://localhost:3000/api/dictionaries
-
-# Fetch by ID
-curl http://localhost:3000/api/dictionaries/1
-
-# Update
-curl -X PUT http://localhost:3000/api/dictionaries/1 \
-  -H "Content-Type: application/json" \
-  -d '{
-    "description": "Updated description",
-    "isEnabled": false
-  }'
-
-# Delete
-curl -X DELETE http://localhost:3000/api/dictionaries/1
-```
-
-These operations can also be validated directly against the database:
-
-```sql
-SELECT * FROM dictionaries;
-```
-
-Running the above query before and after each request allows you to confirm that inserts, updates, and deletions are reflected in MySQL.
+导入完成后，即可使用提供的后端脚手架连接数据库并扩展业务逻辑。
