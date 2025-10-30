@@ -7,10 +7,10 @@ module.exports = {
     
     // 数据库配置
     database: {
-        host: '43.156.92.151',
+        host: '127.0.0.1',
         user: 'root',
-        password:  'Lianhuadedie1991!',
-        database: 'english',
+        password:  '',
+        database: '1',
         port: 3306,
         connectionLimit: 10
     }
