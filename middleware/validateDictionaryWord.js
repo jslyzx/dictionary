@@ -35,6 +35,11 @@ const listRelationQueryRules = [
     .isInt({ min: 1 })
     .withMessage('wordId must be a positive integer.')
     .toInt(),
+  query('search')
+    .optional()
+    .isString()
+    .withMessage('search must be a string.')
+    .trim(),
 ];
 
 module.exports = {

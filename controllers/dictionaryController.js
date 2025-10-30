@@ -234,10 +234,78 @@ const deleteDictionary = async (req, res, next) => {
   }
 };
 
+const getDictionaryStats = async (req, res, next) => {
+  try {
+    const dictionaryId = getDictionaryIdFromRequest(req);
+
+    const dictionaryRows = await query(
+      'SELECT dictionary_id, name FROM dictionaries WHERE dictionary_id = ?',
+      [dictionaryId],
+    );
+
+    if (!dictionaryRows.length) {
+      throw new AppError('Dictionary not found.', {
+        status: 404,
+        code: 'DICTIONARY_NOT_FOUND',
+      });
+    }
+
+    const dictionary = dictionaryRows[0];
+
+    const [statsRow = {}] = await query(
+      `SELECT
+         COUNT(*) AS total,
+         SUM(CASE WHEN w.is_mastered = 1 THEN 1 ELSE 0 END) AS masteredCount,
+         SUM(CASE WHEN w.difficulty = 0 THEN 1 ELSE 0 END) AS easyCount,
+         SUM(CASE WHEN w.difficulty = 1 THEN 1 ELSE 0 END) AS mediumCount,
+         SUM(CASE WHEN w.difficulty = 2 THEN 1 ELSE 0 END) AS hardCount
+       FROM dictionary_words dw
+       INNER JOIN words w ON w.word_id = dw.word_id
+       WHERE dw.dictionary_id = ?`,
+      [dictionaryId],
+    );
+
+    const total = Number(statsRow.total ?? 0);
+    const masteredCount = Number(statsRow.masteredCount ?? 0);
+    const easyCount = Number(statsRow.easyCount ?? 0);
+    const mediumCount = Number(statsRow.mediumCount ?? 0);
+    const hardCount = Number(statsRow.hardCount ?? 0);
+    const unmasteredCount = Math.max(total - masteredCount, 0);
+
+    const masteredPercentage = total
+      ? Number(((masteredCount / total) * 100).toFixed(2))
+      : 0;
+    const unmasteredPercentage = total
+      ? Number(((unmasteredCount / total) * 100).toFixed(2))
+      : 0;
+
+    return res.json({
+      success: true,
+      data: {
+        dictionaryId: dictionary.dictionary_id,
+        name: dictionary.name,
+        total,
+        masteredCount,
+        unmasteredCount,
+        masteredPercentage,
+        unmasteredPercentage,
+        difficulty: {
+          easy: easyCount,
+          medium: mediumCount,
+          hard: hardCount,
+        },
+      },
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
 module.exports = {
   getAllDictionaries,
   getDictionaryById,
   createDictionary,
   updateDictionary,
   deleteDictionary,
+  getDictionaryStats,
 };

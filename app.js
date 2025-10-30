@@ -12,8 +12,6 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
 app.use('/api/dictionaries', dictionariesRouter);
-app.use('/api/dictionary-words', dictionaryWordAssociationsRouter);
-app.use('/api/dictionaries', dictionariesRouter);
 app.use('/api/words', wordsRouter);
 app.use('/api/dictionary-words', dictionaryWordsRouter);
 

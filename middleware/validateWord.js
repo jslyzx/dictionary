@@ -132,6 +132,37 @@ const listWordQueryRules = [
       req.query.masteryStatus = normalized;
       return true;
     }),
+  query('dictionaryId')
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage('dictionaryId must be a positive integer.')
+    .toInt(),
+  query('createdAfter')
+    .optional()
+    .custom((value, { req }) => {
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) {
+        throw new Error('createdAfter must be a valid date.');
+      }
+      req.query.createdAfter = date.toISOString();
+      return true;
+    }),
+  query('createdBefore')
+    .optional()
+    .custom((value, { req }) => {
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) {
+        throw new Error('createdBefore must be a valid date.');
+      }
+      if (req.query.createdAfter) {
+        const afterDate = new Date(req.query.createdAfter);
+        if (!Number.isNaN(afterDate.getTime()) && afterDate > date) {
+          throw new Error('createdBefore must be on or after createdAfter.');
+        }
+      }
+      req.query.createdBefore = date.toISOString();
+      return true;
+    }),
   query('search')
     .optional()
     .isString()
