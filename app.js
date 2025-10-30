@@ -1,6 +1,7 @@
 const express = require('express');
 
 const dictionariesRouter = require('./routes/dictionaries');
+const dictionaryWordAssociationsRouter = require('./routes/dictionaryWordAssociations');
 
 const app = express();
 
@@ -8,6 +9,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
 app.use('/api/dictionaries', dictionariesRouter);
+app.use('/api/dictionary-words', dictionaryWordAssociationsRouter);
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
