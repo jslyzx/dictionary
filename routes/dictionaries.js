@@ -5,6 +5,7 @@ const {
   createDictionary,
   updateDictionary,
   deleteDictionary,
+  getDictionaryStats,
 } = require('../controllers/dictionaryController');
 const {
   dictionaryIdParam,
@@ -15,9 +16,8 @@ const validate = require('../middleware/validate');
 
 const router = express.Router();
 
-router.use('/:id/words', validateDictionaryIdParam, dictionaryWordsRouter);
-
 router.get('/', getAllDictionaries);
+router.get('/:id/stats', dictionaryIdParam, validate, getDictionaryStats);
 router.get('/:id', dictionaryIdParam, validate, getDictionaryById);
 router.post('/', createDictionaryRules, validate, createDictionary);
 router.put('/:id', dictionaryIdParam, updateDictionaryRules, validate, updateDictionary);
