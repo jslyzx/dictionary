@@ -74,6 +74,7 @@ The backend lives at the repository root and exposes RESTful endpoints under `/a
 ### Environment variables
 Create a `.env` file based on `.env.example`:
 ```bash
+cd server
 cp .env.example .env
 ```
 
@@ -84,7 +85,7 @@ cp .env.example .env
 | `DB_PORT` | No | `3306` | MySQL TCP port. |
 | `DB_USER` | Yes | `root` | MySQL username with access to the target schema. |
 | `DB_PASSWORD` | Yes | _(empty)_ | Password for the MySQL user. |
-| `DB_NAME` | Yes | `english` (fallback) | Database name containing the dictionary tables. `.env.example` suggests `dictionary_db`; ensure it matches the schema you created. |
+| `DB_NAME` | Yes | `english` (fallback) | Database name containing the dictionary tables. `server/.env.example` suggests `dictionary_db`; ensure it matches the schema you created. |
 | `DB_POOL_LIMIT` | No | `10` | Maximum concurrent connections in the pool. Useful when tuning for production load. |
 
 > The backend loads environment variables via `dotenv` when `server.js` starts.
@@ -95,6 +96,11 @@ From the repository root:
 ```bash
 # Install dependencies
 npm install
+
+# Set up environment variables
+cd server
+cp .env.example .env
+cd ..
 
 # Start the API with live reload (nodemon)
 npm run dev
@@ -260,6 +266,10 @@ Run the backend and frontend side by side with two terminals:
 
 ```bash
 # Terminal 1 - Backend
+npm install
+cd server
+cp .env.example .env
+cd ..
 npm run dev
 
 # Terminal 2 - Frontend
