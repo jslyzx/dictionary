@@ -6,6 +6,18 @@ import type {
 } from '../types/dictionary'
 import { request } from './apiClient'
 
+export interface CreateDictionaryPayload {
+  name: string
+  description?: string
+}
+
+export interface UpdateDictionaryPayload {
+  name?: string
+  description?: string
+  isEnabled?: boolean
+  isMastered?: boolean
+}
+
 interface ApiResponse<T> {
   success: boolean
   data: T
@@ -79,6 +91,40 @@ export const removeDictionaryWord = async (
   const response = await request<ApiMessageResponse>({
     method: 'DELETE',
     url: `/api/dictionaries/${dictionaryId}/words/${wordId}`,
+  })
+
+  return response.message
+}
+
+export const createDictionary = async (
+  payload: CreateDictionaryPayload,
+): Promise<Dictionary> => {
+  const response = await request<ApiResponse<Dictionary>>({
+    method: 'POST',
+    url: '/api/dictionaries',
+    data: payload,
+  })
+
+  return response.data
+}
+
+export const updateDictionary = async (
+  id: number,
+  payload: UpdateDictionaryPayload,
+): Promise<Dictionary> => {
+  const response = await request<ApiResponse<Dictionary>>({
+    method: 'PUT',
+    url: `/api/dictionaries/${id}`,
+    data: payload,
+  })
+
+  return response.data
+}
+
+export const deleteDictionary = async (id: number): Promise<string> => {
+  const response = await request<ApiMessageResponse>({
+    method: 'DELETE',
+    url: `/api/dictionaries/${id}`,
   })
 
   return response.message
