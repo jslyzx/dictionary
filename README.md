@@ -51,22 +51,56 @@ Ensure the following tooling is installed locally or available in your container
 ```
 
 ## Database Setup
-1. **Create an empty database** (use a name that matches your `.env` later):
-   ```sql
-   CREATE DATABASE dictionary_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-   ```
 
-2. **Import the bundled schema and data** from the project root:
-   ```bash
-   mysql -u <user> -p dictionary_db < English.sql
-   ```
-   Replace `<user>` and `dictionary_db` with your MySQL username and the database you just created. The dump contains table definitions, indexes, and sample content so the UI has data right away.
+> 📖 **详细指南**: 查看 [DATABASE_SETUP.md](./DATABASE_SETUP.md) 获取完整的数据库设置指南，包括故障排除和性能优化建议。
 
-> **Tip:** Need to start from scratch? Drop and re-import the database at any time:
-> ```bash
-> mysql -u <user> -p -e "DROP DATABASE IF EXISTS dictionary_db; CREATE DATABASE dictionary_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
-> mysql -u <user> -p dictionary_db < English.sql
-> ```
+### 快速开始
+
+如果您已经熟悉 MySQL，可以按照以下快速步骤：
+
+```bash
+# 1. 启动 MySQL 服务
+sudo systemctl start mysql
+
+# 2. 创建数据库
+mysql -u root -p -e "CREATE DATABASE dictionary CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+
+# 3. 导入数据
+mysql -u root -p dictionary < English.sql
+
+# 4. 配置环境变量
+cp .env.example .env
+# 编辑 .env 文件，设置正确的数据库密码
+
+# 5. 启动应用
+npm run dev
+```
+
+### 验证安装
+
+启动应用程序后，您应该看到：
+
+```
+📊 数据库配置:
+   Host: localhost
+   Port: 3306
+   User: root
+   Database: dictionary
+✅ 数据库连接成功
+🚀 服务器运行在 http://localhost:5000
+```
+
+测试 API：
+```bash
+curl http://localhost:5000/api/dictionaries
+```
+
+> **常见问题**: 
+> - ❌ "数据库连接失败" → 检查 MySQL 服务状态
+> - ❌ "缺少环境变量" → 运行 `cp .env.example .env`
+> - ❌ "数据库不存在" → 重新执行步骤 2-3
+
+详细故障排除请参考 [DATABASE_SETUP.md](./DATABASE_SETUP.md#故障排除)。
 
 ## Backend (Express API)
 The backend lives at the repository root and exposes RESTful endpoints under `/api`.
@@ -74,21 +108,23 @@ The backend lives at the repository root and exposes RESTful endpoints under `/a
 ### Environment variables
 Create a `.env` file based on `.env.example`:
 ```bash
-cd server
 cp .env.example .env
 ```
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `PORT` | No | `3000` | Port for the Express server. |
+| `PORT` | No | `5000` | Port for the Express server. |
+| `NODE_ENV` | No | `development` | Application environment. |
 | `DB_HOST` | Yes | `localhost` | MySQL host. |
 | `DB_PORT` | No | `3306` | MySQL TCP port. |
 | `DB_USER` | Yes | `root` | MySQL username with access to the target schema. |
 | `DB_PASSWORD` | Yes | _(empty)_ | Password for the MySQL user. |
-| `DB_NAME` | Yes | `english` (fallback) | Database name containing the dictionary tables. `server/.env.example` suggests `dictionary_db`; ensure it matches the schema you created. |
+| `DB_NAME` | Yes | `dictionary` | Database name containing the dictionary tables. |
 | `DB_POOL_LIMIT` | No | `10` | Maximum concurrent connections in the pool. Useful when tuning for production load. |
 
-> The backend loads environment variables via `dotenv` when `server.js` starts.
+> **重要提示：** 应用程序会在启动时验证所有必需的环境变量。如果缺少任何必需变量，应用程序将显示错误消息并退出。
+
+> The backend loads environment variables via `dotenv` when `server.js` starts and performs automatic database connection testing.
 
 ### Install & run
 From the repository root:
