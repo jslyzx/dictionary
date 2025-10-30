@@ -1,162 +1,169 @@
-const isBooleanLike = (value) => {
+const { body, param } = require('express-validator');
+
+const normalizeBoolean = (value) => {
   if (value === undefined || value === null) {
-    return true;
+    return undefined;
   }
 
   if (typeof value === 'boolean') {
-    return true;
+    return value;
   }
 
   if (typeof value === 'number') {
-    return value === 0 || value === 1;
+    return value !== 0;
   }
 
   if (typeof value === 'string') {
-    return ['0', '1', 'true', 'false', 'yes', 'no', 'y', 'n'].includes(
-      value.trim().toLowerCase()
-    );
-  }
-
-  return false;
-};
-
-const validateDictionaryIdParam = (req, res, next) => {
-  const { id } = req.params;
-  const parsed = Number(id);
-
-  if (!Number.isInteger(parsed) || parsed <= 0) {
-    return res.status(400).json({
-      success: false,
-      error: {
-        message: 'Invalid dictionary id.'
-      }
-    });
-  }
-
-  req.params.id = parsed;
-  return next();
-};
-
-const validateCreateDictionary = (req, res, next) => {
-  const { name, description, isEnabled, isMastered } = req.body || {};
-
-  if (typeof name !== 'string' || !name.trim()) {
-    return res.status(400).json({
-      success: false,
-      error: {
-        message: 'Name is required and must be a non-empty string.'
-      }
-    });
-  }
-
-  if (
-    description !== undefined &&
-    description !== null &&
-    typeof description !== 'string'
-  ) {
-    return res.status(400).json({
-      success: false,
-      error: {
-        message: 'Description must be a string when provided.'
-      }
-    });
-  }
-
-  if (!isBooleanLike(isEnabled)) {
-    return res.status(400).json({
-      success: false,
-      error: {
-        message: 'isEnabled must be a boolean-like value when provided.'
-      }
-    });
-  }
-
-  if (!isBooleanLike(isMastered)) {
-    return res.status(400).json({
-      success: false,
-      error: {
-        message: 'isMastered must be a boolean-like value when provided.'
-      }
-    });
-  }
-
-  req.body.name = name.trim();
-  if (typeof description === 'string') {
-    req.body.description = description.trim();
-  }
-
-  return next();
-};
-
-const validateUpdateDictionary = (req, res, next) => {
-  const { name, description, isEnabled, isMastered } = req.body || {};
-
-  if (
-    name === undefined &&
-    description === undefined &&
-    isEnabled === undefined &&
-    isMastered === undefined
-  ) {
-    return res.status(400).json({
-      success: false,
-      error: {
-        message: 'At least one field must be provided to update a dictionary.'
-      }
-    });
-  }
-
-  if (name !== undefined) {
-    if (typeof name !== 'string' || !name.trim()) {
-      return res.status(400).json({
-        success: false,
-        error: {
-          message: 'Name must be a non-empty string when provided.'
-        }
-      });
+    const normalized = value.trim().toLowerCase();
+    if (['1', 'true', 'yes', 'y'].includes(normalized)) {
+      return true;
     }
-    req.body.name = name.trim();
+
+    if (['0', 'false', 'no', 'n'].includes(normalized)) {
+      return false;
+    }
   }
 
-  if (
-    description !== undefined &&
-    description !== null &&
-    typeof description !== 'string'
-  ) {
-    return res.status(400).json({
-      success: false,
-      error: {
-        message: 'Description must be a string when provided.'
-      }
-    });
-  }
-
-  if (typeof description === 'string') {
-    req.body.description = description.trim();
-  }
-
-  if (!isBooleanLike(isEnabled)) {
-    return res.status(400).json({
-      success: false,
-      error: {
-        message: 'isEnabled must be a boolean-like value when provided.'
-      }
-    });
-  }
-
-  if (!isBooleanLike(isMastered)) {
-    return res.status(400).json({
-      success: false,
-      error: {
-        message: 'isMastered must be a boolean-like value when provided.'
-      }
-    });
-  }
-
-  return next();
+  return undefined;
 };
+
+const dictionaryIdParam = [
+  param('id')
+    .isInt({ min: 1 })
+    .withMessage('Dictionary id must be a positive integer.')
+    .toInt(),
+];
+
+const createDictionaryRules = [
+  body('name')
+    .exists({ checkNull: true, checkFalsy: true })
+    .withMessage('Name is required.')
+    .bail()
+    .isString()
+    .withMessage('Name must be a string.')
+    .bail()
+    .custom((value, { req }) => {
+      const trimmed = value.trim();
+      if (!trimmed) {
+        throw new Error('Name is required.');
+      }
+      if (trimmed.length > 100) {
+        throw new Error('Name must be 100 characters or fewer.');
+      }
+      req.body.name = trimmed;
+      return true;
+    }),
+  body('description')
+    .optional()
+    .custom((value, { req }) => {
+      if (value === null) {
+        req.body.description = null;
+        return true;
+      }
+
+      if (typeof value !== 'string') {
+        throw new Error('Description must be a string when provided.');
+      }
+
+      const trimmed = value.trim();
+      if (trimmed.length > 2000) {
+        throw new Error('Description must be 2000 characters or fewer.');
+      }
+      req.body.description = trimmed || null;
+      return true;
+    }),
+  body('isEnabled')
+    .optional()
+    .custom((value, { req }) => {
+      const normalized = normalizeBoolean(value);
+      if (normalized === undefined) {
+        throw new Error('isEnabled must be a boolean value.');
+      }
+      req.body.isEnabled = normalized;
+      return true;
+    }),
+  body('isMastered')
+    .optional()
+    .custom((value, { req }) => {
+      const normalized = normalizeBoolean(value);
+      if (normalized === undefined) {
+        throw new Error('isMastered must be a boolean value.');
+      }
+      req.body.isMastered = normalized;
+      return true;
+    }),
+];
+
+const updateDictionaryRules = [
+  body()
+    .custom((value, { req }) => {
+      const fields = ['name', 'description', 'isEnabled', 'isMastered'];
+      const hasAtLeastOne = fields.some((field) => Object.prototype.hasOwnProperty.call(req.body, field));
+      if (!hasAtLeastOne) {
+        throw new Error('At least one field must be provided to update a dictionary.');
+      }
+      return true;
+    }),
+  body('name')
+    .optional()
+    .custom((value, { req }) => {
+      if (value === null) {
+        throw new Error('Name cannot be null.');
+      }
+      if (typeof value !== 'string') {
+        throw new Error('Name must be a string.');
+      }
+      const trimmed = value.trim();
+      if (!trimmed) {
+        throw new Error('Name must be a non-empty string when provided.');
+      }
+      if (trimmed.length > 100) {
+        throw new Error('Name must be 100 characters or fewer.');
+      }
+      req.body.name = trimmed;
+      return true;
+    }),
+  body('description')
+    .optional()
+    .custom((value, { req }) => {
+      if (value === null) {
+        req.body.description = null;
+        return true;
+      }
+      if (typeof value !== 'string') {
+        throw new Error('Description must be a string when provided.');
+      }
+      const trimmed = value.trim();
+      if (trimmed.length > 2000) {
+        throw new Error('Description must be 2000 characters or fewer.');
+      }
+      req.body.description = trimmed || null;
+      return true;
+    }),
+  body('isEnabled')
+    .optional()
+    .custom((value, { req }) => {
+      const normalized = normalizeBoolean(value);
+      if (normalized === undefined) {
+        throw new Error('isEnabled must be a boolean value.');
+      }
+      req.body.isEnabled = normalized;
+      return true;
+    }),
+  body('isMastered')
+    .optional()
+    .custom((value, { req }) => {
+      const normalized = normalizeBoolean(value);
+      if (normalized === undefined) {
+        throw new Error('isMastered must be a boolean value.');
+      }
+      req.body.isMastered = normalized;
+      return true;
+    }),
+];
 
 module.exports = {
-  validateDictionaryIdParam,
-  validateCreateDictionary,
-  validateUpdateDictionary
+  dictionaryIdParam,
+  createDictionaryRules,
+  updateDictionaryRules,
 };
