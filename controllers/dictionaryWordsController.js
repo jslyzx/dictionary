@@ -129,6 +129,16 @@ const getDictionaryWords = async (req, res, next) => {
       data: rows.map(serializeAssociationRow)
     });
   } catch (error) {
+    console.error('获取词典单词关联失败:', error);
+    
+    if (error.code === 'ECONNREFUSED') {
+      return res.status(503).json({
+        success: false,
+        error: '数据库连接失败，请检查数据库服务是否运行',
+        code: 'DB_CONNECTION_ERROR'
+      });
+    }
+    
     return next(error);
   }
 };

@@ -232,6 +232,16 @@ const getWords = async (req, res, next) => {
       },
     });
   } catch (error) {
+    console.error('获取单词列表失败:', error);
+    
+    if (error.code === 'ECONNREFUSED') {
+      return res.status(503).json({
+        success: false,
+        error: '数据库连接失败，请检查数据库服务是否运行',
+        code: 'DB_CONNECTION_ERROR'
+      });
+    }
+    
     return next(error);
   }
 };
@@ -287,6 +297,16 @@ const getWordStats = async (req, res, next) => {
       },
     });
   } catch (error) {
+    console.error('获取单词统计失败:', error);
+    
+    if (error.code === 'ECONNREFUSED') {
+      return res.status(503).json({
+        success: false,
+        error: '数据库连接失败，请检查数据库服务是否运行',
+        code: 'DB_CONNECTION_ERROR'
+      });
+    }
+    
     return next(error);
   }
 };
