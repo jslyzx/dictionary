@@ -15,6 +15,8 @@ const validate = require('../middleware/validate');
 
 const router = express.Router();
 
+router.use('/:id/words', validateDictionaryIdParam, dictionaryWordsRouter);
+
 router.get('/', getAllDictionaries);
 router.get('/:id', dictionaryIdParam, validate, getDictionaryById);
 router.post('/', createDictionaryRules, validate, createDictionary);
