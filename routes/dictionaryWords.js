@@ -1,18 +1,20 @@
 const express = require('express');
 const {
-  getDictionaryWords,
-  addDictionaryWord,
-  deleteDictionaryWord
-} = require('../controllers/dictionaryWordsController');
+  listDictionaryWords,
+  createDictionaryWord,
+  deleteDictionaryWord,
+} = require('../controllers/dictionaryWordController');
 const {
-  validateWordIdParam,
-  validateCreateDictionaryWord
+  relationIdParam,
+  createRelationRules,
+  listRelationQueryRules,
 } = require('../middleware/validateDictionaryWord');
+const validate = require('../middleware/validate');
 
-const router = express.Router({ mergeParams: true });
+const router = express.Router();
 
-router.get('/', getDictionaryWords);
-router.post('/', validateCreateDictionaryWord, addDictionaryWord);
-router.delete('/:wordId', validateWordIdParam, deleteDictionaryWord);
+router.get('/', listRelationQueryRules, validate, listDictionaryWords);
+router.post('/', createRelationRules, validate, createDictionaryWord);
+router.delete('/:id', relationIdParam, validate, deleteDictionaryWord);
 
 module.exports = router;

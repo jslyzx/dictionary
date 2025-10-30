@@ -4,28 +4,23 @@ const {
   getDictionaryById,
   createDictionary,
   updateDictionary,
-  deleteDictionary
+  deleteDictionary,
 } = require('../controllers/dictionaryController');
 const {
-  validateDictionaryIdParam,
-  validateCreateDictionary,
-  validateUpdateDictionary
+  dictionaryIdParam,
+  createDictionaryRules,
+  updateDictionaryRules,
 } = require('../middleware/validateDictionary');
-const dictionaryWordsRouter = require('./dictionaryWords');
+const validate = require('../middleware/validate');
 
 const router = express.Router();
 
 router.use('/:id/words', validateDictionaryIdParam, dictionaryWordsRouter);
 
 router.get('/', getAllDictionaries);
-router.get('/:id', validateDictionaryIdParam, getDictionaryById);
-router.post('/', validateCreateDictionary, createDictionary);
-router.put(
-  '/:id',
-  validateDictionaryIdParam,
-  validateUpdateDictionary,
-  updateDictionary
-);
-router.delete('/:id', validateDictionaryIdParam, deleteDictionary);
+router.get('/:id', dictionaryIdParam, validate, getDictionaryById);
+router.post('/', createDictionaryRules, validate, createDictionary);
+router.put('/:id', dictionaryIdParam, updateDictionaryRules, validate, updateDictionary);
+router.delete('/:id', dictionaryIdParam, validate, deleteDictionary);
 
 module.exports = router;

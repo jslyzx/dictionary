@@ -1,4 +1,5 @@
 const { pool, query } = require('../config/db');
+const AppError = require('../utils/AppError');
 
 const baseSelectColumns = `
   dictionary_id,
@@ -17,45 +18,46 @@ const serializeDictionary = (row) => ({
   isEnabled: row.is_enabled === 1,
   isMastered: row.is_mastered === 1,
   createdAt: row.created_at,
-  updatedAt: row.updated_at
+  updatedAt: row.updated_at,
 });
 
-const normalizeBoolean = (value, fallback) => {
+const hasOwn = (object, key) =>
+  Object.prototype.hasOwnProperty.call(object ?? {}, key);
+
+const toDatabaseBoolean = (value, fallback) => {
   if (value === undefined || value === null) {
     return fallback;
   }
 
-  if (typeof value === 'boolean') {
-    return value ? 1 : 0;
+  return value ? 1 : 0;
+};
+
+const getValidatedBody = (req) => {
+  const candidate = req.validated?.body;
+  if (candidate && Object.keys(candidate).length) {
+    return candidate;
+  }
+  return req.body ?? {};
+};
+
+const getDictionaryIdFromRequest = (req) => {
+  if (req.validated?.params?.id !== undefined) {
+    return req.validated.params.id;
   }
 
-  if (typeof value === 'number') {
-    return value ? 1 : 0;
-  }
-
-  if (typeof value === 'string') {
-    const normalized = value.trim().toLowerCase();
-    if (['1', 'true', 'yes', 'y'].includes(normalized)) {
-      return 1;
-    }
-
-    if (['0', 'false', 'no', 'n'].includes(normalized)) {
-      return 0;
-    }
-  }
-
-  return fallback;
+  const parsed = Number(req.params.id);
+  return Number.isNaN(parsed) ? undefined : parsed;
 };
 
 const getAllDictionaries = async (req, res, next) => {
   try {
     const rows = await query(
-      `SELECT ${baseSelectColumns} FROM dictionaries ORDER BY created_at DESC`
+      `SELECT ${baseSelectColumns} FROM dictionaries ORDER BY created_at DESC`,
     );
 
     return res.json({
       success: true,
-      data: rows.map(serializeDictionary)
+      data: rows.map(serializeDictionary),
     });
   } catch (error) {
     return next(error);
@@ -64,25 +66,23 @@ const getAllDictionaries = async (req, res, next) => {
 
 const getDictionaryById = async (req, res, next) => {
   try {
-    const { id } = req.params;
+    const dictionaryId = getDictionaryIdFromRequest(req);
 
     const rows = await query(
       `SELECT ${baseSelectColumns} FROM dictionaries WHERE dictionary_id = ?`,
-      [id]
+      [dictionaryId],
     );
 
     if (!rows.length) {
-      return res.status(404).json({
-        success: false,
-        error: {
-          message: 'Dictionary not found'
-        }
+      throw new AppError('Dictionary not found.', {
+        status: 404,
+        code: 'DICTIONARY_NOT_FOUND',
       });
     }
 
     return res.json({
       success: true,
-      data: serializeDictionary(rows[0])
+      data: serializeDictionary(rows[0]),
     });
   } catch (error) {
     return next(error);
@@ -91,40 +91,39 @@ const getDictionaryById = async (req, res, next) => {
 
 const createDictionary = async (req, res, next) => {
   try {
-    const { name, description, isEnabled, isMastered } = req.body;
-
-    const dictionaryName = typeof name === 'string' ? name.trim() : name;
-    const dictionaryDescription =
-      description === undefined || description === null ? null : description;
+    const body = getValidatedBody(req);
+    const name = body.name;
+    const description = hasOwn(body, 'description') ? body.description : null;
+    const isEnabled = hasOwn(body, 'isEnabled')
+      ? toDatabaseBoolean(body.isEnabled)
+      : 1;
+    const isMastered = hasOwn(body, 'isMastered')
+      ? toDatabaseBoolean(body.isMastered)
+      : 0;
 
     const [result] = await pool.execute(
       `INSERT INTO dictionaries (name, description, is_enabled, is_mastered)
        VALUES (?, ?, ?, ?)`,
-      [
-        dictionaryName,
-        dictionaryDescription,
-        normalizeBoolean(isEnabled, 1),
-        normalizeBoolean(isMastered, 0)
-      ]
+      [name, description, isEnabled, isMastered],
     );
 
     const rows = await query(
       `SELECT ${baseSelectColumns} FROM dictionaries WHERE dictionary_id = ?`,
-      [result.insertId]
+      [result.insertId],
     );
 
     return res.status(201).json({
       success: true,
-      data: serializeDictionary(rows[0])
+      data: serializeDictionary(rows[0]),
     });
   } catch (error) {
-    if (error && error.code === 'ER_DUP_ENTRY') {
-      return res.status(409).json({
-        success: false,
-        error: {
-          message: 'A dictionary with this name already exists.'
-        }
-      });
+    if (error?.code === 'ER_DUP_ENTRY') {
+      return next(
+        new AppError('A dictionary with this name already exists.', {
+          status: 409,
+          code: 'DICTIONARY_ALREADY_EXISTS',
+        }),
+      );
     }
 
     return next(error);
@@ -133,70 +132,77 @@ const createDictionary = async (req, res, next) => {
 
 const updateDictionary = async (req, res, next) => {
   try {
-    const { id } = req.params;
-    const { name, description, isEnabled, isMastered } = req.body;
+    const dictionaryId = getDictionaryIdFromRequest(req);
+    const body = getValidatedBody(req);
 
     const existingRows = await query(
       `SELECT ${baseSelectColumns} FROM dictionaries WHERE dictionary_id = ?`,
-      [id]
+      [dictionaryId],
     );
 
     if (!existingRows.length) {
-      return res.status(404).json({
-        success: false,
-        error: {
-          message: 'Dictionary not found'
-        }
+      throw new AppError('Dictionary not found.', {
+        status: 404,
+        code: 'DICTIONARY_NOT_FOUND',
       });
     }
 
-    const existing = existingRows[0];
-    const updatedName = name !== undefined ? name : existing.name;
-    const updatedDescription =
-      description !== undefined
-        ? description === null
-          ? null
-          : description
-        : existing.description;
-    const updatedIsEnabled = normalizeBoolean(isEnabled, existing.is_enabled);
-    const updatedIsMastered = normalizeBoolean(
-      isMastered,
-      existing.is_mastered
-    );
+    const updates = [];
+    const params = [];
+
+    if (hasOwn(body, 'name')) {
+      updates.push('name = ?');
+      params.push(body.name);
+    }
+
+    if (hasOwn(body, 'description')) {
+      updates.push('description = ?');
+      params.push(body.description);
+    }
+
+    if (hasOwn(body, 'isEnabled')) {
+      updates.push('is_enabled = ?');
+      params.push(toDatabaseBoolean(body.isEnabled));
+    }
+
+    if (hasOwn(body, 'isMastered')) {
+      updates.push('is_mastered = ?');
+      params.push(toDatabaseBoolean(body.isMastered));
+    }
+
+    if (!updates.length) {
+      throw new AppError('No valid fields provided for update.', {
+        status: 400,
+        code: 'INVALID_UPDATE',
+      });
+    }
+
+    params.push(dictionaryId);
 
     await pool.execute(
       `UPDATE dictionaries
-         SET name = ?,
-             description = ?,
-             is_enabled = ?,
-             is_mastered = ?
+         SET ${updates.join(', ')}
        WHERE dictionary_id = ?`,
-      [
-        updatedName,
-        updatedDescription,
-        updatedIsEnabled,
-        updatedIsMastered,
-        id
-      ]
+      params,
     );
 
     const updatedRows = await query(
       `SELECT ${baseSelectColumns} FROM dictionaries WHERE dictionary_id = ?`,
-      [id]
+      [dictionaryId],
     );
 
     return res.json({
       success: true,
-      data: serializeDictionary(updatedRows[0])
+      data: serializeDictionary(updatedRows[0]),
     });
   } catch (error) {
-    if (error && error.code === 'ER_DUP_ENTRY') {
-      return res.status(409).json({
-        success: false,
-        error: {
-          message: 'A dictionary with this name already exists.'
-        }
-      });
+    if (error?.code === 'ER_DUP_ENTRY') {
+      return next(
+        new AppError('A dictionary with this name already exists.', {
+          status: 409,
+          code: 'DICTIONARY_ALREADY_EXISTS',
+        }),
+      );
     }
 
     return next(error);
@@ -205,25 +211,23 @@ const updateDictionary = async (req, res, next) => {
 
 const deleteDictionary = async (req, res, next) => {
   try {
-    const { id } = req.params;
+    const dictionaryId = getDictionaryIdFromRequest(req);
 
     const [result] = await pool.execute(
       'DELETE FROM dictionaries WHERE dictionary_id = ?',
-      [id]
+      [dictionaryId],
     );
 
     if (result.affectedRows === 0) {
-      return res.status(404).json({
-        success: false,
-        error: {
-          message: 'Dictionary not found'
-        }
+      throw new AppError('Dictionary not found.', {
+        status: 404,
+        code: 'DICTIONARY_NOT_FOUND',
       });
     }
 
     return res.json({
       success: true,
-      message: 'Dictionary deleted successfully.'
+      message: 'Dictionary deleted successfully.',
     });
   } catch (error) {
     return next(error);
@@ -235,5 +239,5 @@ module.exports = {
   getDictionaryById,
   createDictionary,
   updateDictionary,
-  deleteDictionary
+  deleteDictionary,
 };
