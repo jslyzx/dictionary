@@ -1,4 +1,4 @@
-import { type ChangeEvent, type FormEvent, useCallback, useEffect, useMemo, useState } from 'react'
+import { type ChangeEvent, type FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ApiError } from '../services/apiClient'
 import { createWord, deleteWord, listWords, updateWord, type ListWordsParams, type Word } from '../services/words'
 
@@ -30,6 +30,14 @@ type WordFormErrors = Partial<{
   phonetic: string
   meaning: string
 }>
+
+type PronunciationAudioStatus = 'idle' | 'loading' | 'playing' | 'error'
+
+interface PronunciationAudioState {
+  wordId: number | null
+  status: PronunciationAudioStatus
+  errorMessage: string | null
+}
 
 const defaultFilters: FiltersState = {
   search: '',
@@ -91,6 +99,14 @@ const WordsPage = () => {
 
   const [wordPendingDeletion, setWordPendingDeletion] = useState<Word | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
+
+  const audioRef = useRef<HTMLAudioElement | null>(null)
+  const audioListenersRef = useRef<Array<{ type: keyof HTMLMediaElementEventMap; handler: EventListener }>>([])
+  const [audioState, setAudioState] = useState<PronunciationAudioState>({
+    wordId: null,
+    status: 'idle',
+    errorMessage: null,
+  })
 
   useEffect(() => {
     if (!flash) {
@@ -281,6 +297,134 @@ const WordsPage = () => {
 
   const appliedPronunciation = (word: Word) =>
     word.pronunciation1 || word.pronunciation2 || word.pronunciation3 || ''
+
+  const detachAudioListeners = useCallback((audioElement?: HTMLAudioElement | null) => {
+    const target = audioElement ?? audioRef.current
+    if (!target) {
+      audioListenersRef.current = []
+      return
+    }
+    audioListenersRef.current.forEach(({ type, handler }) => {
+      target.removeEventListener(type, handler)
+    })
+    audioListenersRef.current = []
+  }, [])
+
+  const stopCurrentAudio = useCallback(() => {
+    const current = audioRef.current
+    if (current) {
+      current.pause()
+      current.currentTime = 0
+      detachAudioListeners(current)
+    } else {
+      detachAudioListeners()
+    }
+    audioRef.current = null
+    setAudioState({ wordId: null, status: 'idle', errorMessage: null })
+  }, [detachAudioListeners])
+
+  const handleTogglePronunciation = useCallback(
+    (word: Word, url: string) => {
+      if (!url) {
+        return
+      }
+
+      const normalizedUrl = url.trim()
+      if (!/^https?:/i.test(normalizedUrl)) {
+        return
+      }
+
+      if (audioRef.current && audioState.wordId === word.id) {
+        stopCurrentAudio()
+        return
+      }
+
+      stopCurrentAudio()
+
+      const audio = new Audio(normalizedUrl)
+      audioRef.current = audio
+      setAudioState({ wordId: word.id, status: 'loading', errorMessage: null })
+
+      const handlePlaying: EventListener = () => {
+        setAudioState((prev) =>
+          prev.wordId === word.id ? { ...prev, status: 'playing' } : prev,
+        )
+      }
+
+      const handleEnded: EventListener = () => {
+        detachAudioListeners(audio)
+        if (audioRef.current === audio) {
+          audioRef.current = null
+        }
+        setAudioState({ wordId: null, status: 'idle', errorMessage: null })
+      }
+
+      const handleError: EventListener = () => {
+        detachAudioListeners(audio)
+        if (audioRef.current === audio) {
+          audioRef.current = null
+        }
+        setAudioState({
+          wordId: word.id,
+          status: 'error',
+          errorMessage: '音频播放失败，请稍后重试。',
+        })
+      }
+
+      const handleWaiting: EventListener = () => {
+        setAudioState((prev) =>
+          prev.wordId === word.id ? { ...prev, status: 'loading' } : prev,
+        )
+      }
+
+      audioListenersRef.current = [
+        { type: 'playing', handler: handlePlaying },
+        { type: 'ended', handler: handleEnded },
+        { type: 'error', handler: handleError },
+        { type: 'waiting', handler: handleWaiting },
+        { type: 'stalled', handler: handleWaiting },
+      ]
+
+      audioListenersRef.current.forEach(({ type, handler }) => {
+        audio.addEventListener(type, handler)
+      })
+
+      void audio.play().catch(() => {
+        handleError(new Event('error'))
+      })
+    },
+    [audioState.wordId, detachAudioListeners, stopCurrentAudio],
+  )
+
+  useEffect(() => {
+    return () => {
+      const current = audioRef.current
+      if (current) {
+        detachAudioListeners(current)
+        current.pause()
+      } else {
+        detachAudioListeners()
+      }
+      audioRef.current = null
+    }
+  }, [detachAudioListeners])
+
+  useEffect(() => {
+    if (audioState.wordId === null) {
+      return
+    }
+    const activeWord = words.find((wordItem) => wordItem.id === audioState.wordId)
+    if (!activeWord) {
+      stopCurrentAudio()
+      return
+    }
+    const currentPronunciation = (
+      activeWord.pronunciation1 || activeWord.pronunciation2 || activeWord.pronunciation3 || ''
+    ).trim()
+    if (!/^https?:/i.test(currentPronunciation)) {
+      stopCurrentAudio()
+    }
+  }, [audioState.wordId, stopCurrentAudio, words])
 
   const hasActiveFilters =
     filters.search !== '' || filters.difficulty !== 'all' || filters.mastery !== 'all'
@@ -517,8 +661,32 @@ const WordsPage = () => {
                 <tbody className="divide-y divide-slate-200 text-sm text-slate-700">
                   {words.map((word) => {
                     const difficultyMeta = getDifficultyMeta(word.difficulty)
-                    const pronunciation = appliedPronunciation(word)
+                    const rawPronunciation = appliedPronunciation(word)
+                    const pronunciation = (rawPronunciation ?? '').trim()
                     const pronunciationIsLink = /^https?:/i.test(pronunciation)
+                    const hasPronunciation = pronunciation !== ''
+                    const isActiveWord = audioState.wordId === word.id
+                    const isLoadingAudio = isActiveWord && audioState.status === 'loading'
+                    const isPlayingAudio = isActiveWord && audioState.status === 'playing'
+                    const audioErrorMessage =
+                      isActiveWord && audioState.status === 'error' ? audioState.errorMessage : null
+                    const audioButtonLabel = (() => {
+                      if (!pronunciationIsLink) {
+                        return `播放单词“${word.word}”的发音`
+                      }
+                      if (isActiveWord) {
+                        if (isPlayingAudio) {
+                          return `停止播放单词“${word.word}”的发音`
+                        }
+                        if (isLoadingAudio) {
+                          return `正在加载单词“${word.word}”的发音`
+                        }
+                        if (audioErrorMessage) {
+                          return `重新播放单词“${word.word}”的发音`
+                        }
+                      }
+                      return `播放单词“${word.word}”的发音`
+                    })()
                     return (
                       <tr key={word.id} className="hover:bg-slate-50">
                         <td className="px-4 py-3">
@@ -531,25 +699,42 @@ const WordsPage = () => {
                           {word.phonetic || '—'}
                         </td>
                         <td className="px-4 py-3 align-top">
-                          {pronunciation ? (
+                          {hasPronunciation ? (
                             pronunciationIsLink ? (
-                              <a
-                                href={pronunciation}
-                                className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-3 py-1 text-xs font-medium text-slate-700 transition hover:bg-slate-100"
-                                target="_blank"
-                                rel="noreferrer"
-                              >
-                                收听
-                                <svg
-                                  className="h-3 w-3"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  strokeWidth="1.5"
-                                  viewBox="0 0 24 24"
+                              <div className="flex flex-col items-start gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => handleTogglePronunciation(word, pronunciation)}
+                                  className={`inline-flex h-11 w-11 items-center justify-center rounded-full border text-base shadow-sm transition transform hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-slate-500/50 ${
+                                    isActiveWord
+                                      ? isPlayingAudio
+                                        ? 'border-slate-900 bg-slate-900 text-white hover:bg-slate-800'
+                                        : audioErrorMessage
+                                          ? 'border-rose-300 bg-rose-50 text-rose-600 hover:bg-rose-100'
+                                          : 'border-slate-900 bg-slate-100 text-slate-900 hover:bg-slate-200'
+                                      : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-100 hover:text-slate-900'
+                                  }`}
+                                  aria-label={audioButtonLabel}
+                                  title={audioButtonLabel}
+                                  aria-pressed={isActiveWord && isPlayingAudio}
+                                  aria-busy={isLoadingAudio}
                                 >
-                                  <path d="M5 12h14M13 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
-                                </svg>
-                              </a>
+                                  {isLoadingAudio ? (
+                                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                                  ) : isPlayingAudio ? (
+                                    <StopIcon className="h-4 w-4" />
+                                  ) : (
+                                    <SpeakerWaveIcon
+                                      className={`h-5 w-5 ${isActiveWord && !audioErrorMessage ? 'animate-pulse' : ''}`}
+                                    />
+                                  )}
+                                </button>
+                                {audioErrorMessage ? (
+                                  <p aria-live="polite" role="status" className="text-xs text-rose-500">
+                                    {audioErrorMessage}
+                                  </p>
+                                ) : null}
+                              </div>
                             ) : (
                               <span className="text-sm text-slate-600">{pronunciation}</span>
                             )
@@ -952,5 +1137,32 @@ const WordForm = ({ formId, mode, initialValues, submitting, onSubmit }: WordFor
     </form>
   )
 }
+
+const SpeakerWaveIcon = ({ className }: { className?: string }) => (
+  <svg
+    aria-hidden="true"
+    className={className}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={1.6}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path
+      d="M5.5 9.5H8l4.5-3v11l-4.5-3H5.5a1.5 1.5 0 0 1-1.5-1.5v-2a1.5 1.5 0 0 1 1.5-1.5z"
+      fill="currentColor"
+      stroke="none"
+    />
+    <path d="M16 10a2 2 0 0 1 0 4" />
+    <path d="M18.5 8a4.5 4.5 0 0 1 0 8" />
+  </svg>
+)
+
+const StopIcon = ({ className }: { className?: string }) => (
+  <svg aria-hidden="true" className={className} viewBox="0 0 24 24" fill="currentColor">
+    <rect x="6" y="6" width="12" height="12" rx="2" />
+  </svg>
+)
 
 export default WordsPage
