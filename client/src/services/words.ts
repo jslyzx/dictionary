@@ -120,23 +120,27 @@ export const listWords = async (params: ListWordsParams): Promise<WordListResult
 }
 
 export const createWord = async (payload: UpsertWordPayload): Promise<Word> => {
-  const response = await request<{ success: boolean; data: { item: WordApiResponse } }>({
+  const response = await request<{ success: boolean; data: WordApiResponse }>({
     method: 'POST',
     url: '/api/words',
     data: adaptUpsertPayload(payload),
   })
 
-  return mapWord(response.data.item)
+  return mapWord(response.data)
 }
 
 export const updateWord = async (id: number, payload: UpsertWordPayload): Promise<Word> => {
-  const response = await request<{ success: boolean; data: { item: WordApiResponse } }>({
+  if (!id || typeof id !== 'number' || id <= 0) {
+    throw new Error('Valid word ID is required for update');
+  }
+  
+  const response = await request<{ success: boolean; data: WordApiResponse }>({
     method: 'PUT',
     url: `/api/words/${id}`,
     data: adaptUpsertPayload(payload),
   })
 
-  return mapWord(response.data.item)
+  return mapWord(response.data)
 }
 
 export const deleteWord = async (id: number): Promise<void> => {
