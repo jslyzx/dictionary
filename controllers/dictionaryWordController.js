@@ -3,6 +3,8 @@ const AppError = require('../utils/AppError');
 const { parse } = require('csv-parse/sync');
 const { stringifyCsv, normalizeHeaderName } = require('../utils/csv');
 
+const sanitizeDbParams = (params) => params.map(param => param === undefined ? null : param);
+
 const baseSelectColumns = `
   dw.relation_id,
   dw.dictionary_id,
@@ -160,7 +162,7 @@ const createDictionaryWord = async (req, res, next) => {
 
     const [result] = await pool.execute(
       'INSERT INTO dictionary_words (dictionary_id, word_id) VALUES (?, ?)',
-      [dictionaryId, wordId],
+      sanitizeDbParams([dictionaryId, wordId]),
     );
 
     const rows = await query(

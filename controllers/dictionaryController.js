@@ -32,6 +32,8 @@ const toDatabaseBoolean = (value, fallback) => {
   return value ? 1 : 0;
 };
 
+const sanitizeDbParams = (params) => params.map(param => param === undefined ? null : param);
+
 const getValidatedBody = (req) => {
   const candidate = req.validated?.body;
   if (candidate && Object.keys(candidate).length) {
@@ -139,12 +141,12 @@ const createDictionary = async (req, res, next) => {
     const [result] = await pool.execute(
       `INSERT INTO dictionaries (name, description, is_enabled, is_mastered)
        VALUES (?, ?, ?, ?)`,
-      [name, description, isEnabled, isMastered],
+      sanitizeDbParams([name, description, isEnabled, isMastered]),
     );
 
     const rows = await query(
       `SELECT ${baseSelectColumns} FROM dictionaries WHERE dictionary_id = ?`,
-      [result.insertId],
+      sanitizeDbParams([result.insertId]),
     );
 
     return res.status(201).json({
@@ -168,11 +170,19 @@ const createDictionary = async (req, res, next) => {
 const updateDictionary = async (req, res, next) => {
   try {
     const dictionaryId = getDictionaryIdFromRequest(req);
+    
+    if (!dictionaryId) {
+      throw new AppError('Valid dictionary ID is required for update.', {
+        status: 400,
+        code: 'INVALID_DICTIONARY_ID',
+      });
+    }
+    
     const body = getValidatedBody(req);
 
     const existingRows = await query(
       `SELECT ${baseSelectColumns} FROM dictionaries WHERE dictionary_id = ?`,
-      [dictionaryId],
+      sanitizeDbParams([dictionaryId]),
     );
 
     if (!existingRows.length) {
@@ -187,12 +197,12 @@ const updateDictionary = async (req, res, next) => {
 
     if (hasOwn(body, 'name')) {
       updates.push('name = ?');
-      params.push(body.name);
+      params.push(body.name === undefined ? null : body.name);
     }
 
     if (hasOwn(body, 'description')) {
       updates.push('description = ?');
-      params.push(body.description ?? null);
+      params.push(body.description === undefined ? null : body.description);
     }
 
     if (hasOwn(body, 'isEnabled') && body.isEnabled !== undefined) {
@@ -218,12 +228,12 @@ const updateDictionary = async (req, res, next) => {
       `UPDATE dictionaries
          SET ${updates.join(', ')}
        WHERE dictionary_id = ?`,
-      params,
+      sanitizeDbParams(params),
     );
 
     const updatedRows = await query(
       `SELECT ${baseSelectColumns} FROM dictionaries WHERE dictionary_id = ?`,
-      [dictionaryId],
+      sanitizeDbParams([dictionaryId]),
     );
 
     return res.json({
@@ -247,10 +257,17 @@ const updateDictionary = async (req, res, next) => {
 const deleteDictionary = async (req, res, next) => {
   try {
     const dictionaryId = getDictionaryIdFromRequest(req);
+    
+    if (!dictionaryId) {
+      throw new AppError('Valid dictionary ID is required for deletion.', {
+        status: 400,
+        code: 'INVALID_DICTIONARY_ID',
+      });
+    }
 
     const [result] = await pool.execute(
       'DELETE FROM dictionaries WHERE dictionary_id = ?',
-      [dictionaryId],
+      sanitizeDbParams([dictionaryId]),
     );
 
     if (result.affectedRows === 0) {
