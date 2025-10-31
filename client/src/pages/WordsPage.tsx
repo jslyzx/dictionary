@@ -196,6 +196,11 @@ const WordsPage = () => {
   }
 
   const openEditForm = (word: Word) => {
+    if (!word || !word.id || typeof word.id !== 'number' || word.id <= 0) {
+      setFlash({ type: 'error', message: '无法编辑单词：缺少有效的单词ID' });
+      return;
+    }
+    
     setFormState({ open: true, mode: 'edit', word })
     setFormError(null)
   }
@@ -222,6 +227,9 @@ const WordsPage = () => {
 
     try {
       if (mode === 'edit' && word) {
+        if (!word.id || typeof word.id !== 'number' || word.id <= 0) {
+          throw new Error('无效的单词ID');
+        }
         await updateWord(word.id, payload)
         setFlash({ type: 'success', message: '单词更新成功。' })
       } else {
@@ -674,7 +682,7 @@ const WordsPage = () => {
                 </div>
               ) : null}
               <WordForm
-                key={formState.word ? formState.word.id : 'new'}
+                key={`${formState.mode}-${formState.word?.id ?? 'new'}`}
                 formId={WORD_FORM_ID}
                 mode={formState.mode}
                 initialValues={formInitialValues}
