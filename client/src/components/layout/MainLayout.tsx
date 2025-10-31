@@ -2,8 +2,8 @@ import { useMemo, useState } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 
 const navigation = [
-  { to: '/dictionaries', label: 'Dictionaries' },
-  { to: '/words', label: 'Words' },
+  { to: '/dictionaries', label: '词典管理' },
+  { to: '/words', label: '单词库' },
 ]
 
 const MainLayout = () => {
@@ -12,11 +12,11 @@ const MainLayout = () => {
 
   const title = useMemo(() => {
     if (location.pathname.startsWith('/dictionaries/') && location.pathname !== '/dictionaries') {
-      return 'Dictionary Details'
+      return '词典详情'
     }
 
     const match = navigation.find((item) => location.pathname.startsWith(item.to))
-    return match?.label ?? 'Dashboard'
+    return match?.label ?? '词典管理'
   }, [location.pathname])
 
   const handleCloseSidebar = () => setIsSidebarOpen(false)
@@ -33,7 +33,7 @@ const MainLayout = () => {
         className={`fixed inset-y-0 left-0 z-40 flex w-64 flex-col border-r border-slate-200 bg-white transition-transform duration-200 ease-in-out md:static md:translate-x-0 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}
       >
         <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4 md:justify-center">
-          <span className="text-lg font-semibold text-slate-900">Dictionary Manager</span>
+          <span className="text-lg font-semibold text-slate-900">词典管理系统</span>
           <button
             aria-label="Close navigation"
             className="rounded-md p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 md:hidden"
@@ -66,7 +66,7 @@ const MainLayout = () => {
           ))}
         </nav>
         <div className="border-t border-slate-200 px-4 py-6 text-xs text-slate-500">
-          Connected to
+          已连接到
           <span className="ml-1 font-medium text-slate-700">API</span>
         </div>
       </aside>
@@ -89,7 +89,7 @@ const MainLayout = () => {
           </div>
           <div className="hidden items-center gap-3 md:flex">
             <span className="rounded-full bg-primary-50 px-3 py-1 text-sm font-medium text-primary-700">
-              Frontend ready
+              前端就绪
             </span>
           </div>
         </header>

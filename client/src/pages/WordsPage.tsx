@@ -40,19 +40,19 @@ const defaultFilters: FiltersState = {
 const limitOptions = [10, 20, 50]
 
 const masteryOptions: Array<{ value: MasteryFilterValue; label: string }> = [
-  { value: 'all', label: 'All' },
-  { value: 'mastered', label: 'Mastered' },
-  { value: 'unmastered', label: 'In progress' },
+  { value: 'all', label: '全部' },
+  { value: 'mastered', label: '已掌握' },
+  { value: 'unmastered', label: '学习中' },
 ]
 
 const difficultyMetadata: Record<0 | 1 | 2, { label: string; className: string }> = {
-  0: { label: 'Easy', className: 'bg-emerald-50 text-emerald-700' },
-  1: { label: 'Medium', className: 'bg-amber-50 text-amber-700' },
-  2: { label: 'Hard', className: 'bg-rose-50 text-rose-700' },
+  0: { label: '简单', className: 'bg-emerald-50 text-emerald-700' },
+  1: { label: '中等', className: 'bg-amber-50 text-amber-700' },
+  2: { label: '困难', className: 'bg-rose-50 text-rose-700' },
 }
 
 const difficultyFilterOptions: Array<{ value: DifficultyFilterValue; label: string }> = [
-  { value: 'all', label: 'All difficulties' },
+  { value: 'all', label: '全部难度' },
   { value: '0', label: difficultyMetadata[0].label },
   { value: '1', label: difficultyMetadata[1].label },
   { value: '2', label: difficultyMetadata[2].label },
@@ -62,7 +62,7 @@ const getDifficultyMeta = (difficulty: number | null | undefined) => {
   if (difficulty === 0 || difficulty === 1 || difficulty === 2) {
     return difficultyMetadata[difficulty]
   }
-  return { label: 'Unknown', className: 'bg-slate-100 text-slate-600' }
+  return { label: '未知', className: 'bg-slate-100 text-slate-600' }
 }
 
 const WORD_FORM_ID = 'word-form'
@@ -141,7 +141,7 @@ const WordsPage = () => {
       }
     } catch (error) {
       const apiError = error as ApiError
-      setFetchError(apiError.message ?? 'Unable to load words.')
+      setFetchError(apiError.message ?? '无法加载单词列表。')
       setWords([])
       setTotal(0)
       setHasFetched(true)
@@ -223,10 +223,10 @@ const WordsPage = () => {
     try {
       if (mode === 'edit' && word) {
         await updateWord(word.id, payload)
-        setFlash({ type: 'success', message: 'Word updated successfully.' })
+        setFlash({ type: 'success', message: '单词更新成功。' })
       } else {
         await createWord(payload)
-        setFlash({ type: 'success', message: 'Word created successfully.' })
+        setFlash({ type: 'success', message: '单词创建成功。' })
       }
 
       closeForm()
@@ -242,7 +242,7 @@ const WordsPage = () => {
       }
     } catch (error) {
       const apiError = error as ApiError
-      setFormError(apiError.message ?? 'Unable to save word.')
+      setFormError(apiError.message ?? '保存单词失败。')
     } finally {
       setFormSubmitting(false)
     }
@@ -260,12 +260,12 @@ const WordsPage = () => {
     setIsDeleting(true)
     try {
       await deleteWord(wordPendingDeletion.id)
-      setFlash({ type: 'success', message: 'Word deleted successfully.' })
+      setFlash({ type: 'success', message: '单词删除成功。' })
       setWordPendingDeletion(null)
       await fetchWords()
     } catch (error) {
       const apiError = error as ApiError
-      setFlash({ type: 'error', message: apiError.message ?? 'Unable to delete word.' })
+      setFlash({ type: 'error', message: apiError.message ?? '删除单词失败。' })
     } finally {
       setIsDeleting(false)
     }
@@ -302,10 +302,9 @@ const WordsPage = () => {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900">Words</h1>
+          <h1 className="text-2xl font-semibold text-slate-900">单词库</h1>
           <p className="mt-2 max-w-2xl text-sm text-slate-600">
-            Search, create, and curate your word list. Use filters to focus on specific
-            difficulty levels or mastery states.
+            搜索、创建和管理您的单词列表。使用筛选器专注于特定的难度级别或掌握状态。
           </p>
         </div>
         <button
@@ -313,7 +312,7 @@ const WordsPage = () => {
           onClick={openCreateForm}
           className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-700"
         >
-          New word
+          新建单词
         </button>
       </div>
 
@@ -333,7 +332,7 @@ const WordsPage = () => {
               className="rounded-md p-1 text-slate-500 transition hover:bg-white/60 hover:text-slate-700"
             >
               <span aria-hidden="true">&times;</span>
-              <span className="sr-only">Dismiss message</span>
+              <span className="sr-only">关闭消息</span>
             </button>
           </div>
         </div>
@@ -344,14 +343,14 @@ const WordsPage = () => {
           <form onSubmit={handleSearchSubmit} className="flex flex-col gap-4 lg:flex-row lg:items-end">
             <div className="flex-1">
               <label htmlFor="search" className="block text-sm font-medium text-slate-700">
-                Search
+                搜索
               </label>
               <div className="mt-1 flex gap-3">
                 <input
                   id="search"
                   name="search"
                   type="search"
-                  placeholder="Search by word or meaning"
+                  placeholder="按单词或含义搜索"
                   value={searchInput}
                   onChange={(event) => setSearchInput(event.target.value)}
                   className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-500/60"
@@ -360,7 +359,7 @@ const WordsPage = () => {
                   type="submit"
                   className="hidden rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-700 lg:block"
                 >
-                  Apply
+                  应用
                 </button>
               </div>
             </div>
@@ -370,7 +369,7 @@ const WordsPage = () => {
                 htmlFor="difficulty"
                 className="block text-sm font-medium text-slate-700"
               >
-                Difficulty
+                难度
               </label>
               <select
                 id="difficulty"
@@ -388,7 +387,7 @@ const WordsPage = () => {
             </div>
 
             <div className="flex flex-col gap-2 lg:w-56">
-              <span className="text-sm font-medium text-slate-700">Mastery</span>
+              <span className="text-sm font-medium text-slate-700">掌握状态</span>
               <div className="flex rounded-full border border-slate-200 bg-slate-50 p-1">
                 {masteryOptions.map((option) => {
                   const isActive = filters.mastery === option.value
@@ -415,7 +414,7 @@ const WordsPage = () => {
                 type="submit"
                 className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-700 lg:hidden"
               >
-                Apply filters
+                应用筛选器
               </button>
               <button
                 type="button"
@@ -423,7 +422,7 @@ const WordsPage = () => {
                 className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100"
                 disabled={!hasActiveFilters}
               >
-                Reset
+                重置
               </button>
             </div>
           </form>
@@ -449,16 +448,16 @@ const WordsPage = () => {
 
           {!loading && hasFetched && words.length === 0 && !fetchError ? (
             <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-8 py-12 text-center">
-              <h3 className="text-lg font-semibold text-slate-900">No words found</h3>
+              <h3 className="text-lg font-semibold text-slate-900">未找到单词</h3>
               <p className="mt-2 text-sm text-slate-600">
-                Adjust your filters or add a new word to get started.
+                调整您的筛选器或添加新单词以开始使用。
               </p>
               <button
                 type="button"
                 onClick={openCreateForm}
                 className="mt-6 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-700"
               >
-                Add word
+                添加单词
               </button>
             </div>
           ) : null}
@@ -472,37 +471,37 @@ const WordsPage = () => {
                       scope="col"
                       className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600"
                     >
-                      Word
+                      单词
                     </th>
                     <th
                       scope="col"
                       className="hidden px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600 lg:table-cell"
                     >
-                      Phonetic
+                      音标
                     </th>
                     <th
                       scope="col"
                       className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600"
                     >
-                      Pronunciation
+                      发音
                     </th>
                     <th
                       scope="col"
                       className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600"
                     >
-                      Description
+                      描述
                     </th>
                     <th
                       scope="col"
                       className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600"
                     >
-                      Difficulty
+                      难度
                     </th>
                     <th
                       scope="col"
                       className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600"
                     >
-                      Mastery
+                      掌握状态
                     </th>
                     <th className="px-4 py-3" />
                   </tr>
@@ -532,7 +531,7 @@ const WordsPage = () => {
                                 target="_blank"
                                 rel="noreferrer"
                               >
-                                Listen
+                                收听
                                 <svg
                                   className="h-3 w-3"
                                   fill="none"
@@ -568,7 +567,7 @@ const WordsPage = () => {
                                 : 'bg-slate-200 text-slate-700'
                             }`}
                           >
-                            {word.isMastered ? 'Mastered' : 'In progress'}
+                            {word.isMastered ? '已掌握' : '学习中'}
                           </span>
                         </td>
                         <td className="px-4 py-3 align-top text-right">
@@ -578,14 +577,14 @@ const WordsPage = () => {
                               onClick={() => openEditForm(word)}
                               className="rounded-lg border border-slate-200 px-3 py-1.5 text-slate-600 transition hover:bg-slate-100"
                             >
-                              Edit
+                              编辑
                             </button>
                             <button
                               type="button"
                               onClick={() => confirmDelete(word)}
                               className="rounded-lg bg-rose-50 px-3 py-1.5 text-rose-600 transition hover:bg-rose-100"
                             >
-                              Delete
+                              删除
                             </button>
                           </div>
                         </td>
@@ -602,19 +601,19 @@ const WordsPage = () => {
           <div>
             {hasVisibleWords ? (
               <span>
-                Showing <span className="font-semibold text-slate-900">{showingFrom}</span> -{' '}
-                <span className="font-semibold text-slate-900">{showingTo}</span> of{' '}
-                <span className="font-semibold text-slate-900">{total}</span> words
+                显示第 <span className="font-semibold text-slate-900">{showingFrom}</span> -{' '}
+                <span className="font-semibold text-slate-900">{showingTo}</span> 条，共{' '}
+                <span className="font-semibold text-slate-900">{total}</span> 个单词
               </span>
             ) : hasFetched && !loading ? (
-              <span>No words to display.</span>
+              <span>无单词显示。</span>
             ) : (
-              <span>Loading…</span>
+              <span>加载中…</span>
             )}
           </div>
           <div className="flex flex-col items-stretch gap-3 md:flex-row md:items-center md:gap-4">
             <label className="flex items-center gap-2 text-sm">
-              <span>Rows per page</span>
+              <span>每页显示</span>
               <select
                 value={limit}
                 onChange={handleLimitChange}
@@ -634,10 +633,10 @@ const WordsPage = () => {
                 disabled={page <= 1 || loading}
                 className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-600 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                Previous
+                上一页
               </button>
               <span className="text-sm font-medium text-slate-700">
-                Page {total === 0 ? 0 : page} of {total === 0 ? 0 : totalPages}
+                第 {total === 0 ? 0 : page} 页，共 {total === 0 ? 0 : totalPages} 页
               </span>
               <button
                 type="button"
@@ -645,7 +644,7 @@ const WordsPage = () => {
                 disabled={page >= totalPages || total === 0 || loading}
                 className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-600 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                Next
+                下一页
               </button>
             </div>
           </div>
@@ -657,7 +656,7 @@ const WordsPage = () => {
           <div className="w-full max-w-2xl overflow-hidden rounded-2xl bg-white shadow-xl">
             <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
               <h2 className="text-lg font-semibold text-slate-900">
-                {formState.mode === 'edit' ? 'Edit word' : 'Add word'}
+                {formState.mode === 'edit' ? '编辑单词' : '添加单词'}
               </h2>
               <button
                 type="button"
@@ -665,7 +664,7 @@ const WordsPage = () => {
                 className="rounded-md p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
               >
                 <span aria-hidden="true">&times;</span>
-                <span className="sr-only">Close</span>
+                <span className="sr-only">关闭</span>
               </button>
             </div>
             <div className="px-6 py-6">
@@ -690,7 +689,7 @@ const WordsPage = () => {
                 className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100"
                 disabled={formSubmitting}
               >
-                Cancel
+                取消
               </button>
               <button
                 type="submit"
