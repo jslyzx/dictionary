@@ -15,6 +15,7 @@ export interface Word {
 }
 
 interface WordApiResponse {
+  id: number
   word_id: number
   word: string
   phonetic: string
@@ -63,7 +64,7 @@ export interface UpsertWordPayload {
 }
 
 const mapWord = (word: WordApiResponse): Word => ({
-  id: word.word_id,
+  id: word.id,
   word: word.word,
   phonetic: word.phonetic,
   meaning: word.meaning,
@@ -110,7 +111,6 @@ export const listWords = async (params: ListWordsParams): Promise<WordListResult
     url: '/api/words',
     params,
   })
-
   return {
     items: response.data.items.map(mapWord),
     total: response.data.total,

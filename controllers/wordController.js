@@ -1,4 +1,4 @@
-const { query, executeWithRetry, isTransientDatabaseError } = require('../config/db');
+const { pool, query, executeWithRetry, isTransientDatabaseError } = require('../config/db');
 const AppError = require('../utils/AppError');
 const { parse } = require('csv-parse/sync');
 const { stringifyCsv, normalizeHeaderName } = require('../utils/csv');
@@ -451,7 +451,7 @@ const createWord = async (req, res, next) => {
       });
 
       const rows = await query(
-        `SELECT ${baseSelectColumns} FROM words WHERE word_id = ?`,
+        `SELECT ${baseSelectColumns} FROM words w WHERE w.word_id = ?`,
         [result.insertId],
       );
 
