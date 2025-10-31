@@ -43,6 +43,8 @@ const hasOwn = (object, key) =>
 
 const toDatabaseBoolean = (value) => (value ? 1 : 0);
 
+const sanitizeDbParams = (params) => params.map(param => param === undefined ? null : param);
+
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const CREATE_WORD_MAX_ATTEMPTS = 3;
 const CREATE_WORD_RETRY_DELAY_MS = 200;
@@ -216,14 +218,14 @@ const getWords = async (req, res, next) => {
          ${whereClause}
          ORDER BY w.word_id DESC
          LIMIT ? OFFSET ?`,
-      [...params, limit, offset],
+      sanitizeDbParams([...params, limit, offset]),
     );
 
     const [countRow] = await query(
       `SELECT COUNT(DISTINCT w.word_id) AS total
          FROM words w${joinClause}
          ${whereClause}`,
-      params,
+      sanitizeDbParams(params),
     );
 
     return res.json({
@@ -268,7 +270,7 @@ const getWordStats = async (req, res, next) => {
             FROM words w${joinClause}
             ${whereClause}
         ) AS word_scope`,
-      params,
+      sanitizeDbParams(params),
     );
 
     const total = Number(statsRow.total ?? 0);
@@ -326,7 +328,7 @@ const exportWordsCsv = async (req, res, next) => {
          FROM words w${joinClause}
          ${whereClause}
          ORDER BY w.word ASC`,
-      params,
+      sanitizeDbParams(params),
     );
 
     const csvColumns = [
@@ -382,10 +384,17 @@ const getWordIdFromRequest = (req) => {
 const getWordById = async (req, res, next) => {
   try {
     const wordId = getWordIdFromRequest(req);
+    
+    if (!wordId) {
+      throw new AppError('Valid word ID is required.', {
+        status: 400,
+        code: 'INVALID_WORD_ID',
+      });
+    }
 
     const rows = await query(
       `SELECT ${baseSelectColumns} FROM words w WHERE w.word_id = ?`,
-      [wordId],
+      sanitizeDbParams([wordId]),
     );
 
     if (!rows.length) {
@@ -412,9 +421,9 @@ const createWord = async (req, res, next) => {
 
   const columns = ['word', 'phonetic', 'meaning', 'difficulty', 'is_mastered'];
   const values = [
-    body.word,
-    body.phonetic,
-    body.meaning,
+    body.word === undefined ? null : body.word,
+    body.phonetic === undefined ? null : body.phonetic,
+    body.meaning === undefined ? null : body.meaning,
     difficulty,
     toDatabaseBoolean(isMastered),
   ];
@@ -445,14 +454,14 @@ const createWord = async (req, res, next) => {
   let lastError;
 
   while (attempt < CREATE_WORD_MAX_ATTEMPTS) {
-    try {
-      const [result] = await executeWithRetry(insertSql, values, {
-        retries: 0,
-      });
+        try {
+          const [result] = await executeWithRetry(insertSql, sanitizeDbParams(values), {
+            retries: 0,
+          });
 
       const rows = await query(
         `SELECT ${baseSelectColumns} FROM words w WHERE w.word_id = ?`,
-        [result.insertId],
+        sanitizeDbParams([result.insertId]),
       );
 
       return res.status(201).json({
@@ -528,52 +537,52 @@ const updateWord = async (req, res, next) => {
 
     if (hasOwn(body, 'word')) {
       updates.push('word = ?');
-      params.push(body.word);
+      params.push(body.word === undefined ? null : body.word);
     }
 
     if (hasOwn(body, 'phonetic')) {
       updates.push('phonetic = ?');
-      params.push(body.phonetic);
+      params.push(body.phonetic === undefined ? null : body.phonetic);
     }
 
     if (hasOwn(body, 'meaning')) {
       updates.push('meaning = ?');
-      params.push(body.meaning);
+      params.push(body.meaning === undefined ? null : body.meaning);
     }
 
     if (hasOwn(body, 'pronunciation1')) {
       updates.push('pronunciation1 = ?');
-      params.push(body.pronunciation1);
+      params.push(body.pronunciation1 === undefined ? null : body.pronunciation1);
     }
 
     if (hasOwn(body, 'pronunciation2')) {
       updates.push('pronunciation2 = ?');
-      params.push(body.pronunciation2);
+      params.push(body.pronunciation2 === undefined ? null : body.pronunciation2);
     }
 
     if (hasOwn(body, 'pronunciation3')) {
       updates.push('pronunciation3 = ?');
-      params.push(body.pronunciation3);
+      params.push(body.pronunciation3 === undefined ? null : body.pronunciation3);
     }
 
     if (hasOwn(body, 'notes')) {
       updates.push('notes = ?');
-      params.push(body.notes);
+      params.push(body.notes === undefined ? null : body.notes);
     }
 
     if (hasOwn(body, 'difficulty')) {
       updates.push('difficulty = ?');
-      params.push(body.difficulty);
+      params.push(body.difficulty === undefined ? null : body.difficulty);
     }
 
     if (hasOwn(body, 'isMastered')) {
       updates.push('is_mastered = ?');
-      params.push(toDatabaseBoolean(body.isMastered));
+      params.push(body.isMastered === undefined ? null : toDatabaseBoolean(body.isMastered));
     }
 
     if (hasOwn(body, 'createdAt')) {
       updates.push('created_at = ?');
-      params.push(body.createdAt);
+      params.push(body.createdAt === undefined ? null : body.createdAt);
     }
 
     if (!updates.length) {
@@ -589,12 +598,12 @@ const updateWord = async (req, res, next) => {
       `UPDATE words
          SET ${updates.join(', ')}
        WHERE word_id = ?`,
-      params,
+      sanitizeDbParams(params),
     );
 
     const rows = await query(
       `SELECT ${baseSelectColumns} FROM words w WHERE w.word_id = ?`,
-      [wordId],
+      sanitizeDbParams([wordId]),
     );
 
     return res.json({
@@ -852,7 +861,7 @@ const importWordsCsv = async (req, res, next) => {
         const sql = `INSERT INTO words (${columns.join(', ')}) VALUES (${placeholders})
           ON DUPLICATE KEY UPDATE ${updates.join(', ')}`;
 
-        const [result] = await connection.execute(sql, values);
+        const [result] = await connection.execute(sql, sanitizeDbParams(values));
         if (result.affectedRows === 1) {
           created += 1;
         } else if (result.affectedRows === 2) {
@@ -906,10 +915,17 @@ const importWordsCsv = async (req, res, next) => {
 const deleteWord = async (req, res, next) => {
   try {
     const wordId = getWordIdFromRequest(req);
+    
+    if (!wordId) {
+      throw new AppError('Valid word ID is required for deletion.', {
+        status: 400,
+        code: 'INVALID_WORD_ID',
+      });
+    }
 
     const [result] = await pool.execute(
       'DELETE FROM words WHERE word_id = ?',
-      [wordId],
+      sanitizeDbParams([wordId]),
     );
 
     if (result.affectedRows === 0) {
