@@ -14,7 +14,10 @@ CREATE TABLE dictionaries (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '修改时间',
     UNIQUE KEY uniq_dict_name (name) COMMENT '字典名称唯一'
-) COMMENT='字典主表';
+) ENGINE=InnoDB 
+  DEFAULT CHARSET=utf8mb4 
+  COLLATE=utf8mb4_unicode_ci
+  COMMENT='字典主表';
 -- 5. 重建单词表（添加音标字段）
 CREATE TABLE words (
     word_id INT AUTO_INCREMENT PRIMARY KEY COMMENT '单词唯一标识',
@@ -30,7 +33,10 @@ CREATE TABLE words (
     notes VARCHAR(255) COMMENT '笔记(可选)',
     UNIQUE KEY uniq_word (word) COMMENT '单词唯一性约束',
     INDEX idx_phonetic (phonetic(10)) COMMENT '音标查询索引'
-) COMMENT='单词库表（含音标）';
+) ENGINE=InnoDB 
+  DEFAULT CHARSET=utf8mb4 
+  COLLATE=utf8mb4_unicode_ci
+  COMMENT='单词库表（含音标）';
 -- 6. 重建字典单词关系表
 CREATE TABLE dictionary_words (
     relation_id INT AUTO_INCREMENT PRIMARY KEY COMMENT '关系主键',
@@ -43,7 +49,10 @@ CREATE TABLE dictionary_words (
     FOREIGN KEY (dictionary_id) REFERENCES dictionaries(dictionary_id) ON DELETE CASCADE,
     FOREIGN KEY (word_id) REFERENCES words(word_id) ON DELETE CASCADE,
     UNIQUE KEY unique_dict_word (dictionary_id, word_id) COMMENT '防止重复添加'
-) COMMENT='字典单词关系表';
+) ENGINE=InnoDB 
+  DEFAULT CHARSET=utf8mb4 
+  COLLATE=utf8mb4_unicode_ci
+  COMMENT='字典单词关系表';
 
 -- 7. 可选：新建索引
 -- 在单词表建立首字母索引

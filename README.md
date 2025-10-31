@@ -54,6 +54,45 @@ Ensure the following tooling is installed locally or available in your container
 
 > 📖 **详细指南**: 查看 [DATABASE_SETUP.md](./DATABASE_SETUP.md) 获取完整的数据库设置指南，包括故障排除和性能优化建议。
 
+### 重要：字符集配置
+
+本项目需要使用 utf8mb4 字符集以支持中文和特殊字符。
+
+#### 创建数据库时指定字符集：
+```sql
+CREATE DATABASE dictionary 
+CHARACTER SET utf8mb4 
+COLLATE utf8mb4_unicode_ci;
+```
+
+#### 如果数据库已存在，执行修复脚本：
+```bash
+mysql -u root -p dictionary < scripts/fix-charset.sql
+```
+
+#### 或者重新导入数据：
+```bash
+mysql -u root -p
+DROP DATABASE IF EXISTS dictionary;
+CREATE DATABASE dictionary CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE dictionary;
+SOURCE English.sql;
+exit;
+```
+
+#### 验证字符集设置：
+```sql
+-- 检查数据库字符集
+SELECT DEFAULT_CHARACTER_SET_NAME, DEFAULT_COLLATION_NAME 
+FROM information_schema.SCHEMATA 
+WHERE SCHEMA_NAME = 'dictionary';
+
+-- 检查表的字符集
+SELECT TABLE_NAME, TABLE_COLLATION 
+FROM information_schema.TABLES 
+WHERE TABLE_SCHEMA = 'dictionary';
+```
+
 ### 快速开始
 
 如果您已经熟悉 MySQL，可以按照以下快速步骤：
@@ -99,6 +138,8 @@ curl http://localhost:5000/api/dictionaries
 > - ❌ "数据库连接失败" → 检查 MySQL 服务状态
 > - ❌ "缺少环境变量" → 运行 `cp .env.example .env`
 > - ❌ "数据库不存在" → 重新执行步骤 2-3
+> - ❌ "ER_TRUNCATED_WRONG_VALUE_FOR_FIELD" → 字符集问题，执行修复脚本 `mysql -u root -p dictionary < scripts/fix-charset.sql`
+> - ❌ 中文显示乱码 → 确认数据库和表都使用 utf8mb4 字符集
 
 详细故障排除请参考 [DATABASE_SETUP.md](./DATABASE_SETUP.md#故障排除)。
 
