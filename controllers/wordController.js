@@ -369,6 +369,12 @@ const getWordIdFromRequest = (req) => {
     return req.validated.params.id;
   }
 
+  // If params.id is literally the string 'undefined', that's the issue
+  if (req.params.id === 'undefined' || req.params.id === undefined) {
+    console.error('getWordIdFromRequest - Invalid params.id:', req.params.id);
+    return undefined;
+  }
+
   const parsed = Number(req.params.id);
   return Number.isNaN(parsed) ? undefined : parsed;
 };
@@ -378,7 +384,7 @@ const getWordById = async (req, res, next) => {
     const wordId = getWordIdFromRequest(req);
 
     const rows = await query(
-      `SELECT ${baseSelectColumns} FROM words WHERE word_id = ?`,
+      `SELECT ${baseSelectColumns} FROM words w WHERE w.word_id = ?`,
       [wordId],
     );
 
@@ -495,10 +501,18 @@ const createWord = async (req, res, next) => {
 const updateWord = async (req, res, next) => {
   try {
     const wordId = getWordIdFromRequest(req);
+    
+    if (!wordId) {
+      throw new AppError('Valid word ID is required for update.', {
+        status: 400,
+        code: 'INVALID_WORD_ID',
+      });
+    }
+    
     const body = getValidatedBody(req);
 
     const existingRows = await query(
-      `SELECT ${baseSelectColumns} FROM words WHERE word_id = ?`,
+      `SELECT ${baseSelectColumns} FROM words w WHERE w.word_id = ?`,
       [wordId],
     );
 
@@ -579,7 +593,7 @@ const updateWord = async (req, res, next) => {
     );
 
     const rows = await query(
-      `SELECT ${baseSelectColumns} FROM words WHERE word_id = ?`,
+      `SELECT ${baseSelectColumns} FROM words w WHERE w.word_id = ?`,
       [wordId],
     );
 
