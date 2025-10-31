@@ -1,4 +1,4 @@
-const { pool, query } = require('../config/db');
+const { query, executeWithRetry, isTransientDatabaseError } = require('../config/db');
 const AppError = require('../utils/AppError');
 const { parse } = require('csv-parse/sync');
 const { stringifyCsv, normalizeHeaderName } = require('../utils/csv');
@@ -42,6 +42,10 @@ const hasOwn = (object, key) =>
   Object.prototype.hasOwnProperty.call(object ?? {}, key);
 
 const toDatabaseBoolean = (value) => (value ? 1 : 0);
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+const CREATE_WORD_MAX_ATTEMPTS = 3;
+const CREATE_WORD_RETRY_DELAY_MS = 200;
 
 const getRequestFilters = (req) => req.validated?.query ?? req.query ?? {};
 
@@ -401,68 +405,97 @@ const getWordById = async (req, res, next) => {
 };
 
 const createWord = async (req, res, next) => {
-  try {
-    const body = getValidatedBody(req);
+  const body = getValidatedBody(req);
 
-    const difficulty = hasOwn(body, 'difficulty') ? body.difficulty : 0;
-    const isMastered = hasOwn(body, 'isMastered') ? body.isMastered : false;
+  const difficulty = hasOwn(body, 'difficulty') ? body.difficulty : 0;
+  const isMastered = hasOwn(body, 'isMastered') ? body.isMastered : false;
 
-    const columns = ['word', 'phonetic', 'meaning', 'difficulty', 'is_mastered'];
-    const values = [
-      body.word,
-      body.phonetic,
-      body.meaning,
-      difficulty,
-      toDatabaseBoolean(isMastered),
-    ];
+  const columns = ['word', 'phonetic', 'meaning', 'difficulty', 'is_mastered'];
+  const values = [
+    body.word,
+    body.phonetic,
+    body.meaning,
+    difficulty,
+    toDatabaseBoolean(isMastered),
+  ];
 
-    const optionalFields = [
-      ['pronunciation1', body.pronunciation1],
-      ['pronunciation2', body.pronunciation2],
-      ['pronunciation3', body.pronunciation3],
-      ['notes', body.notes],
-    ];
+  const optionalFields = [
+    ['pronunciation1', body.pronunciation1],
+    ['pronunciation2', body.pronunciation2],
+    ['pronunciation3', body.pronunciation3],
+    ['notes', body.notes],
+  ];
 
-    optionalFields.forEach(([field, value]) => {
-      if (hasOwn(body, field) && value !== undefined) {
-        columns.push(field);
-        values.push(value);
-      }
-    });
-
-    if (hasOwn(body, 'createdAt') && body.createdAt !== undefined) {
-      columns.push('created_at');
-      values.push(body.createdAt);
+  optionalFields.forEach(([field, value]) => {
+    if (hasOwn(body, field) && value !== undefined) {
+      columns.push(field);
+      values.push(value);
     }
+  });
 
-    const placeholders = columns.map(() => '?').join(', ');
-
-    const [result] = await pool.execute(
-      `INSERT INTO words (${columns.join(', ')}) VALUES (${placeholders})`,
-      values,
-    );
-
-    const rows = await query(
-      `SELECT ${baseSelectColumns} FROM words w WHERE w.word_id = ?`,
-      [result.insertId],
-    );
-
-    return res.status(201).json({
-      success: true,
-      data: serializeWord(rows[0]),
-    });
-  } catch (error) {
-    if (error?.code === 'ER_DUP_ENTRY') {
-      return next(
-        new AppError('A word with this spelling already exists.', {
-          status: 409,
-          code: 'WORD_ALREADY_EXISTS',
-        }),
-      );
-    }
-
-    return next(error);
+  if (hasOwn(body, 'createdAt') && body.createdAt !== undefined) {
+    columns.push('created_at');
+    values.push(body.createdAt);
   }
+
+  const placeholders = columns.map(() => '?').join(', ');
+  const insertSql = `INSERT INTO words (${columns.join(', ')}) VALUES (${placeholders})`;
+
+  let attempt = 0;
+  let lastError;
+
+  while (attempt < CREATE_WORD_MAX_ATTEMPTS) {
+    try {
+      const [result] = await executeWithRetry(insertSql, values, {
+        retries: 0,
+      });
+
+      const rows = await query(
+        `SELECT ${baseSelectColumns} FROM words WHERE word_id = ?`,
+        [result.insertId],
+      );
+
+      return res.status(201).json({
+        success: true,
+        data: serializeWord(rows[0]),
+      });
+    } catch (error) {
+      if (error?.code === 'ER_DUP_ENTRY') {
+        return next(
+          new AppError('A word with this spelling already exists.', {
+            status: 409,
+            code: 'WORD_ALREADY_EXISTS',
+          }),
+        );
+      }
+
+      lastError = error;
+
+      if (
+        isTransientDatabaseError(error) &&
+        attempt < CREATE_WORD_MAX_ATTEMPTS - 1
+      ) {
+        const delay = CREATE_WORD_RETRY_DELAY_MS * (attempt + 1);
+        console.warn(
+          `创建单词时检测到暂时性数据库错误 (尝试 ${attempt + 1}/${CREATE_WORD_MAX_ATTEMPTS})：${error.message}`,
+        );
+        attempt += 1;
+        await sleep(delay);
+        continue;
+      }
+
+      console.error('创建单词失败:', error);
+      return next(error);
+    }
+  }
+
+  return next(
+    lastError ??
+      new AppError('Unable to create word due to repeated database errors.', {
+        status: 500,
+        code: 'WORD_CREATE_FAILED',
+      }),
+  );
 };
 
 const updateWord = async (req, res, next) => {
