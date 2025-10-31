@@ -19,7 +19,7 @@ function ConfirmDialog({ title, message, confirmLabel, cancelLabel, onConfirm, o
             className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-red-500 disabled:cursor-not-allowed disabled:bg-red-400"
             disabled={isProcessing}
           >
-            {isProcessing ? 'Deleting…' : confirmLabel}
+            {isProcessing ? '删除中…' : confirmLabel}
           </button>
         </div>
       </div>

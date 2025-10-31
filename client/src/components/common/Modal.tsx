@@ -69,7 +69,7 @@ const Modal = ({
             {description ? <p className="mt-1 text-sm text-slate-500">{description}</p> : null}
           </div>
           <button
-            aria-label="Close dialog"
+            aria-label="关闭对话框"
             className="rounded-md p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
             onClick={onClose}
             type="button"

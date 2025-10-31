@@ -58,7 +58,7 @@ const DictionariesPage = () => {
       setDictionaries(data)
     } catch (err) {
       const apiError = err as ApiError
-      setError(apiError.message ?? 'Unable to load dictionaries.')
+      setError(apiError.message ?? '无法加载词典列表。')
     } finally {
       setLoading(false)
     }
@@ -76,11 +76,11 @@ const DictionariesPage = () => {
         description: formData.description,
       })
       setShowCreateModal(false)
-      setFlash({ type: 'success', message: 'Dictionary created successfully!' })
+      setFlash({ type: 'success', message: '词典创建成功！' })
       fetchDictionariesData()
     } catch (err) {
       const apiError = err as ApiError
-      setFlash({ type: 'error', message: apiError.message ?? 'Failed to create dictionary.' })
+      setFlash({ type: 'error', message: apiError.message ?? '创建词典失败。' })
     } finally {
       setSubmitting(false)
     }
@@ -99,11 +99,11 @@ const DictionariesPage = () => {
       })
       setShowEditModal(false)
       setEditingDictionary(null)
-      setFlash({ type: 'success', message: 'Dictionary updated successfully!' })
+      setFlash({ type: 'success', message: '词典更新成功！' })
       fetchDictionariesData()
     } catch (err) {
       const apiError = err as ApiError
-      setFlash({ type: 'error', message: apiError.message ?? 'Failed to update dictionary.' })
+      setFlash({ type: 'error', message: apiError.message ?? '更新词典失败。' })
     } finally {
       setSubmitting(false)
     }
@@ -117,11 +117,11 @@ const DictionariesPage = () => {
       await deleteDictionary(deletingDictionary.id)
       setShowDeleteDialog(false)
       setDeletingDictionary(null)
-      setFlash({ type: 'success', message: 'Dictionary deleted successfully!' })
+      setFlash({ type: 'success', message: '词典删除成功！' })
       fetchDictionariesData()
     } catch (err) {
       const apiError = err as ApiError
-      setFlash({ type: 'error', message: apiError.message ?? 'Failed to delete dictionary.' })
+      setFlash({ type: 'error', message: apiError.message ?? '删除词典失败。' })
     } finally {
       setDeleting(false)
     }
@@ -145,9 +145,9 @@ const DictionariesPage = () => {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900">Dictionaries</h1>
+          <h1 className="text-2xl font-semibold text-slate-900">词典管理</h1>
           <p className="mt-2 max-w-2xl text-sm text-slate-600">
-            Explore, create, and manage your dictionaries.
+            浏览、创建和管理您的词典。
           </p>
         </div>
         <button
@@ -155,7 +155,7 @@ const DictionariesPage = () => {
           onClick={() => setShowCreateModal(true)}
           className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-700"
         >
-          New dictionary
+          新建词典
         </button>
       </div>
 
@@ -175,7 +175,7 @@ const DictionariesPage = () => {
               className="rounded-md p-1 text-slate-500 transition hover:bg-white/60 hover:text-slate-700"
             >
               <span aria-hidden="true">&times;</span>
-              <span className="sr-only">Dismiss message</span>
+              <span className="sr-only">关闭消息</span>
             </button>
           </div>
         </div>
@@ -183,8 +183,8 @@ const DictionariesPage = () => {
 
       <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div className="border-b border-slate-200 px-6 py-5">
-          <h2 className="text-lg font-medium text-slate-900">Your dictionaries</h2>
-          <p className="text-sm text-slate-500">Manage your dictionary collection.</p>
+          <h2 className="text-lg font-medium text-slate-900">您的词典</h2>
+          <p className="text-sm text-slate-500">管理您的词典集合。</p>
         </div>
 
         <div className="px-6 py-6">
@@ -207,16 +207,16 @@ const DictionariesPage = () => {
 
           {!loading && !error && dictionaries.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-8 py-12 text-center">
-              <h3 className="text-lg font-semibold text-slate-900">No dictionaries found</h3>
+              <h3 className="text-lg font-semibold text-slate-900">暂无词典</h3>
               <p className="mt-2 text-sm text-slate-600">
-                Create your first dictionary to get started.
+                创建您的第一个词典以开始使用。
               </p>
               <button
                 type="button"
                 onClick={() => setShowCreateModal(true)}
                 className="mt-6 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-700"
               >
-                Create dictionary
+                创建词典
               </button>
             </div>
           ) : null}
@@ -230,37 +230,37 @@ const DictionariesPage = () => {
                       scope="col"
                       className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600"
                     >
-                      Name
+                      名称
                     </th>
                     <th
                       scope="col"
                       className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600"
                     >
-                      Description
+                      描述
                     </th>
                     <th
                       scope="col"
                       className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600"
                     >
-                      Words
+                      单词数
                     </th>
                     <th
                       scope="col"
                       className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600"
                     >
-                      Status
+                      状态
                     </th>
                     <th
                       scope="col"
                       className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600"
                     >
-                      Created
+                      创建时间
                     </th>
                     <th
                       scope="col"
                       className="relative px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-600"
                     >
-                      Actions
+                      操作
                     </th>
                   </tr>
                 </thead>
@@ -272,12 +272,12 @@ const DictionariesPage = () => {
                       </td>
                       <td className="px-4 py-4">
                         <div className="text-sm text-slate-600">
-                          {dictionary.description || 'No description'}
+                          {dictionary.description || '暂无描述'}
                         </div>
                       </td>
                       <td className="px-4 py-4">
                         <div className="text-sm text-slate-600">
-                          {dictionary.wordCount || 0} words
+                          {dictionary.wordCount || 0} 个单词
                         </div>
                       </td>
                       <td className="px-4 py-4">
@@ -289,11 +289,11 @@ const DictionariesPage = () => {
                                 : 'bg-slate-100 text-slate-600'
                             }`}
                           >
-                            {dictionary.isEnabled ? 'Enabled' : 'Disabled'}
+                            {dictionary.isEnabled ? '启用' : '禁用'}
                           </span>
                           {dictionary.isMastered && (
                             <span className="inline-flex items-center rounded-full bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700">
-                              Mastered
+                              已掌握
                             </span>
                           )}
                         </div>
@@ -310,21 +310,21 @@ const DictionariesPage = () => {
                             onClick={() => navigateToDictionary(dictionary.id)}
                             className="rounded-md border border-slate-200 px-3 py-1 text-sm font-medium text-slate-600 transition hover:bg-slate-100"
                           >
-                            View
+                            查看
                           </button>
                           <button
                             type="button"
                             onClick={() => openEditModal(dictionary)}
                             className="rounded-md border border-slate-200 px-3 py-1 text-sm font-medium text-slate-600 transition hover:bg-slate-100"
                           >
-                            Edit
+                            编辑
                           </button>
                           <button
                             type="button"
                             onClick={() => openDeleteDialog(dictionary)}
                             className="rounded-md border border-rose-200 px-3 py-1 text-sm font-medium text-rose-600 transition hover:bg-rose-50"
                           >
-                            Delete
+                            删除
                           </button>
                         </div>
                       </td>
@@ -341,8 +341,8 @@ const DictionariesPage = () => {
       <Modal
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
-        title="Create New Dictionary"
-        description="Add a new dictionary to organize your vocabulary."
+        title="创建新词典"
+        description="添加新词典来整理您的词汇。"
         footer={
           <div className="flex items-center justify-end gap-3">
             <button
@@ -351,7 +351,7 @@ const DictionariesPage = () => {
               className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100"
               disabled={submitting}
             >
-              Cancel
+              取消
             </button>
             <button
               type="submit"
@@ -359,7 +359,7 @@ const DictionariesPage = () => {
               className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-400"
               disabled={submitting}
             >
-              {submitting ? 'Creating...' : 'Create Dictionary'}
+              {submitting ? '创建中...' : '创建词典'}
             </button>
           </div>
         }
@@ -378,8 +378,8 @@ const DictionariesPage = () => {
           setShowEditModal(false)
           setEditingDictionary(null)
         }}
-        title="Edit Dictionary"
-        description="Update the details of your dictionary."
+        title="编辑词典"
+        description="更新您的词典详情。"
         footer={
           <div className="flex items-center justify-end gap-3">
             <button
@@ -391,7 +391,7 @@ const DictionariesPage = () => {
               className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100"
               disabled={submitting}
             >
-              Cancel
+              取消
             </button>
             <button
               type="submit"
@@ -399,7 +399,7 @@ const DictionariesPage = () => {
               className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-400"
               disabled={submitting}
             >
-              {submitting ? 'Updating...' : 'Update Dictionary'}
+              {submitting ? '更新中...' : '更新词典'}
             </button>
           </div>
         }
@@ -415,10 +415,10 @@ const DictionariesPage = () => {
       {/* Delete Confirmation Dialog */}
       {showDeleteDialog && deletingDictionary && (
         <ConfirmDialog
-          title="Delete Dictionary"
-          message={`Are you sure you want to delete "${deletingDictionary.name}"? This action cannot be undone and will remove all associated words.`}
-          confirmLabel="Delete Dictionary"
-          cancelLabel="Cancel"
+          title="删除词典"
+          message={`确定要删除"${deletingDictionary.name}"吗？此操作无法撤销，并将删除所有相关单词。`}
+          confirmLabel="删除词典"
+          cancelLabel="取消"
           onConfirm={handleDeleteDictionary}
           onCancel={() => {
             setShowDeleteDialog(false)

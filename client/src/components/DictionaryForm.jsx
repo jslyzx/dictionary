@@ -41,7 +41,7 @@ function DictionaryForm({ initialData, onSubmit, formId, isSubmitting }) {
 
     const nextErrors = {};
     if (!trimmedName) {
-      nextErrors.name = 'Name is required.';
+      nextErrors.name = '名称为必填项。';
     }
 
     setErrors(nextErrors);
@@ -61,7 +61,7 @@ function DictionaryForm({ initialData, onSubmit, formId, isSubmitting }) {
     <form id={formId} onSubmit={handleSubmit} className="space-y-5">
       <div>
         <label htmlFor="name" className="block text-sm font-medium text-slate-700">
-          Name
+          名称
         </label>
         <input
           id="name"
@@ -69,7 +69,7 @@ function DictionaryForm({ initialData, onSubmit, formId, isSubmitting }) {
           type="text"
           value={values.name}
           onChange={handleChange}
-          placeholder="e.g. Travel Essentials"
+          placeholder="例如：旅行必备"
           className={`mt-1 w-full rounded-lg border px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-500/60 ${
             errors.name ? 'border-red-400 focus:ring-red-500/60' : 'border-slate-300'
           }`}
@@ -85,7 +85,7 @@ function DictionaryForm({ initialData, onSubmit, formId, isSubmitting }) {
           htmlFor="description"
           className="block text-sm font-medium text-slate-700"
         >
-          Description
+          描述
         </label>
         <textarea
           id="description"
@@ -93,7 +93,7 @@ function DictionaryForm({ initialData, onSubmit, formId, isSubmitting }) {
           rows={4}
           value={values.description}
           onChange={handleChange}
-          placeholder="Add a short description for this dictionary (optional)."
+          placeholder="为此词典添加简短描述（可选）。"
           className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-500/60"
           disabled={isSubmitting}
         />
@@ -110,9 +110,9 @@ function DictionaryForm({ initialData, onSubmit, formId, isSubmitting }) {
             disabled={isSubmitting}
           />
           <div>
-            <p className="text-sm font-medium text-slate-800">Enabled</p>
+            <p className="text-sm font-medium text-slate-800">启用</p>
             <p className="text-xs text-slate-500">
-              Enabled dictionaries are available for learning experiences.
+              启用的词典可用于学习体验。
             </p>
           </div>
         </label>
@@ -127,9 +127,9 @@ function DictionaryForm({ initialData, onSubmit, formId, isSubmitting }) {
             disabled={isSubmitting}
           />
           <div>
-            <p className="text-sm font-medium text-slate-800">Mastered</p>
+            <p className="text-sm font-medium text-slate-800">已掌握</p>
             <p className="text-xs text-slate-500">
-              Mark as mastered when all words in this dictionary are learned.
+              当此词典中所有单词都已学会时，标记为已掌握。
             </p>
           </div>
         </label>
