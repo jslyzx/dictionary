@@ -105,42 +105,42 @@ const adaptUpsertPayload = (payload: UpsertWordPayload) => {
 }
 
 export const listWords = async (params: ListWordsParams): Promise<WordListResult> => {
-  const response = await request<WordListApiResponse>({
+  const response = await request<{ success: boolean; data: WordListApiResponse }>({
     method: 'GET',
     url: '/api/words',
     params,
   })
 
   return {
-    items: response.items.map(mapWord),
-    total: response.total,
-    page: response.page,
-    limit: response.limit,
+    items: response.data.items.map(mapWord),
+    total: response.data.total,
+    page: response.data.page,
+    limit: response.data.limit,
   }
 }
 
 export const createWord = async (payload: UpsertWordPayload): Promise<Word> => {
-  const response = await request<{ item: WordApiResponse }>({
+  const response = await request<{ success: boolean; data: { item: WordApiResponse } }>({
     method: 'POST',
     url: '/api/words',
     data: adaptUpsertPayload(payload),
   })
 
-  return mapWord(response.item)
+  return mapWord(response.data.item)
 }
 
 export const updateWord = async (id: number, payload: UpsertWordPayload): Promise<Word> => {
-  const response = await request<{ item: WordApiResponse }>({
+  const response = await request<{ success: boolean; data: { item: WordApiResponse } }>({
     method: 'PUT',
     url: `/api/words/${id}`,
     data: adaptUpsertPayload(payload),
   })
 
-  return mapWord(response.item)
+  return mapWord(response.data.item)
 }
 
 export const deleteWord = async (id: number): Promise<void> => {
-  await request<{ message: string }>({
+  await request<{ success: boolean; data: { message: string } }>({
     method: 'DELETE',
     url: `/api/words/${id}`,
   })
@@ -160,7 +160,7 @@ export const fetchWords = async (params: ListWordsParams): Promise<{
     ...result,
     items: result.items.map(item => ({
       ...item,
-      createdAt: item.createdAt || '', // Ensure non-null string
+      createdAt: item.createdAt || new Date().toISOString(), // Ensure non-null string
       difficulty: item.difficulty as import('../types/word').WordDifficulty, // Ensure correct difficulty type
       isMastered: item.isMastered as boolean | null // Ensure boolean | null type
     }))
