@@ -73,8 +73,12 @@ const createDictionaryRules = [
       return true;
     }),
   body('isEnabled')
-    .optional()
+    .optional({ nullable: true, checkFalsy: false })
     .custom((value, { req }) => {
+      if (value === undefined || value === null) {
+        delete req.body.isEnabled;
+        return true;
+      }
       const normalized = normalizeBoolean(value);
       if (normalized === undefined) {
         throw new Error('isEnabled must be a boolean value.');
@@ -83,8 +87,12 @@ const createDictionaryRules = [
       return true;
     }),
   body('isMastered')
-    .optional()
+    .optional({ nullable: true, checkFalsy: false })
     .custom((value, { req }) => {
+      if (value === undefined || value === null) {
+        delete req.body.isMastered;
+        return true;
+      }
       const normalized = normalizeBoolean(value);
       if (normalized === undefined) {
         throw new Error('isMastered must be a boolean value.');

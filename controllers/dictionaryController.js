@@ -55,9 +55,24 @@ const getAllDictionaries = async (req, res, next) => {
       `SELECT ${baseSelectColumns} FROM dictionaries ORDER BY created_at DESC`,
     );
 
+    // Get word counts for each dictionary
+    const dictionariesWithCounts = await Promise.all(
+      rows.map(async (row) => {
+        const [countRow = {}] = await query(
+          'SELECT COUNT(*) as wordCount FROM dictionary_words WHERE dictionary_id = ?',
+          [row.dictionary_id]
+        );
+        
+        return {
+          ...serializeDictionary(row),
+          wordCount: Number(countRow.wordCount ?? 0)
+        };
+      })
+    );
+
     return res.json({
       success: true,
-      data: rows.map(serializeDictionary),
+      data: dictionariesWithCounts,
     });
   } catch (error) {
     console.error('获取词典列表失败:', error);
@@ -113,11 +128,11 @@ const createDictionary = async (req, res, next) => {
   try {
     const body = getValidatedBody(req);
     const name = body.name;
-    const description = hasOwn(body, 'description') ? body.description : null;
-    const isEnabled = hasOwn(body, 'isEnabled')
+    const description = hasOwn(body, 'description') ? (body.description ?? null) : null;
+    const isEnabled = hasOwn(body, 'isEnabled') && body.isEnabled !== undefined
       ? toDatabaseBoolean(body.isEnabled)
       : 1;
-    const isMastered = hasOwn(body, 'isMastered')
+    const isMastered = hasOwn(body, 'isMastered') && body.isMastered !== undefined
       ? toDatabaseBoolean(body.isMastered)
       : 0;
 
@@ -177,15 +192,15 @@ const updateDictionary = async (req, res, next) => {
 
     if (hasOwn(body, 'description')) {
       updates.push('description = ?');
-      params.push(body.description);
+      params.push(body.description ?? null);
     }
 
-    if (hasOwn(body, 'isEnabled')) {
+    if (hasOwn(body, 'isEnabled') && body.isEnabled !== undefined) {
       updates.push('is_enabled = ?');
       params.push(toDatabaseBoolean(body.isEnabled));
     }
 
-    if (hasOwn(body, 'isMastered')) {
+    if (hasOwn(body, 'isMastered') && body.isMastered !== undefined) {
       updates.push('is_mastered = ?');
       params.push(toDatabaseBoolean(body.isMastered));
     }

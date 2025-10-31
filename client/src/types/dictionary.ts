@@ -8,6 +8,7 @@ export interface Dictionary {
   isMastered: boolean
   createdAt: string
   updatedAt: string
+  wordCount?: number
 }
 
 export interface DictionaryWordAssociation {
