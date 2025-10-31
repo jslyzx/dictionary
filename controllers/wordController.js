@@ -374,7 +374,7 @@ const getWordById = async (req, res, next) => {
     const wordId = getWordIdFromRequest(req);
 
     const rows = await query(
-      `SELECT ${baseSelectColumns} FROM words WHERE word_id = ?`,
+      `SELECT ${baseSelectColumns} FROM words w WHERE w.word_id = ?`,
       [wordId],
     );
 
@@ -437,7 +437,7 @@ const createWord = async (req, res, next) => {
     );
 
     const rows = await query(
-      `SELECT ${baseSelectColumns} FROM words WHERE word_id = ?`,
+      `SELECT ${baseSelectColumns} FROM words w WHERE w.word_id = ?`,
       [result.insertId],
     );
 
@@ -465,7 +465,7 @@ const updateWord = async (req, res, next) => {
     const body = getValidatedBody(req);
 
     const existingRows = await query(
-      `SELECT ${baseSelectColumns} FROM words WHERE word_id = ?`,
+      `SELECT ${baseSelectColumns} FROM words w WHERE w.word_id = ?`,
       [wordId],
     );
 
@@ -546,7 +546,7 @@ const updateWord = async (req, res, next) => {
     );
 
     const rows = await query(
-      `SELECT ${baseSelectColumns} FROM words WHERE word_id = ?`,
+      `SELECT ${baseSelectColumns} FROM words w WHERE w.word_id = ?`,
       [wordId],
     );
 
