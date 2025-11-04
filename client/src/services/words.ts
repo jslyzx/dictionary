@@ -12,6 +12,7 @@ export interface Word {
   isMastered: boolean
   createdAt: string | null
   notes: string | null
+  sentence: string | null
 }
 
 interface WordApiResponse {
@@ -24,6 +25,7 @@ interface WordApiResponse {
   pronunciation2: string | null
   pronunciation3: string | null
   notes: string | null
+  sentence: string | null
   difficulty: number | null
   is_mastered: 0 | 1 | null
   created_at: string | null
@@ -61,6 +63,7 @@ export interface UpsertWordPayload {
   pronunciation2?: string | null
   pronunciation3?: string | null
   notes?: string | null
+  sentence?: string | null
 }
 
 const mapWord = (word: WordApiResponse): Word => ({
@@ -72,6 +75,7 @@ const mapWord = (word: WordApiResponse): Word => ({
   pronunciation2: word.pronunciation2 ?? null,
   pronunciation3: word.pronunciation3 ?? null,
   notes: word.notes ?? null,
+  sentence: word.sentence ?? null,
   difficulty: word.difficulty ?? 0,
   isMastered: Boolean(word.is_mastered),
   createdAt: word.created_at ?? null,
@@ -100,6 +104,10 @@ const adaptUpsertPayload = (payload: UpsertWordPayload) => {
 
   if (payload.notes !== undefined) {
     data.notes = payload.notes ? payload.notes : null
+  }
+
+  if (payload.sentence !== undefined) {
+    data.sentence = payload.sentence ? payload.sentence : null
   }
 
   return data

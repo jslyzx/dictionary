@@ -30,7 +30,8 @@ CREATE TABLE words (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     difficulty TINYINT(1) DEFAULT 0 NOT NULL COMMENT '难度等级(0-简单 1-中等 2-困难)',
     is_mastered TINYINT(1) DEFAULT 0 NOT NULL COMMENT '是否掌握(1是 0否)',
-    notes VARCHAR(255) COMMENT '笔记(可选)',
+    notes TEXT COMMENT '笔记(可选)',
+    sentence TEXT COMMENT '例句(可选)',
     UNIQUE KEY uniq_word (word) COMMENT '单词唯一性约束',
     INDEX idx_phonetic (phonetic(10)) COMMENT '音标查询索引'
 ) ENGINE=InnoDB 

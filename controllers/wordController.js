@@ -15,6 +15,7 @@ const baseSelectColumns = `
   w.pronunciation2,
   w.pronunciation3,
   w.notes,
+  w.sentence,
   w.created_at,
   w.difficulty,
   w.is_mastered
@@ -36,7 +37,8 @@ const WORD_MAX_LENGTH = 50;
 const PHONETIC_MAX_LENGTH = 100;
 const MEANING_MAX_LENGTH = 255;
 const PRONUNCIATION_MAX_LENGTH = 255;
-const NOTES_MAX_LENGTH = 255;
+const NOTES_MAX_LENGTH = 65535;
+const SENTENCE_MAX_LENGTH = 65535;
 
 const hasOwn = (object, key) =>
   Object.prototype.hasOwnProperty.call(object ?? {}, key);
@@ -68,6 +70,7 @@ const serializeWord = (row) => ({
   pronunciation2: row.pronunciation2,
   pronunciation3: row.pronunciation3,
   notes: row.notes,
+  sentence: row.sentence,
   createdAt: row.created_at,
   difficulty: row.difficulty,
   isMastered: row.is_mastered === 1,
@@ -95,9 +98,9 @@ const buildFilter = (filters = {}) => {
   const createdBefore = filters.createdBefore;
 
   if (typeof search === 'string' && search.trim()) {
-    conditions.push('(w.word LIKE ? OR w.meaning LIKE ? OR w.phonetic LIKE ?)');
+    conditions.push('(w.word LIKE ? OR w.meaning LIKE ? OR w.phonetic LIKE ? OR w.notes LIKE ? OR w.sentence LIKE ?)');
     const like = `%${search.trim()}%`;
-    params.push(like, like, like);
+    params.push(like, like, like, like, like);
   }
 
   if (difficulty !== undefined) {
@@ -347,6 +350,7 @@ const exportWordsCsv = async (req, res, next) => {
       },
       { key: 'createdAt', header: 'Created At' },
       { key: 'notes', header: 'Notes' },
+      { key: 'sentence', header: 'Sentence' },
       { key: 'pronunciation1', header: 'Pronunciation 1' },
       { key: 'pronunciation2', header: 'Pronunciation 2' },
       { key: 'pronunciation3', header: 'Pronunciation 3' },
@@ -433,6 +437,7 @@ const createWord = async (req, res, next) => {
     ['pronunciation2', body.pronunciation2],
     ['pronunciation3', body.pronunciation3],
     ['notes', body.notes],
+    ['sentence', body.sentence],
   ];
 
   optionalFields.forEach(([field, value]) => {
@@ -568,6 +573,11 @@ const updateWord = async (req, res, next) => {
     if (hasOwn(body, 'notes')) {
       updates.push('notes = ?');
       params.push(body.notes === undefined ? null : body.notes);
+    }
+
+    if (hasOwn(body, 'sentence')) {
+      updates.push('sentence = ?');
+      params.push(body.sentence === undefined ? null : body.sentence);
     }
 
     if (hasOwn(body, 'difficulty')) {
