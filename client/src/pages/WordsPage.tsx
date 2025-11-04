@@ -734,7 +734,7 @@ const WordsPage = () => {
           ) : null}
 
           {words.length > 0 ? (
-            <>
+            <div>
               {/* Bulk action toolbar */}
               <div className="mb-4 flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
                 <div className="flex items-center gap-3">
@@ -980,7 +980,6 @@ const WordsPage = () => {
               </table>
               </div>
             </div>
-            </>
           ) : null}
         </div>
 
