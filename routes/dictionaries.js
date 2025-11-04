@@ -18,7 +18,7 @@ const {
   updateDictionaryRules,
 } = require('../middleware/validateDictionary');
 const {
-  createRelationRules,
+  createDictionaryWordRelationRules,
   relationIdParam,
   wordIdParam,
 } = require('../middleware/validateDictionaryWord');
@@ -35,7 +35,7 @@ router.delete('/:id', dictionaryIdParam, validate, deleteDictionary);
 
 // Dictionary word routes
 router.get('/:id/words', dictionaryIdParam, validate, getDictionaryWords);
-router.post('/:id/words', dictionaryIdParam, createRelationRules, validate, addDictionaryWord);
+router.post('/:id/words', dictionaryIdParam, createDictionaryWordRelationRules, validate, addDictionaryWord);
 router.delete('/:id/words/:wordId', dictionaryIdParam, wordIdParam, validate, deleteDictionaryWord);
 
 module.exports = router;
