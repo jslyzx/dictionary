@@ -31,6 +31,33 @@ const createRelationRules = [
     .toInt(),
 ];
 
+const createDictionaryWordRelationRules = [
+  body('wordId')
+    .exists({ checkNull: true })
+    .withMessage('wordId is required.')
+    .bail()
+    .isInt({ min: 1 })
+    .withMessage('wordId must be a positive integer.')
+    .toInt(),
+  body('difficulty')
+    .optional()
+    .isInt({ min: 0, max: 2 })
+    .withMessage('difficulty must be 0 (easy), 1 (medium), or 2 (hard).')
+    .toInt(),
+  body('isMastered')
+    .optional()
+    .isBoolean()
+    .withMessage('isMastered must be a boolean.')
+    .toBoolean(),
+  body('notes')
+    .optional()
+    .isString()
+    .withMessage('notes must be a string.')
+    .isLength({ max: 255 })
+    .withMessage('notes must not exceed 255 characters.')
+    .trim(),
+];
+
 const listRelationQueryRules = [
   query('dictionaryId')
     .optional()
@@ -80,6 +107,7 @@ module.exports = {
   relationIdParam,
   wordIdParam,
   createRelationRules,
+  createDictionaryWordRelationRules,
   listRelationQueryRules,
   validateDictionaryWordAssociationIdParam,
   validateUpdateDictionaryWord,
