@@ -2,6 +2,7 @@ import { type ChangeEvent, type FormEvent, useCallback, useEffect, useMemo, useR
 import type { ApiError } from '../services/apiClient'
 import { createWord, deleteWord, listWords, updateWord, type ListWordsParams, type Word } from '../services/words'
 import { fetchDictionaries, batchAddWordsToDictionary } from '../services/dictionaries'
+import { pronunciationRuleService, type PronunciationRule } from '../services/pronunciationRules'
 import type { Dictionary } from '../types/dictionary'
 import Modal from '../components/common/Modal'
 
@@ -28,6 +29,7 @@ interface WordFormValues {
   isMastered: boolean
   notes: string
   sentence: string
+  pronunciationRules: number[]
 }
 
 type WordFormErrors = Partial<{
@@ -295,15 +297,33 @@ const WordsPage = () => {
     }
 
     try {
+      let wordId: number
       if (mode === 'edit' && word) {
         if (!word.id || typeof word.id !== 'number' || word.id <= 0) {
           throw new Error('无效的单词ID');
         }
         await updateWord(word.id, payload)
+        wordId = word.id
         setFlash({ type: 'success', message: '单词更新成功。' })
       } else {
-        await createWord(payload)
+        const createdWord = await createWord(payload)
+        wordId = createdWord.id
         setFlash({ type: 'success', message: '单词创建成功。' })
+      }
+
+      // Handle pronunciation rules associations
+      if (values.pronunciationRules && values.pronunciationRules.length > 0) {
+        try {
+          await pronunciationRuleService.addWordPronunciationRules(wordId, {
+            pronunciationRuleIds: values.pronunciationRules,
+          })
+        } catch (error) {
+          console.error('Failed to associate pronunciation rules:', error)
+          setFlash({ 
+            type: 'error', 
+            message: '单词保存成功，但发音规则关联失败。' 
+          })
+        }
       }
 
       closeForm()
@@ -566,6 +586,7 @@ const WordsPage = () => {
       isMastered: formState.word.isMastered,
       notes: formState.word.notes ?? '',
       sentence: formState.word.sentence ?? '',
+      pronunciationRules: [], // Reset pronunciation rules for editing
     }
   }, [formState.word])
 
@@ -1221,16 +1242,38 @@ const emptyFormValues: WordFormValues = {
   isMastered: false,
   notes: '',
   sentence: '',
+  pronunciationRules: [],
 }
 
 const WordForm = ({ formId, mode, initialValues, submitting, onSubmit }: WordFormProps) => {
   const [values, setValues] = useState<WordFormValues>(initialValues ?? emptyFormValues)
   const [errors, setErrors] = useState<WordFormErrors>({})
+  const [pronunciationRules, setPronunciationRules] = useState<PronunciationRule[]>([])
+  const [pronunciationRulesLoading, setPronunciationRulesLoading] = useState(false)
+  const [pronunciationRulesError, setPronunciationRulesError] = useState<string | null>(null)
 
   useEffect(() => {
     setValues(initialValues ?? emptyFormValues)
     setErrors({})
   }, [initialValues])
+
+  // Fetch pronunciation rules when form opens
+  useEffect(() => {
+    const fetchPronunciationRulesData = async () => {
+      try {
+        setPronunciationRulesLoading(true)
+        setPronunciationRulesError(null)
+        const result = await pronunciationRuleService.getAll({ limit: 1000 })
+        setPronunciationRules(result.items)
+      } catch (error) {
+        const apiError = error as ApiError
+        setPronunciationRulesError(apiError.message ?? '无法加载发音规则列表。')
+      } finally {
+        setPronunciationRulesLoading(false)
+      }
+    }
+    fetchPronunciationRulesData()
+  }, [])
 
   const handleChange = (
     event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
@@ -1282,6 +1325,7 @@ const WordForm = ({ formId, mode, initialValues, submitting, onSubmit }: WordFor
       isMastered: values.isMastered,
       notes: trimmedNotes,
       sentence: trimmedSentence,
+      pronunciationRules: values.pronunciationRules,
     })
   }
 
@@ -1444,9 +1488,68 @@ const WordForm = ({ formId, mode, initialValues, submitting, onSubmit }: WordFor
               </p>
             </div>
           </label>
-        </div>
-      </div>
-    </form>
+          </div>
+          </div>
+
+          <div>
+          <label className="block text-sm font-medium text-slate-700">
+          关联发音规则
+          </label>
+          <div className="mt-1">
+          {pronunciationRulesLoading ? (
+            <div className="flex items-center text-sm text-slate-500">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-slate-600 mr-2"></div>
+              加载发音规则中...
+            </div>
+          ) : pronunciationRulesError ? (
+            <div className="text-sm text-rose-600">
+              {pronunciationRulesError}
+            </div>
+          ) : (
+            <div className="space-y-2 max-h-48 overflow-y-auto border border-slate-300 rounded-lg p-2">
+              {pronunciationRules.length === 0 ? (
+                <div className="text-sm text-slate-500 text-center py-4">
+                  暂无发音规则
+                </div>
+              ) : (
+                pronunciationRules.map((rule) => (
+                  <label key={rule.id} className="flex items-center space-x-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={values.pronunciationRules.includes(rule.id)}
+                      onChange={(e) => {
+                        const checked = e.target.checked
+                        setValues((prev) => ({
+                          ...prev,
+                          pronunciationRules: checked
+                            ? [...prev.pronunciationRules, rule.id]
+                            : prev.pronunciationRules.filter(id => id !== rule.id)
+                        }))
+                      }}
+                      disabled={submitting}
+                      className="rounded border-slate-300 text-slate-900 focus:ring-slate-900"
+                    />
+                    <span className="flex-1">
+                      <span className="font-medium text-slate-900">{rule.letterCombination}</span>
+                      <span className="mx-2 text-slate-400">-</span>
+                      <span className="font-mono text-slate-700">{rule.pronunciation}</span>
+                      {rule.ruleDescription && (
+                        <span className="block text-xs text-slate-500 mt-1">
+                          {rule.ruleDescription}
+                        </span>
+                      )}
+                    </span>
+                  </label>
+                ))
+              )}
+            </div>
+          )}
+          </div>
+          <p className="mt-1 text-xs text-slate-500">
+          可选。选择该单词使用的发音规则（可多选）。
+          </p>
+          </div>
+          </form>
   )
 }
 
