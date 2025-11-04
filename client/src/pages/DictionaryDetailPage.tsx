@@ -257,7 +257,7 @@ const AddDictionaryWordModal = ({
 
       await addWordToDictionary(dictionaryId, payload)
       const addedWord = results.find((word) => word.id === selectedWordId)
-      onFeedback('success', addedWord ? `已将单词添加到词典。')
+      onFeedback('success', addedWord ? `已将单词添加到词典。` : '单词已添加到词典，但无法确认具体单词。')
       onRefresh()
       onClose()
     } catch (error) {
