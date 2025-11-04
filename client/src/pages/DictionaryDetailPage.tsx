@@ -2,21 +2,21 @@ import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react
 import { Link, useParams } from 'react-router-dom'
 import Modal from '../components/common/Modal'
 import {
-  add单词To词典,
-  fetch词典,
-  fetch词典单词Associations,
-  remove词典单词,
-  update词典单词Association,
+  addWordToDictionary,
+  fetchDictionary,
+  fetchDictionaryWordAssociations,
+  removeDictionaryWord,
+  updateDictionaryWordAssociation,
 } from '../services/dictionaries'
 import type { ApiError } from '../services/apiClient'
-import { fetch单词s } from '../services/words'
+import { fetchWords } from '../services/words'
 import type {
-  词典,
-  词典单词Association,
-  词典单词AssociationPayload,
-  词典单词AssociationUpdatePayload,
+  Dictionary,
+  DictionaryWordAssociation,
+  DictionaryWordAssociationPayload,
+  DictionaryWordAssociationUpdatePayload,
 } from '../types/dictionary'
-import type { 单词, 单词Difficulty } from '../types/word'
+import type { Word, WordDifficulty } from '../types/word'
 
 type FeedbackType = 'success' | 'error'
 
@@ -31,7 +31,7 @@ interface BadgeDisplay {
 }
 
 type DifficultySelection = 'unset' | 'easy' | 'medium' | 'hard'
-type MasterySelection = 'unset' | '已掌握' | 'in-progress'
+type MasterySelection = 'unset' | 'mastered' | 'in-progress'
 
 const difficultySelectOptions: Array<{ value: DifficultySelection; label: string }> = [
   { value: 'unset', label: '未设置' },
@@ -42,7 +42,7 @@ const difficultySelectOptions: Array<{ value: DifficultySelection; label: string
 
 const masterySelectOptions: Array<{ value: MasterySelection; label: string }> = [
   { value: 'unset', label: '未设置' },
-  { value: '已掌握', label: '已掌握' },
+  { value: 'mastered', label: '已掌握' },
   { value: 'in-progress', label: '学习中' },
 ]
 
@@ -59,7 +59,7 @@ const formatDateTime = (value: string | null) => {
   return date.toLocaleString()
 }
 
-const getDifficultyDisplay = (difficulty: 单词Difficulty): BadgeDisplay => {
+const getDifficultyDisplay = (difficulty: WordDifficulty): BadgeDisplay => {
   switch (difficulty) {
     case 0:
       return { label: '简单', className: 'bg-emerald-50 text-emerald-700' }
@@ -84,7 +84,7 @@ const getMasteryDisplay = (value: boolean | null): BadgeDisplay => {
   return { label: '未设置', className: 'bg-slate-100 text-slate-600' }
 }
 
-const mapDifficultyToSelection = (value: 单词Difficulty): DifficultySelection => {
+const mapDifficultyToSelection = (value: WordDifficulty): DifficultySelection => {
   if (value === 0) {
     return 'easy'
   }
@@ -97,7 +97,7 @@ const mapDifficultyToSelection = (value: 单词Difficulty): DifficultySelection 
   return 'unset'
 }
 
-const mapSelectionToDifficulty = (selection: DifficultySelection): 单词Difficulty => {
+const mapSelectionToDifficulty = (selection: DifficultySelection): WordDifficulty => {
   if (selection === 'easy') {
     return 0
   }
@@ -112,7 +112,7 @@ const mapSelectionToDifficulty = (selection: DifficultySelection): 单词Difficu
 
 const mapMasteryToSelection = (value: boolean | null): MasterySelection => {
   if (value === true) {
-    return '已掌握'
+    return 'mastered'
   }
   if (value === false) {
     return 'in-progress'
@@ -121,7 +121,7 @@ const mapMasteryToSelection = (value: boolean | null): MasterySelection => {
 }
 
 const mapSelectionToMastery = (selection: MasterySelection): boolean | null => {
-  if (selection === '已掌握') {
+  if (selection === 'mastered') {
     return true
   }
   if (selection === 'in-progress') {
@@ -130,35 +130,35 @@ const mapSelectionToMastery = (selection: MasterySelection): boolean | null => {
   return null
 }
 
-interface Add词典单词ModalProps {
+interface AddDictionaryWordModalProps {
   dictionaryId: number
-  existing单词Ids: number[]
+  existingWordIds: number[]
   isOpen: boolean
   onClose: () => void
-  on添加时间: () => void
+  onRefresh: () => void
   onFeedback: (type: FeedbackType, message: string) => void
 }
 
-const Add词典单词Modal = ({
+const AddDictionaryWordModal = ({
   dictionaryId,
-  existing单词Ids,
+  existingWordIds,
   isOpen,
   onClose,
-  on添加时间,
+  onRefresh,
   onFeedback,
-}: Add词典单词ModalProps) => {
+}: AddDictionaryWordModalProps) => {
   const [search, setSearch] = useState('')
-  const [results, setResults] = useState<单词[]>([])
+  const [results, setResults] = useState<Word[]>([])
   const [loading, setLoading] = useState(false)
-  const [selected单词Id, setSelected单词Id] = useState<number | null>(null)
+  const [selectedWordId, setSelectedWordId] = useState<number | null>(null)
   const [difficulty, setDifficulty] = useState<DifficultySelection>('unset')
   const [mastery, setMastery] = useState<MasterySelection>('unset')
-  const [notes, set笔记] = useState('')
+  const [notes, setNotes] = useState('')
   const [fetchError, setFetchError] = useState<string | null>(null)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
-  const excludedIds = useMemo(() => new Set(existing单词Ids), [existing单词Ids])
+  const excludedIds = useMemo(() => new Set(existingWordIds), [existingWordIds])
 
   useEffect(() => {
     if (!isOpen) {
@@ -166,10 +166,10 @@ const Add词典单词Modal = ({
     }
 
     setSearch('')
-    setSelected单词Id(null)
+    setSelectedWordId(null)
     setDifficulty('unset')
     setMastery('unset')
-    set笔记('')
+    setNotes('')
     setFetchError(null)
     setSubmitError(null)
   }, [isOpen])
@@ -181,12 +181,12 @@ const Add词典单词Modal = ({
 
     let ignore = false
 
-    const load单词s = async () => {
+    const loadWords = async () => {
       setLoading(true)
       setFetchError(null)
 
       try {
-        const response = await fetch单词s({
+        const response = await fetchWords({
           search: search.trim() ? search.trim() : undefined,
           limit: 20,
         })
@@ -198,8 +198,8 @@ const Add词典单词Modal = ({
         const filtered = response.items.filter((word) => !excludedIds.has(word.id))
         setResults(filtered)
 
-        if (selected单词Id && !filtered.some((word) => word.id === selected单词Id)) {
-          setSelected单词Id(null)
+        if (selectedWordId && !filtered.some((word) => word.id === selectedWordId)) {
+          setSelectedWordId(null)
         }
       } catch (error) {
         if (ignore) {
@@ -216,18 +216,18 @@ const Add词典单词Modal = ({
       }
     }
 
-    const timeoutId = window.setTimeout(load单词s, 250)
+    const timeoutId = window.setTimeout(loadWords, 250)
 
     return () => {
       ignore = true
       window.clearTimeout(timeoutId)
     }
-  }, [isOpen, search, excludedIds, selected单词Id])
+  }, [isOpen, search, excludedIds, selectedWordId])
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
 
-    if (!selected单词Id) {
+    if (!selectedWordId) {
       setSubmitError('请选择要添加到词典的单词。')
       return
     }
@@ -236,8 +236,8 @@ const Add词典单词Modal = ({
     setSubmitting(true)
 
     try {
-      const payload: 词典单词AssociationPayload = {
-        wordId: selected单词Id,
+      const payload: DictionaryWordAssociationPayload = {
+        wordId: selectedWordId,
       }
 
       const difficultyValue = mapSelectionToDifficulty(difficulty)
@@ -247,18 +247,18 @@ const Add词典单词Modal = ({
 
       const masteryValue = mapSelectionToMastery(mastery)
       if (masteryValue !== null) {
-        payload.is已掌握 = masteryValue
+        payload.isMastered = masteryValue
       }
 
-      const trimmed笔记 = notes.trim()
-      if (trimmed笔记) {
-        payload.notes = trimmed笔记
+      const trimmedNotes = notes.trim()
+      if (trimmedNotes) {
+        payload.notes = trimmedNotes
       }
 
-      await add单词To词典(dictionaryId, payload)
-      const added单词 = results.find((word) => word.id === selected单词Id)
-      onFeedback('success', added单词 ? `已将单词添加到词典。')
-      on添加时间()
+      await addWordToDictionary(dictionaryId, payload)
+      const addedWord = results.find((word) => word.id === selectedWordId)
+      onFeedback('success', addedWord ? `已将单词添加到词典。')
+      onRefresh()
       onClose()
     } catch (error) {
       const apiError = error as ApiError
@@ -292,7 +292,7 @@ const Add词典单词Modal = ({
             className="inline-flex items-center justify-center rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60"
             form="add-dictionary-word-form"
             type="submit"
-            disabled={submitting || !selected单词Id}
+            disabled={submitting || !selectedWordId}
           >
             {submitting ? '添加中…' : '添加单词'}
           </button>
@@ -409,7 +409,7 @@ const Add词典单词Modal = ({
             className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200"
             id="dictionary-add-word-notes"
             maxLength={255}
-            onChange={(event) => set笔记(event.target.value)}
+            onChange={(event) => setNotes(event.target.value)}
             placeholder="Add any context for why this word belongs to the dictionary."
             rows={3}
             value={notes}
@@ -422,24 +422,24 @@ const Add词典单词Modal = ({
   )
 }
 
-interface Edit词典单词ModalProps {
-  association: 词典单词Association | null
+interface EditDictionaryWordModalProps {
+  association: DictionaryWordAssociation | null
   isOpen: boolean
   onClose: () => void
   onUpdated: () => void
   onFeedback: (type: FeedbackType, message: string) => void
 }
 
-const Edit词典单词Modal = ({
+const EditDictionaryWordModal = ({
   association,
   isOpen,
   onClose,
   onUpdated,
   onFeedback,
-}: Edit词典单词ModalProps) => {
+}: EditDictionaryWordModalProps) => {
   const [difficulty, setDifficulty] = useState<DifficultySelection>('unset')
   const [mastery, setMastery] = useState<MasterySelection>('unset')
-  const [notes, set笔记] = useState('')
+  const [notes, setNotes] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
 
@@ -449,8 +449,8 @@ const Edit词典单词Modal = ({
     }
 
     setDifficulty(mapDifficultyToSelection(association.difficulty))
-    setMastery(mapMasteryToSelection(association.is已掌握))
-    set笔记(association.notes ?? '')
+    setMastery(mapMasteryToSelection(association.isMastered))
+    setNotes(association.notes ?? '')
     setSubmitError(null)
   }, [isOpen, association])
 
@@ -465,13 +465,13 @@ const Edit词典单词Modal = ({
     setSubmitError(null)
 
     try {
-      const payload: 词典单词AssociationUpdatePayload = {
+      const payload: DictionaryWordAssociationUpdatePayload = {
         difficulty: mapSelectionToDifficulty(difficulty),
-        is已掌握: mapSelectionToMastery(mastery),
+        isMastered: mapSelectionToMastery(mastery),
         notes: notes.trim() ? notes.trim() : null,
       }
 
-      await update词典单词Association(association.id, payload)
+      await updateDictionaryWordAssociation(association.id, payload)
       onFeedback('success', `Updated settings for "${association.word.word}".`)
       onUpdated()
       onClose()
@@ -560,7 +560,7 @@ const Edit词典单词Modal = ({
             className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200"
             id="dictionary-edit-notes"
             maxLength={255}
-            onChange={(event) => set笔记(event.target.value)}
+            onChange={(event) => setNotes(event.target.value)}
             placeholder="分享此单词在词典中的特定上下文。"
             rows={3}
             value={notes}
@@ -573,8 +573,8 @@ const Edit词典单词Modal = ({
   )
 }
 
-interface Remove词典单词DialogProps {
-  association: 词典单词Association | null
+interface RemoveDictionaryWordDialogProps {
+  association: DictionaryWordAssociation | null
   dictionaryId: number
   isOpen: boolean
   onClose: () => void
@@ -582,14 +582,14 @@ interface Remove词典单词DialogProps {
   onFeedback: (type: FeedbackType, message: string) => void
 }
 
-const Remove词典单词Dialog = ({
+const RemoveDictionaryWordDialog = ({
   association,
   dictionaryId,
   isOpen,
   onClose,
   onRemoved,
   onFeedback,
-}: Remove词典单词DialogProps) => {
+}: RemoveDictionaryWordDialogProps) => {
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
 
@@ -611,7 +611,7 @@ const Remove词典单词Dialog = ({
     setSubmitError(null)
 
     try {
-      await remove词典单词(dictionaryId, association.wordId)
+      await removeDictionaryWord(dictionaryId, association.wordId)
       onFeedback('success', `Removed "${association.word.word}" from the dictionary.`)
       onRemoved()
       onClose()
@@ -668,20 +668,20 @@ const Remove词典单词Dialog = ({
   )
 }
 
-const 词典DetailPage = () => {
+const DictionaryDetailPage = () => {
   const { id } = useParams<{ id: string }>()
   const dictionaryId = Number(id)
 
-  const [dictionary, set词典] = useState<词典 | null>(null)
-  const [associations, setAssociations] = useState<词典单词Association[]>([])
+  const [dictionary, setDictionary] = useState<Dictionary | null>(null)
+  const [associations, setAssociations] = useState<DictionaryWordAssociation[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [notFound, setNotFound] = useState(false)
   const [refreshIndex, setRefreshIndex] = useState(0)
   const [feedback, setFeedback] = useState<Feedback | null>(null)
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
-  const [associationToEdit, setAssociationToEdit] = useState<词典单词Association | null>(null)
-  const [associationToRemove, setAssociationToRemove] = useState<词典单词Association | null>(null)
+  const [associationToEdit, setAssociationToEdit] = useState<DictionaryWordAssociation | null>(null)
+  const [associationToRemove, setAssociationToRemove] = useState<DictionaryWordAssociation | null>(null)
 
   const refreshData = useCallback(() => {
     setRefreshIndex((index) => index + 1)
@@ -712,15 +712,15 @@ const 词典DetailPage = () => {
 
       try {
         const [dictionaryResponse, associationsResponse] = await Promise.all([
-          fetch词典(dictionaryId),
-          fetch词典单词Associations(dictionaryId),
+          fetchDictionary(dictionaryId),
+          fetchDictionaryWordAssociations(dictionaryId),
         ])
 
         if (ignore) {
           return
         }
 
-        set词典(dictionaryResponse)
+        setDictionary(dictionaryResponse)
         setAssociations(associationsResponse)
       } catch (err) {
         if (ignore) {
@@ -730,7 +730,7 @@ const 词典DetailPage = () => {
         const apiError = err as ApiError
         if (apiError.status === 404) {
           setNotFound(true)
-          set词典(null)
+          setDictionary(null)
           setAssociations([])
         } else {
           setError(apiError.message ?? '无法加载词典详情。')
@@ -753,13 +753,13 @@ const 词典DetailPage = () => {
     setFeedback({ type, message })
   }, [])
 
-  const existing单词Ids = useMemo(() => associations.map((association) => association.wordId), [associations])
+  const existingWordIds = useMemo(() => associations.map((association) => association.wordId), [associations])
 
-  const total单词s = associations.length
-  const 已掌握Count = associations.filter((association) => association.is已掌握 === true).length
-  const inProgressCount = associations.filter((association) => association.is已掌握 === false).length
-  const masteryUnknownCount = total单词s - 已掌握Count - inProgressCount
-  const masteryPercent = total单词s ? Math.round((已掌握Count / total单词s) * 100) : 0
+  const totalWords = associations.length
+  const masteredCount = associations.filter((association) => association.isMastered === true).length
+  const inProgressCount = associations.filter((association) => association.isMastered === false).length
+  const masteryUnknownCount = totalWords - masteredCount - inProgressCount
+  const masteryPercent = totalWords ? Math.round((masteredCount / totalWords) * 100) : 0
 
   const difficultyBreakdown = useMemo(() => {
     const accumulator = {
@@ -896,9 +896,9 @@ const 词典DetailPage = () => {
 
         <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <p className="text-xs font-medium uppercase tracking-wide text-slate-500">总单词数</p>
-          <p className="mt-3 text-3xl font-semibold text-slate-900">{total单词s}</p>
+          <p className="mt-3 text-3xl font-semibold text-slate-900">{totalWords}</p>
           <p className="mt-3 text-xs text-slate-500">
-            {已掌握Count} 已掌握 · {inProgressCount} 学习中 · {masteryUnknownCount} 未设置
+            {masteredCount} 已掌握 · {inProgressCount} 学习中 · {masteryUnknownCount} 未设置
           </p>
         </div>
 
@@ -1038,9 +1038,9 @@ const 词典DetailPage = () => {
 
       <Add词典单词Modal
         dictionaryId={dictionaryId}
-        existing单词Ids={existing单词Ids}
+        existingWordIds={existingWordIds}
         isOpen={isAddModalOpen}
-        on添加时间={refreshData}
+        onRefresh={refreshData}
         onClose={() => setIsAddModalOpen(false)}
         onFeedback={showFeedback}
       />
