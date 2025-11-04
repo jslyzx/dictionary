@@ -257,7 +257,7 @@ const AddDictionaryWordModal = ({
 
       await addWordToDictionary(dictionaryId, payload)
       const addedWord = results.find((word) => word.id === selectedWordId)
-      onFeedback('success', addedWord ? `已将单词添加到词典。')
+      onFeedback('success', `已将单词 "${addedWord?.word}" 添加到词典。`)
       onRefresh()
       onClose()
     } catch (error) {
@@ -410,7 +410,7 @@ const AddDictionaryWordModal = ({
             id="dictionary-add-word-notes"
             maxLength={255}
             onChange={(event) => setNotes(event.target.value)}
-            placeholder="Add any context for why this word belongs to the dictionary."
+            placeholder="添加此单词属于该词典的任何上下文说明。"
             rows={3}
             value={notes}
           />
@@ -489,7 +489,7 @@ const EditDictionaryWordModal = ({
     <Modal
       description={
         association
-          ? `Adjust dictionary-specific settings for ${association.word.word}.`
+          ? `调整单词 "${association.word.word}" 的词典特定设置。`
           : undefined
       }
       footer={
@@ -612,12 +612,12 @@ const RemoveDictionaryWordDialog = ({
 
     try {
       await removeDictionaryWord(dictionaryId, association.wordId)
-      onFeedback('success', `Removed "${association.word.word}" from the dictionary.`)
+      onFeedback('success', `已从词典中移除 "${association.word.word}"。`)
       onRemoved()
       onClose()
     } catch (error) {
       const apiError = error as ApiError
-      const message = apiError.message ?? 'Unable to remove this word from the dictionary.'
+      const message = apiError.message ?? '无法从词典中移除这个单词。'
       setSubmitError(message)
       onFeedback('error', message)
     } finally {
@@ -629,7 +629,7 @@ const RemoveDictionaryWordDialog = ({
     <Modal
       description={
         association
-          ? `Removing this association will keep the word in the global word list but detach it from this dictionary.`
+          ? `移除此关联将保留该单词在全局单词列表中，但会将其与此词典分离。`
           : undefined
       }
       footer={
@@ -931,7 +931,7 @@ const DictionaryDetailPage = () => {
             <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
               <path d="M12 4v16m8-8H4" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-            添加单词s
+            添加单词
           </button>
         </div>
 
@@ -954,7 +954,7 @@ const DictionaryDetailPage = () => {
                 <tr>
                   <th className="px-4 py-3 text-left font-semibold">单词</th>
                   <th className="px-4 py-3 text-left font-semibold">词典难度</th>
-                  <th className="px-4 py-3 text-left font-semibold">Mastery</th>
+                  <th className="px-4 py-3 text-left font-semibold">掌握情况</th>
                   <th className="px-4 py-3 text-left font-semibold">笔记</th>
                   <th className="px-4 py-3 text-left font-semibold">添加时间</th>
                   <th className="px-4 py-3 text-left font-semibold">操作</th>
@@ -999,14 +999,14 @@ const DictionaryDetailPage = () => {
                             onClick={() => setAssociationToEdit(association)}
                             type="button"
                           >
-                            Edit
+                            编辑
                           </button>
                           <button
                             className="rounded-lg border border-rose-200 px-3 py-1.5 text-xs font-medium text-rose-600 transition hover:bg-rose-50"
                             onClick={() => setAssociationToRemove(association)}
                             type="button"
                           >
-                            Remove
+                            删除
                           </button>
                         </div>
                       </td>
@@ -1020,7 +1020,7 @@ const DictionaryDetailPage = () => {
           <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center shadow-sm">
             <h3 className="text-base font-semibold text-slate-900">No words yet</h3>
             <p className="mt-2 text-sm text-slate-500">
-              添加单词s from your global catalog to start building this dictionary.
+              添加单词 from your global catalog to start building this dictionary.
             </p>
             <button
               className="mt-6 inline-flex items-center gap-2 rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-700"
