@@ -1,6 +1,9 @@
 import { type ChangeEvent, type FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ApiError } from '../services/apiClient'
 import { createWord, deleteWord, listWords, updateWord, type ListWordsParams, type Word } from '../services/words'
+import { fetchDictionaries, batchAddWordsToDictionary } from '../services/dictionaries'
+import type { Dictionary } from '../types/dictionary'
+import Modal from '../components/common/Modal'
 
 type DifficultyFilterValue = 'all' | '0' | '1' | '2'
 type MasteryFilterValue = 'all' | 'mastered' | 'unmastered'
@@ -110,6 +113,17 @@ const WordsPage = () => {
     errorMessage: null,
   })
 
+  // Bulk selection state
+  const [selectedWordIds, setSelectedWordIds] = useState<Set<number>>(new Set())
+  const [selectAll, setSelectAll] = useState(false)
+  
+  // Dictionary selection modal state
+  const [dictionaryModalOpen, setDictionaryModalOpen] = useState(false)
+  const [dictionaries, setDictionaries] = useState<Dictionary[]>([])
+  const [selectedDictionary, setSelectedDictionary] = useState<number | null>(null)
+  const [bulkAdding, setBulkAdding] = useState(false)
+  const [bulkAddError, setBulkAddError] = useState<string | null>(null)
+
   useEffect(() => {
     if (!flash) {
       return
@@ -171,6 +185,41 @@ const WordsPage = () => {
   useEffect(() => {
     fetchWords()
   }, [fetchWords])
+
+  // Fetch dictionaries when modal opens
+  useEffect(() => {
+    if (dictionaryModalOpen) {
+      const fetchDictionariesData = async () => {
+        try {
+          const dictionariesData = await fetchDictionaries()
+          setDictionaries(dictionariesData)
+        } catch (error) {
+          const apiError = error as ApiError
+          setBulkAddError(apiError.message ?? '无法加载词典列表。')
+        }
+      }
+      fetchDictionariesData()
+    }
+  }, [dictionaryModalOpen])
+
+  // Handle select all functionality
+  useEffect(() => {
+    if (selectAll) {
+      const allWordIds = new Set(words.map(word => word.id))
+      setSelectedWordIds(allWordIds)
+    } else {
+      setSelectedWordIds(new Set())
+    }
+  }, [selectAll, words])
+
+  // Update selectAll state when individual selections change
+  useEffect(() => {
+    if (words.length > 0) {
+      setSelectAll(selectedWordIds.size === words.length && words.length > 0)
+    } else {
+      setSelectAll(false)
+    }
+  }, [selectedWordIds, words])
 
   const totalPages = useMemo(() => (total === 0 ? 1 : Math.ceil(total / limit)), [limit, total])
 
@@ -296,6 +345,70 @@ const WordsPage = () => {
       setFlash({ type: 'error', message: apiError.message ?? '删除单词失败。' })
     } finally {
       setIsDeleting(false)
+    }
+  }
+
+  const handleWordSelection = (wordId: number, checked: boolean) => {
+    setSelectedWordIds(prev => {
+      const newSet = new Set(prev)
+      if (checked) {
+        newSet.add(wordId)
+      } else {
+        newSet.delete(wordId)
+      }
+      return newSet
+    })
+  }
+
+  const openDictionaryModal = () => {
+    if (selectedWordIds.size === 0) {
+      setFlash({ type: 'error', message: '请先选择要添加的单词。' })
+      return
+    }
+    setDictionaryModalOpen(true)
+    setSelectedDictionary(null)
+    setBulkAddError(null)
+  }
+
+  const closeDictionaryModal = () => {
+    setDictionaryModalOpen(false)
+    setSelectedDictionary(null)
+    setBulkAddError(null)
+  }
+
+  const handleBulkAddToDictionary = async () => {
+    if (!selectedDictionary || selectedWordIds.size === 0) {
+      return
+    }
+
+    setBulkAdding(true)
+    setBulkAddError(null)
+
+    try {
+      const result = await batchAddWordsToDictionary(selectedDictionary, {
+        wordIds: Array.from(selectedWordIds)
+      })
+
+      let message = `成功添加 ${result.created} 个单词到词典`
+      if (result.skipped > 0) {
+        message += `，跳过 ${result.skipped} 个已存在的单词`
+      }
+      if (result.duplicates > 0) {
+        message += `，忽略 ${result.duplicates} 个重复的单词`
+      }
+
+      setFlash({ type: 'success', message })
+      closeDictionaryModal()
+      setSelectedWordIds(new Set())
+      setSelectAll(false)
+      
+      // Refresh words list to update any potential changes
+      await fetchWords()
+    } catch (error) {
+      const apiError = error as ApiError
+      setBulkAddError(apiError.message ?? '批量添加单词失败。')
+    } finally {
+      setBulkAdding(false)
     }
   }
 
@@ -621,10 +734,45 @@ const WordsPage = () => {
           ) : null}
 
           {words.length > 0 ? (
-            <div className="overflow-x-auto">
+            <>
+              {/* Bulk action toolbar */}
+              <div className="mb-4 flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+                <div className="flex items-center gap-3">
+                  <label className="flex items-center gap-2 text-sm text-slate-700">
+                    <input
+                      type="checkbox"
+                      checked={selectAll}
+                      onChange={(e) => setSelectAll(e.target.checked)}
+                      className="rounded border-slate-300 text-slate-900 focus:ring-slate-500/60"
+                    />
+                    全选
+                  </label>
+                  {selectedWordIds.size > 0 && (
+                    <span className="text-sm text-slate-600">
+                      已选择 {selectedWordIds.size} 个单词
+                    </span>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={openDictionaryModal}
+                  disabled={selectedWordIds.size === 0}
+                  className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-700 disabled:bg-slate-400 disabled:cursor-not-allowed"
+                >
+                  批量添加到词典
+                </button>
+              </div>
+
+              <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-slate-200">
                 <thead className="bg-slate-50">
                   <tr>
+                    <th
+                      scope="col"
+                      className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600 w-12"
+                    >
+                      <span className="sr-only">选择</span>
+                    </th>
                     <th
                       scope="col"
                       className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600"
@@ -707,6 +855,14 @@ const WordsPage = () => {
                     })()
                     return (
                       <tr key={word.id} className="hover:bg-slate-50">
+                        <td className="px-4 py-3">
+                          <input
+                            type="checkbox"
+                            checked={selectedWordIds.has(word.id)}
+                            onChange={(e) => handleWordSelection(word.id, e.target.checked)}
+                            className="rounded border-slate-300 text-slate-900 focus:ring-slate-500/60"
+                          />
+                        </td>
                         <td className="px-4 py-3">
                           <div className="font-medium text-slate-900">{word.word}</div>
                           <div className="mt-0.5 text-xs text-slate-500 lg:hidden">
@@ -822,7 +978,9 @@ const WordsPage = () => {
                   })}
                 </tbody>
               </table>
+              </div>
             </div>
+            </>
           ) : null}
         </div>
 
@@ -969,6 +1127,80 @@ const WordsPage = () => {
           </div>
         </div>
       ) : null}
+
+      {/* Dictionary Selection Modal */}
+      <Modal
+        isOpen={dictionaryModalOpen}
+        onClose={closeDictionaryModal}
+        title="选择词典"
+        description={`将 ${selectedWordIds.size} 个单词添加到选定的词典`}
+        size="md"
+        footer={
+          <div className="flex items-center justify-end gap-3">
+            <button
+              type="button"
+              onClick={closeDictionaryModal}
+              disabled={bulkAdding}
+              className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100 disabled:cursor-not-allowed"
+            >
+              取消
+            </button>
+            <button
+              type="button"
+              onClick={handleBulkAddToDictionary}
+              disabled={bulkAdding || !selectedDictionary}
+              className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-700 disabled:bg-slate-400 disabled:cursor-not-allowed"
+            >
+              {bulkAdding ? '添加中...' : '添加到词典'}
+            </button>
+          </div>
+        }
+      >
+        <div className="space-y-4">
+          {bulkAddError ? (
+            <div className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+              {bulkAddError}
+            </div>
+          ) : null}
+          
+          {dictionaries.length === 0 && !bulkAddError ? (
+            <div className="text-center py-8">
+              <p className="text-sm text-slate-600">暂无可用词典</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {dictionaries.map((dictionary) => (
+                <label
+                  key={dictionary.id}
+                  className="flex cursor-pointer items-start gap-3 rounded-lg border border-slate-200 p-3 transition hover:bg-slate-50"
+                >
+                  <input
+                    type="radio"
+                    name="dictionary"
+                    value={dictionary.id}
+                    checked={selectedDictionary === dictionary.id}
+                    onChange={(e) => setSelectedDictionary(Number(e.target.value))}
+                    disabled={bulkAdding}
+                    className="mt-1 rounded border-slate-300 text-slate-900 focus:ring-slate-500/60"
+                  />
+                  <div className="flex-1">
+                    <div className="font-medium text-slate-900">{dictionary.name}</div>
+                    {dictionary.description ? (
+                      <p className="mt-1 text-sm text-slate-600">{dictionary.description}</p>
+                    ) : null}
+                    <div className="mt-2 text-xs text-slate-500">
+                      创建于 {new Date(dictionary.createdAt).toLocaleDateString()}
+                      {dictionary.wordCount !== undefined ? (
+                        <span> • {dictionary.wordCount} 个单词</span>
+                      ) : null}
+                    </div>
+                  </div>
+                </label>
+              ))}
+            </div>
+          )}
+        </div>
+      </Modal>
     </div>
   )
 }
