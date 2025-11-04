@@ -67,7 +67,7 @@ function DictionariesList() {
     try {
       if (formMode === 'edit' && activeDictionary) {
         const updated = await apiClient.updateDictionary(activeDictionary.id, payload);
-        toast.success('Dictionary updated successfully.');
+        toast.success('词典更新成功。');
         setDictionaries((prev) =>
           prev.map((dictionary) =>
             dictionary.id === updated.id ? { ...dictionary, ...updated } : dictionary
@@ -75,7 +75,7 @@ function DictionariesList() {
         );
       } else {
         const created = await apiClient.createDictionary(payload);
-        toast.success('Dictionary created successfully.');
+        toast.success('词典创建成功。');
         setDictionaries((prev) => [created, ...prev]);
       }
       closeForm();
@@ -83,7 +83,7 @@ function DictionariesList() {
     } catch (error) {
       console.error(error);
       const message =
-        error instanceof ApiError ? error.message : 'Unable to save dictionary.';
+        error instanceof ApiError ? error.message : '无法保存词典。';
       toast.error(message);
     } finally {
       setIsSubmitting(false);
@@ -100,7 +100,7 @@ function DictionariesList() {
     try {
       const deletedId = dictionaryToDelete.id;
       await apiClient.deleteDictionary(deletedId);
-      toast.success('Dictionary deleted.');
+      toast.success('词典已删除。');
       setDictionaries((prev) =>
         prev.filter((dictionary) => dictionary.id !== deletedId)
       );
@@ -109,7 +109,7 @@ function DictionariesList() {
     } catch (error) {
       console.error(error);
       const message =
-        error instanceof ApiError ? error.message : 'Unable to delete dictionary.';
+        error instanceof ApiError ? error.message : '无法删除词典。';
       toast.error(message);
     } finally {
       setIsDeleting(false);
@@ -121,9 +121,9 @@ function DictionariesList() {
     <div className="space-y-8">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900">Dictionaries</h1>
+          <h1 className="text-2xl font-semibold text-slate-900">词典管理</h1>
           <p className="text-sm text-slate-500">
-            Manage your dictionary collections, update their settings, and explore their details.
+            管理您的词典集合，更新设置，浏览详情。
           </p>
         </div>
         <button
@@ -131,7 +131,7 @@ function DictionariesList() {
           onClick={openCreateForm}
           className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-700"
         >
-          New dictionary
+          新建词典
         </button>
       </div>
 
@@ -154,16 +154,16 @@ function DictionariesList() {
 
       {!isLoading && hasFetched && dictionaries.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-8 py-12 text-center">
-          <h3 className="text-lg font-semibold text-slate-900">No dictionaries yet</h3>
+          <h3 className="text-lg font-semibold text-slate-900">暂无词典</h3>
           <p className="mt-2 text-sm text-slate-500">
-            Create your first dictionary to start organizing word collections.
+            创建您的第一个词典，开始整理单词集合。
           </p>
           <button
             type="button"
             onClick={openCreateForm}
             className="mt-6 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-700"
           >
-            Create dictionary
+            创建词典
           </button>
         </div>
       ) : null}
@@ -193,7 +193,7 @@ function DictionariesList() {
                           : 'bg-slate-200 text-slate-600'
                       }`}
                     >
-                      {dictionary.isEnabled ? 'Enabled' : 'Disabled'}
+                      {dictionary.isEnabled ? '已启用' : '已禁用'}
                     </span>
                     <span
                       className={`rounded-full px-2 py-1 ${
@@ -202,12 +202,12 @@ function DictionariesList() {
                           : 'bg-slate-200 text-slate-600'
                       }`}
                     >
-                      {dictionary.isMastered ? 'Mastered' : 'In progress'}
+                      {dictionary.isMastered ? '已掌握' : '进行中'}
                     </span>
                   </div>
                 </div>
                 <div className="rounded-lg bg-slate-50 px-4 py-2 text-sm text-slate-600 shadow-inner">
-                  Word count: <span className="font-semibold text-slate-900">—</span>
+                  单词数：<span className="font-semibold text-slate-900">—</span>
                 </div>
               </div>
               <div className="mt-6 flex flex-wrap items-center gap-3">
@@ -215,21 +215,21 @@ function DictionariesList() {
                   to={`/dictionaries/${dictionary.id}`}
                   className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
                 >
-                  View details
+                  查看详情
                 </Link>
                 <button
                   type="button"
                   onClick={() => openEditForm(dictionary)}
                   className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
                 >
-                  Edit
+                  编辑
                 </button>
                 <button
                   type="button"
                   onClick={() => confirmDeleteDictionary(dictionary)}
                   className="rounded-lg bg-red-50 px-3 py-2 text-sm font-medium text-red-600 transition hover:bg-red-100"
                 >
-                  Delete
+                  删除
                 </button>
               </div>
             </div>
@@ -239,7 +239,7 @@ function DictionariesList() {
 
       {isFormOpen ? (
         <Modal
-          title={formMode === 'edit' ? 'Edit dictionary' : 'New dictionary'}
+          title={formMode === 'edit' ? '编辑词典' : '新建词典'}
           onClose={closeForm}
           footer={[
             <button
@@ -249,7 +249,7 @@ function DictionariesList() {
               className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100"
               disabled={isSubmitting}
             >
-              Cancel
+              取消
             </button>,
             <button
               key="submit"
@@ -260,11 +260,12 @@ function DictionariesList() {
             >
               {isSubmitting
                 ? formMode === 'edit'
-                  ? 'Saving…'
-                  : 'Creating…'
+                  ? '保存中…'
+                  : '创建中…'
                 : formMode === 'edit'
-                  ? 'Save changes'
-                  : 'Create dictionary'}
+                  ? '保存更改'
+                  : '创建词典'
+              }
             </button>
           ]}
         >
@@ -280,10 +281,10 @@ function DictionariesList() {
 
       {dictionaryToDelete ? (
         <ConfirmDialog
-          title="Delete dictionary"
-          message={`Are you sure you want to delete "${dictionaryToDelete.name}"? This action cannot be undone.`}
-          confirmLabel="Delete"
-          cancelLabel="Cancel"
+          title="删除词典"
+          message={`确定要删除"${dictionaryToDelete.name}"吗？此操作无法撤销。`}
+          confirmLabel="删除"
+          cancelLabel="取消"
           onCancel={() => setDictionaryToDelete(null)}
           onConfirm={handleDelete}
           isProcessing={isDeleting}

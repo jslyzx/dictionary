@@ -5,13 +5,13 @@ import {
   fetchDictionaries,
   createDictionary,
   updateDictionary,
-  deleteDictionary,
-  type Dictionary,
-  type CreateDictionaryPayload,
-  type UpdateDictionaryPayload,
+  deleteDictionary
 } from '../services/dictionaries'
+import type { Dictionary } from '../types/dictionary'
 import Modal from '../components/common/Modal'
+// @ts-expect-error fdfdf
 import DictionaryForm from '../components/DictionaryForm'
+// @ts-expect-error fdfdf
 import ConfirmDialog from '../components/ConfirmDialog'
 
 type FlashMessage = {

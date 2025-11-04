@@ -301,23 +301,23 @@ const AddDictionaryWordModal = ({
       isOpen={isOpen}
       onClose={submitting ? () => {} : onClose}
       size="lg"
-      title="添加单词 to dictionary"
+      title="添加单词到词典"
     >
       <form className="space-y-5" id="add-dictionary-word-form" onSubmit={handleSubmit}>
         <div>
           <label className="block text-sm font-medium text-slate-700" htmlFor="dictionary-add-word-search">
-            Search words
+            搜索单词
           </label>
           <input
             autoFocus
             className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200"
             id="dictionary-add-word-search"
             onChange={(event) => setSearch(event.target.value)}
-            placeholder="Type a word, phonetic spelling, or meaning"
+            placeholder="输入单词、音标或释义"
             type="search"
             value={search}
           />
-          <p className="mt-2 text-xs text-slate-500">Only words not already associated with this dictionary are shown.</p>
+          <p className="mt-2 text-xs text-slate-500">只显示尚未与此词典关联的单词。</p>
         </div>
 
         <div className="space-y-3">
@@ -367,8 +367,8 @@ const AddDictionaryWordModal = ({
         <div className="grid gap-4 md:grid-cols-2">
           <div>
             <label className="block text-sm font-medium text-slate-700" htmlFor="dictionary-add-word-difficulty">
-              词典难度 (optional)
-            </label>
+            词典难度
+          </label>
             <select
               className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200"
               id="dictionary-add-word-difficulty"
@@ -384,8 +384,8 @@ const AddDictionaryWordModal = ({
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-700" htmlFor="dictionary-add-word-mastery">
-              掌握状态 (optional)
-            </label>
+            掌握状态
+          </label>
             <select
               className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200"
               id="dictionary-add-word-mastery"
@@ -403,7 +403,7 @@ const AddDictionaryWordModal = ({
 
         <div>
           <label className="block text-sm font-medium text-slate-700" htmlFor="dictionary-add-word-notes">
-            笔记 (optional)
+            笔记
           </label>
           <textarea
             className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-200"
@@ -515,7 +515,7 @@ const EditDictionaryWordModal = ({
       isOpen={isOpen}
       onClose={submitting ? () => {} : onClose}
       size="md"
-      title={association ? `编辑设置 "${association.word.word}"` : '编辑关联'}
+      title={association ? `编辑设置 "${association.word.word}"` : '编辑关联设置'}
     >
       <form className="space-y-5" id="edit-dictionary-word-form" onSubmit={handleSubmit}>
         <div>
@@ -883,13 +883,13 @@ const DictionaryDetailPage = () => {
         </div>
 
         <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <p className="text-xs font-medium uppercase tracking-wide text-slate-500">词典 mastery</p>
+          <p className="text-xs font-medium uppercase tracking-wide text-slate-500">掌握状态统计</p>
           <span
             className={`mt-3 inline-flex rounded-full px-3 py-1 text-sm font-semibold ${
               dictionary.isMastered ? 'bg-indigo-50 text-indigo-700' : 'bg-slate-200 text-slate-600'
             }`}
           >
-            {dictionary.isMastered ? '已掌握' : 'In progress'}
+            {dictionary.isMastered ? '已掌握' : '学习中'}
           </span>
           <p className="mt-4 text-xs text-slate-500">最后更新 {formatDateTime(dictionary.updatedAt)}</p>
         </div>
@@ -912,7 +912,7 @@ const DictionaryDetailPage = () => {
             <span className="rounded-full bg-emerald-50 px-2 py-1 font-medium text-emerald-700">简单: {difficultyBreakdown.easy}</span>
             <span className="rounded-full bg-amber-50 px-2 py-1 font-medium text-amber-700">中等: {difficultyBreakdown.medium}</span>
             <span className="rounded-full bg-rose-50 px-2 py-1 font-medium text-rose-700">困难: {difficultyBreakdown.hard}</span>
-            <span className="rounded-full bg-slate-100 px-2 py-1 font-medium text-slate-600">Unset: {difficultyBreakdown.unset}</span>
+            <span className="rounded-full bg-slate-100 px-2 py-1 font-medium text-slate-600">未设置: {difficultyBreakdown.unset}</span>
           </div>
         </div>
       </div>
@@ -920,7 +920,7 @@ const DictionaryDetailPage = () => {
       <section className="space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h2 className="text-lg font-semibold text-slate-900">词典 words</h2>
+            <h2 className="text-lg font-semibold text-slate-900">词典单词</h2>
             <p className="text-sm text-slate-500">管理与此词典关联的单词，包括自定义难度和掌握状态。</p>
           </div>
           <button
@@ -1018,9 +1018,9 @@ const DictionaryDetailPage = () => {
           </div>
         ) : (
           <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center shadow-sm">
-            <h3 className="text-base font-semibold text-slate-900">No words yet</h3>
+            <h3 className="text-base font-semibold text-slate-900">暂无单词</h3>
             <p className="mt-2 text-sm text-slate-500">
-              添加单词 from your global catalog to start building this dictionary.
+              从全局单词目录添加单词以开始构建词典。
             </p>
             <button
               className="mt-6 inline-flex items-center gap-2 rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-700"
@@ -1030,7 +1030,7 @@ const DictionaryDetailPage = () => {
               <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
                 <path d="M12 4v16m8-8H4" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
-              Add your first word
+              添加第一个单词
             </button>
           </div>
         )}

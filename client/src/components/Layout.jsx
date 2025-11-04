@@ -13,11 +13,11 @@ function Layout({ children }) {
       <header className="border-b border-slate-200 bg-white">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
           <Link to="/dictionaries" className="text-lg font-semibold text-slate-900">
-            Dictionary Manager
+            词典管理系统
           </Link>
           <nav className="flex items-center gap-2">
             <NavLink to="/dictionaries" className={navLinkClasses}>
-              Dictionaries
+              词典管理
             </NavLink>
           </nav>
         </div>

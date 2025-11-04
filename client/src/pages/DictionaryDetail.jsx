@@ -31,7 +31,7 @@ function DictionaryDetail() {
         if (error instanceof ApiError && error.status === 404) {
           setNotFound(true);
         } else {
-          toast.error('Unable to load dictionary details.');
+          toast.error('无法加载词典详情。');
         }
       } finally {
         setIsLoading(false);
@@ -45,19 +45,19 @@ function DictionaryDetail() {
     if (!dictionary) return [];
     return [
       {
-        label: 'Status',
-        value: dictionary.isEnabled ? 'Enabled' : 'Disabled',
+        label: '状态',
+        value: dictionary.isEnabled ? '已启用' : '已禁用',
         accent: dictionary.isEnabled ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-600'
       },
       {
-        label: 'Mastery',
-        value: dictionary.isMastered ? 'Mastered' : 'In progress',
+        label: '掌握状态',
+        value: dictionary.isMastered ? '已掌握' : '进行中',
         accent: dictionary.isMastered
           ? 'bg-indigo-100 text-indigo-700'
           : 'bg-slate-200 text-slate-600'
       },
-      { label: 'Created', value: formatDateTime(dictionary.createdAt) },
-      { label: 'Last updated', value: formatDateTime(dictionary.updatedAt) }
+      { label: '创建时间', value: formatDateTime(dictionary.createdAt) },
+      { label: '最后更新', value: formatDateTime(dictionary.updatedAt) }
     ];
   }, [dictionary]);
 
@@ -78,15 +78,15 @@ function DictionaryDetail() {
   if (notFound) {
     return (
       <div className="rounded-2xl border border-slate-200 bg-white px-8 py-12 text-center">
-        <h2 className="text-xl font-semibold text-slate-900">Dictionary not found</h2>
+        <h2 className="text-xl font-semibold text-slate-900">词典未找到</h2>
         <p className="mt-2 text-sm text-slate-500">
-          The dictionary you are looking for may have been removed or never existed.
+          您寻找的词典可能已被移除或从未存在。
         </p>
         <Link
           to="/dictionaries"
           className="mt-6 inline-flex rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-700"
         >
-          Back to dictionaries
+          返回词典列表
         </Link>
       </div>
     );
@@ -100,17 +100,17 @@ function DictionaryDetail() {
     <div className="space-y-8">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <p className="text-xs uppercase tracking-wide text-slate-500">Dictionary</p>
+          <p className="text-xs uppercase tracking-wide text-slate-500">词典</p>
           <h1 className="mt-1 text-3xl font-semibold text-slate-900">{dictionary.name}</h1>
           <p className="mt-2 max-w-2xl text-sm text-slate-600">
-            {dictionary.description || 'No description provided for this dictionary yet.'}
+            {dictionary.description || '此词典暂无描述。'}
           </p>
         </div>
         <Link
           to="/dictionaries"
           className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100"
         >
-          Back to list
+          返回列表
         </Link>
       </div>
 
@@ -134,17 +134,17 @@ function DictionaryDetail() {
         ))}
         <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
-            Word count
+            单词数
           </p>
           <p className="mt-3 text-3xl font-semibold text-slate-900">—</p>
-          <p className="mt-2 text-sm text-slate-500">Word counts will appear once word management is available.</p>
+          <p className="mt-2 text-sm text-slate-500">单词管理功能启用后将显示单词数。</p>
         </div>
       </div>
 
       <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center shadow-sm">
-        <h2 className="text-lg font-semibold text-slate-900">Dictionary words</h2>
+        <h2 className="text-lg font-semibold text-slate-900">词典单词</h2>
         <p className="mt-2 text-sm text-slate-500">
-          Word management tools for this dictionary will be available in an upcoming update.
+          此词典的单词管理工具将在即将发布的更新中提供。
         </p>
       </div>
     </div>

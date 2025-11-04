@@ -22,7 +22,7 @@ function Modal({ title, children, onClose, footer }) {
             onClick={onClose}
             className="rounded-md p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900"
           >
-            <span className="sr-only">Close</span>
+            <span className="sr-only">关闭</span>
             ×
           </button>
         </div>
