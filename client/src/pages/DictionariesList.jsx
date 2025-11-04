@@ -33,7 +33,7 @@ function DictionariesList() {
     } catch (error) {
       console.error(error);
       const message =
-        error instanceof ApiError ? error.message : 'Unable to load dictionaries.';
+        error instanceof ApiError ? error.message : '无法加载词典列表。';
       setLoadError(message);
       toast.error(message);
     } finally {
