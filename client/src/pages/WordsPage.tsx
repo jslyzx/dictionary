@@ -325,11 +325,11 @@ const WordsPage = () => {
     }
   }
 
-  const confirm删除 = (word: Word) => {
+  const confirmDeletion = (word: Word) => {
     setWordPendingDeletion(word)
   }
 
-  const handle删除Word = async () => {
+  const handleDeleteWord = async () => {
     if (!wordPendingDeletion) {
       return
     }
@@ -966,7 +966,7 @@ const WordsPage = () => {
                             </button>
                             <button
                               type="button"
-                              onClick={() => confirm删除(word)}
+                              onClick={() => confirmDeletion(word)}
                               className="rounded-lg bg-rose-50 px-3 py-1.5 text-rose-600 transition hover:bg-rose-100"
                             >
                               删除
@@ -1116,7 +1116,7 @@ const WordsPage = () => {
               </button>
               <button
                 type="button"
-                onClick={handle删除Word}
+                onClick={handleDeleteWord}
                 className="rounded-lg bg-rose-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-rose-500 disabled:cursor-not-allowed disabled:bg-rose-400"
                 disabled={isDeleting}
               >
