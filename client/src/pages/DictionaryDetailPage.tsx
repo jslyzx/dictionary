@@ -338,7 +338,7 @@ const AddDictionaryWordModal = ({
                 return (
                   <li key={word.id}>
                     <button
-                      className={`flex w-full items-start justify-between gap-3 px-4 py-3 text-left transition hover:bg-slate-50 ${
+className={`flex w-full items-start justify-between gap-3 px-4 py-3 text-left transition hover:bg-slate-50 ${
                         isSelected ? 'bg-primary-50/80' : ''
                       }`}
                       onClick={() => setSelectedWordId(word.id)}
