@@ -23,6 +23,8 @@ interface WordFormValues {
   pronunciationUrl: string
   difficulty: number
   isMastered: boolean
+  notes: string
+  sentence: string
 }
 
 type WordFormErrors = Partial<{
@@ -239,6 +241,8 @@ const WordsPage = () => {
       difficulty: values.difficulty,
       isMastered: values.isMastered,
       pronunciationUrl: values.pronunciationUrl ? values.pronunciationUrl : null,
+      notes: values.notes ? values.notes : null,
+      sentence: values.sentence ? values.sentence : null,
     }
 
     try {
@@ -447,6 +451,8 @@ const WordsPage = () => {
       pronunciationUrl: pronunciation,
       difficulty: formState.word.difficulty ?? 0,
       isMastered: formState.word.isMastered,
+      notes: formState.word.notes ?? '',
+      sentence: formState.word.sentence ?? '',
     }
   }, [formState.word])
 
@@ -645,6 +651,18 @@ const WordsPage = () => {
                     </th>
                     <th
                       scope="col"
+                      className="hidden px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600 lg:table-cell"
+                    >
+                      笔记
+                    </th>
+                    <th
+                      scope="col"
+                      className="hidden px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600 lg:table-cell"
+                    >
+                      例句
+                    </th>
+                    <th
+                      scope="col"
                       className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600"
                     >
                       难度
@@ -744,6 +762,24 @@ const WordsPage = () => {
                         </td>
                         <td className="px-4 py-3 align-top text-slate-600">
                           <p className="text-sm leading-relaxed">{word.meaning}</p>
+                        </td>
+                        <td className="hidden px-4 py-3 align-top lg:table-cell">
+                          {word.notes ? (
+                            <p className="max-w-xs truncate text-sm text-slate-600" title={word.notes}>
+                              {word.notes}
+                            </p>
+                          ) : (
+                            <span className="text-slate-400">—</span>
+                          )}
+                        </td>
+                        <td className="hidden px-4 py-3 align-top lg:table-cell">
+                          {word.sentence ? (
+                            <p className="max-w-xs truncate text-sm text-slate-600" title={word.sentence}>
+                              {word.sentence}
+                            </p>
+                          ) : (
+                            <span className="text-slate-400">—</span>
+                          )}
                         </td>
                         <td className="px-4 py-3 align-top">
                           <span
@@ -952,6 +988,8 @@ const emptyFormValues: WordFormValues = {
   pronunciationUrl: '',
   difficulty: 0,
   isMastered: false,
+  notes: '',
+  sentence: '',
 }
 
 const WordForm = ({ formId, mode, initialValues, submitting, onSubmit }: WordFormProps) => {
@@ -981,6 +1019,8 @@ const WordForm = ({ formId, mode, initialValues, submitting, onSubmit }: WordFor
     const trimmedPhonetic = values.phonetic.trim()
     const trimmedMeaning = values.meaning.trim()
     const trimmedPronunciation = values.pronunciationUrl.trim()
+    const trimmedNotes = values.notes.trim()
+    const trimmedSentence = values.sentence.trim()
 
     const nextErrors: WordFormErrors = {}
 
@@ -1009,6 +1049,8 @@ const WordForm = ({ formId, mode, initialValues, submitting, onSubmit }: WordFor
       pronunciationUrl: trimmedPronunciation,
       difficulty: values.difficulty,
       isMastered: values.isMastered,
+      notes: trimmedNotes,
+      sentence: trimmedSentence,
     })
   }
 
@@ -1073,6 +1115,45 @@ const WordForm = ({ formId, mode, initialValues, submitting, onSubmit }: WordFor
           disabled={submitting}
         />
         {errors.meaning ? <p className="mt-1 text-sm text-rose-600">{errors.meaning}</p> : null}
+      </div>
+
+      <div className="grid gap-5 md:grid-cols-2">
+        <div>
+          <label htmlFor="notes" className="block text-sm font-medium text-slate-700">
+            笔记
+          </label>
+          <textarea
+            id="notes"
+            name="notes"
+            rows={6}
+            value={values.notes}
+            onChange={handleChange}
+            placeholder="记录学习笔记、记忆技巧等..."
+            className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-500/60"
+            disabled={submitting}
+          />
+          <p className="mt-1 text-xs text-slate-500">
+            可选。记录学习笔记、记忆技巧等。
+          </p>
+        </div>
+        <div>
+          <label htmlFor="sentence" className="block text-sm font-medium text-slate-700">
+            例句
+          </label>
+          <textarea
+            id="sentence"
+            name="sentence"
+            rows={4}
+            value={values.sentence}
+            onChange={handleChange}
+            placeholder="提供例句帮助理解单词用法..."
+            className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-500/60"
+            disabled={submitting}
+          />
+          <p className="mt-1 text-xs text-slate-500">
+            可选。提供例句帮助理解单词用法。
+          </p>
+        </div>
       </div>
 
       <div className="grid gap-5 md:grid-cols-2">

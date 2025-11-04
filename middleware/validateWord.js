@@ -228,7 +228,8 @@ const createWordRules = [
   optionalNullableString('pronunciation1', 255, 'pronunciation1 must be a string when provided.'),
   optionalNullableString('pronunciation2', 255, 'pronunciation2 must be a string when provided.'),
   optionalNullableString('pronunciation3', 255, 'pronunciation3 must be a string when provided.'),
-  optionalNullableString('notes', 255, 'notes must be a string when provided.'),
+  optionalNullableString('notes', 65535, 'notes must be a string when provided.'),
+  optionalNullableString('sentence', 65535, 'sentence must be a string when provided.'),
   body('difficulty')
     .optional()
     .custom((value, { req }) => {
@@ -280,6 +281,7 @@ const updateWordRules = [
         'pronunciation2',
         'pronunciation3',
         'notes',
+        'sentence',
         'difficulty',
         'isMastered',
         'createdAt',
@@ -350,7 +352,8 @@ const updateWordRules = [
   optionalNullableString('pronunciation1', 255, 'pronunciation1 must be a string when provided.'),
   optionalNullableString('pronunciation2', 255, 'pronunciation2 must be a string when provided.'),
   optionalNullableString('pronunciation3', 255, 'pronunciation3 must be a string when provided.'),
-  optionalNullableString('notes', 255, 'notes must be a string when provided.'),
+  optionalNullableString('notes', 65535, 'notes must be a string when provided.'),
+  optionalNullableString('sentence', 65535, 'sentence must be a string when provided.'),
   body('difficulty')
     .optional()
     .custom((value, { req }) => {
