@@ -334,14 +334,14 @@ const AddDictionaryWordModal = ({
           ) : hasResults ? (
             <ul className="max-h-60 overflow-y-auto rounded-lg border border-slate-200">
               {results.map((word) => {
-                const isSelected = selected单词Id === word.id
+                const isSelected = selectedWordId === word.id
                 return (
                   <li key={word.id}>
                     <button
                       className={`flex w-full items-start justify-between gap-3 px-4 py-3 text-left transition hover:bg-slate-50 ${
                         isSelected ? 'bg-primary-50/80' : ''
                       }`}
-                      onClick={() => setSelected单词Id(word.id)}
+                      onClick={() => setSelectedWordId(word.id)}
                       type="button"
                     >
                       <div>
@@ -874,10 +874,10 @@ const DictionaryDetailPage = () => {
           <p className="text-xs font-medium uppercase tracking-wide text-slate-500">状态</p>
           <span
             className={`mt-3 inline-flex rounded-full px-3 py-1 text-sm font-semibold ${
-              dictionary.is启用 ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-200 text-slate-600'
+              dictionary.isEnabled ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-200 text-slate-600'
             }`}
           >
-            {dictionary.is启用 ? '启用' : '禁用'}
+            {dictionary.isEnabled ? '启用' : '禁用'}
           </span>
           <p className="mt-4 text-xs text-slate-500">创建时间 {formatDateTime(dictionary.createdAt)}</p>
         </div>
@@ -886,10 +886,10 @@ const DictionaryDetailPage = () => {
           <p className="text-xs font-medium uppercase tracking-wide text-slate-500">词典 mastery</p>
           <span
             className={`mt-3 inline-flex rounded-full px-3 py-1 text-sm font-semibold ${
-              dictionary.is已掌握 ? 'bg-indigo-50 text-indigo-700' : 'bg-slate-200 text-slate-600'
+              dictionary.isMastered ? 'bg-indigo-50 text-indigo-700' : 'bg-slate-200 text-slate-600'
             }`}
           >
-            {dictionary.is已掌握 ? '已掌握' : 'In progress'}
+            {dictionary.isMastered ? '已掌握' : 'In progress'}
           </span>
           <p className="mt-4 text-xs text-slate-500">最后更新 {formatDateTime(dictionary.updatedAt)}</p>
         </div>
@@ -963,7 +963,7 @@ const DictionaryDetailPage = () => {
               <tbody className="divide-y divide-slate-200">
                 {associations.map((association) => {
                   const difficultyDisplay = getDifficultyDisplay(association.difficulty)
-                  const masteryDisplay = getMasteryDisplay(association.is已掌握)
+                  const masteryDisplay = getMasteryDisplay(association.isMastered)
 
                   return (
                     <tr key={association.id} className="align-top">
@@ -1036,7 +1036,7 @@ const DictionaryDetailPage = () => {
         )}
       </section>
 
-      <Add词典单词Modal
+      <AddDictionaryWordModal
         dictionaryId={dictionaryId}
         existingWordIds={existingWordIds}
         isOpen={isAddModalOpen}
@@ -1045,7 +1045,7 @@ const DictionaryDetailPage = () => {
         onFeedback={showFeedback}
       />
 
-      <Edit词典单词Modal
+      <EditDictionaryWordModal
         association={associationToEdit}
         isOpen={Boolean(associationToEdit)}
         onClose={() => setAssociationToEdit(null)}
@@ -1053,7 +1053,7 @@ const DictionaryDetailPage = () => {
         onUpdated={refreshData}
       />
 
-      <Remove词典单词Dialog
+      <RemoveDictionaryWordDialog
         association={associationToRemove}
         dictionaryId={dictionaryId}
         isOpen={Boolean(associationToRemove)}
@@ -1065,4 +1065,4 @@ const DictionaryDetailPage = () => {
   )
 }
 
-export default 词典DetailPage
+export default DictionaryDetailPage
