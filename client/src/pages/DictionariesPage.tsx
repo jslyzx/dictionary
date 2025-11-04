@@ -6,24 +6,16 @@ import {
   createDictionary,
   updateDictionary,
   deleteDictionary,
-  type Dictionary,
-  type CreateDictionaryPayload,
-  type UpdateDictionaryPayload,
 } from '../services/dictionaries'
+import type { Dictionary } from '../types/dictionary'
 import Modal from '../components/common/Modal'
 import DictionaryForm from '../components/DictionaryForm'
+import type { DictionaryFormData } from '../components/DictionaryForm'
 import ConfirmDialog from '../components/ConfirmDialog'
 
 type FlashMessage = {
   type: 'success' | 'error'
   message: string
-}
-
-type FormData = {
-  name: string
-  description?: string
-  isEnabled?: boolean
-  isMastered?: boolean
 }
 
 const DictionariesPage = () => {
@@ -68,12 +60,12 @@ const DictionariesPage = () => {
     fetchDictionariesData()
   }, [])
 
-  const handleCreateDictionary = async (formData: FormData) => {
+  const handleCreateDictionary = async (formData: DictionaryFormData) => {
     setSubmitting(true)
     try {
       await createDictionary({
         name: formData.name,
-        description: formData.description,
+        description: formData.description || undefined,
       })
       setShowCreateModal(false)
       setFlash({ type: 'success', message: '词典创建成功！' })
@@ -86,14 +78,14 @@ const DictionariesPage = () => {
     }
   }
 
-  const handleEditDictionary = async (formData: FormData) => {
+  const handleEditDictionary = async (formData: DictionaryFormData) => {
     if (!editingDictionary) return
 
     setSubmitting(true)
     try {
       await updateDictionary(editingDictionary.id, {
         name: formData.name,
-        description: formData.description,
+        description: formData.description || undefined,
         isEnabled: formData.isEnabled,
         isMastered: formData.isMastered,
       })
