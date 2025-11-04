@@ -103,6 +103,29 @@ const validateUpdateDictionaryWord = [
     .trim(),
 ];
 
+const batchAddWordsRules = [
+  body('wordIds')
+    .exists({ checkNull: true })
+    .withMessage('wordIds is required.')
+    .bail()
+    .isArray({ min: 1 })
+    .withMessage('wordIds must be a non-empty array.')
+    .bail()
+    .custom((wordIds) => {
+      if (!Array.isArray(wordIds) || wordIds.length === 0) {
+        throw new Error('wordIds must be a non-empty array.');
+      }
+      
+      for (const wordId of wordIds) {
+        if (!Number.isInteger(Number(wordId)) || Number(wordId) <= 0) {
+          throw new Error('All wordIds must be positive integers.');
+        }
+      }
+      
+      return true;
+    }),
+];
+
 module.exports = {
   relationIdParam,
   wordIdParam,
@@ -111,4 +134,5 @@ module.exports = {
   listRelationQueryRules,
   validateDictionaryWordAssociationIdParam,
   validateUpdateDictionaryWord,
+  batchAddWordsRules,
 };

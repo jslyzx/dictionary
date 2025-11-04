@@ -3,6 +3,8 @@ import type {
   DictionaryWordAssociation,
   DictionaryWordAssociationPayload,
   DictionaryWordAssociationUpdatePayload,
+  BatchAddWordsPayload,
+  BatchAddWordsResult,
 } from '../types/dictionary'
 import { request } from './apiClient'
 
@@ -128,4 +130,17 @@ export const deleteDictionary = async (id: number): Promise<string> => {
   })
 
   return response.message
+}
+
+export const batchAddWordsToDictionary = async (
+  dictionaryId: number,
+  payload: BatchAddWordsPayload,
+): Promise<BatchAddWordsResult> => {
+  const response = await request<ApiResponse<BatchAddWordsResult>>({
+    method: 'POST',
+    url: `/api/dictionaries/${dictionaryId}/words/batch`,
+    data: payload,
+  })
+
+  return response.data
 }

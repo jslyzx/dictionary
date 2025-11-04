@@ -403,9 +403,132 @@ const updateDictionaryWord = async (req, res, next) => {
   }
 };
 
+const batchAddDictionaryWords = async (req, res, next) => {
+  const dictionaryId = req.params.id;
+  const { wordIds } = req.body;
+
+  let connection;
+  let transactionActive = false;
+
+  try {
+    connection = await pool.getConnection();
+    await connection.beginTransaction();
+    transactionActive = true;
+
+    // Check if dictionary exists
+    const dictionaryExists = await ensureDictionaryExists(connection, dictionaryId);
+    if (!dictionaryExists) {
+      await connection.rollback();
+      transactionActive = false;
+      return res.status(404).json({
+        success: false,
+        error: {
+          message: 'Dictionary not found'
+        }
+      });
+    }
+
+    // Check which words exist and filter out invalid ones
+    const uniqueWordIds = [...new Set(wordIds)];
+    const placeholders = uniqueWordIds.map(() => '?').join(', ');
+    const [existingWordRows] = await connection.execute(
+      `SELECT word_id FROM words WHERE word_id IN (${placeholders})`,
+      uniqueWordIds
+    );
+    
+    const existingWordIds = new Set(existingWordRows.map(row => row.word_id));
+    const invalidWordIds = uniqueWordIds.filter(id => !existingWordIds.has(id));
+
+    if (invalidWordIds.length > 0) {
+      await connection.rollback();
+      transactionActive = false;
+      return res.status(404).json({
+        success: false,
+        error: {
+          message: `Words not found: ${invalidWordIds.join(', ')}`
+        }
+      });
+    }
+
+    // Check for existing associations to avoid duplicates
+    const [existingAssociationRows] = await connection.execute(
+      `SELECT word_id FROM dictionary_words WHERE dictionary_id = ? AND word_id IN (${placeholders})`,
+      [dictionaryId, ...uniqueWordIds]
+    );
+    
+    const existingAssociationWordIds = new Set(existingAssociationRows.map(row => row.word_id));
+    const newWordIds = uniqueWordIds.filter(id => !existingAssociationWordIds.has(id));
+
+    let created = 0;
+    let skipped = 0;
+
+    // Batch insert new associations
+    if (newWordIds.length > 0) {
+      const valuePlaceholders = newWordIds.map(() => '(?, ?)').join(', ');
+      const values = [];
+      for (const wordId of newWordIds) {
+        values.push(dictionaryId, wordId);
+      }
+
+      const [result] = await connection.execute(
+        `INSERT INTO dictionary_words (dictionary_id, word_id) VALUES ${valuePlaceholders}`,
+        values
+      );
+      
+      created = result.affectedRows;
+    }
+
+    skipped = existingAssociationWordIds.size;
+
+    await connection.commit();
+    transactionActive = false;
+
+    return res.status(201).json({
+      success: true,
+      data: {
+        totalRequested: wordIds.length,
+        uniqueWords: uniqueWordIds.length,
+        created,
+        skipped,
+        duplicates: wordIds.length - uniqueWordIds.length,
+        results: {
+          created: newWordIds,
+          skipped: Array.from(existingAssociationWordIds),
+          invalid: invalidWordIds
+        }
+      }
+    });
+  } catch (error) {
+    if (connection && transactionActive) {
+      try {
+        await connection.rollback();
+      } catch (rollbackError) {
+        console.error('Rollback failed:', rollbackError);
+      }
+    }
+
+    console.error('批量添加词典单词失败:', error);
+    
+    if (error.code === 'ECONNREFUSED') {
+      return res.status(503).json({
+        success: false,
+        error: '数据库连接失败，请检查数据库服务是否运行',
+        code: 'DB_CONNECTION_ERROR'
+      });
+    }
+
+    return next(error);
+  } finally {
+    if (connection) {
+      connection.release();
+    }
+  }
+};
+
 module.exports = {
   getDictionaryWords,
   addDictionaryWord,
   deleteDictionaryWord,
-  updateDictionaryWord
+  updateDictionaryWord,
+  batchAddDictionaryWords,
 };

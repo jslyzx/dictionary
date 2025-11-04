@@ -34,3 +34,20 @@ export interface DictionaryWordAssociationUpdatePayload {
   isMastered?: boolean | null
   notes?: string | null
 }
+
+export interface BatchAddWordsPayload {
+  wordIds: number[]
+}
+
+export interface BatchAddWordsResult {
+  totalRequested: number
+  uniqueWords: number
+  created: number
+  skipped: number
+  duplicates: number
+  results: {
+    created: number[]
+    skipped: number[]
+    invalid: number[]
+  }
+}
