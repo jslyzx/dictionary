@@ -325,11 +325,11 @@ const WordsPage = () => {
     }
   }
 
-  const confirmDelete = (word: Word) => {
+  const confirm删除 = (word: Word) => {
     setWordPendingDeletion(word)
   }
 
-  const handleDeleteWord = async () => {
+  const handle删除Word = async () => {
     if (!wordPendingDeletion) {
       return
     }
@@ -966,7 +966,7 @@ const WordsPage = () => {
                             </button>
                             <button
                               type="button"
-                              onClick={() => confirmDelete(word)}
+                              onClick={() => confirm删除(word)}
                               className="rounded-lg bg-rose-50 px-3 py-1.5 text-rose-600 transition hover:bg-rose-100"
                             >
                               删除
@@ -1085,11 +1085,11 @@ const WordsPage = () => {
               >
                 {formSubmitting
                   ? formState.mode === 'edit'
-                    ? 'Saving…'
-                    : 'Creating…'
+                    ? '保存中…'
+                    : '创建中…'
                   : formState.mode === 'edit'
-                    ? 'Save changes'
-                    : 'Create word'}
+                    ? '保存更改'
+                    : '创建单词'}
               </button>
             </div>
           </div>
@@ -1099,11 +1099,11 @@ const WordsPage = () => {
       {wordPendingDeletion ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 px-4">
           <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
-            <h3 className="text-lg font-semibold text-slate-900">Delete word</h3>
+            <h3 className="text-lg font-semibold text-slate-900">删除单词</h3>
             <p className="mt-3 text-sm text-slate-600">
-              Are you sure you want to delete “
+              确定要删除 “
               <span className="font-semibold text-slate-900">{wordPendingDeletion.word}</span>”? This
-              action cannot be undone.
+              操作无法撤销.
             </p>
             <div className="mt-6 flex items-center justify-end gap-3">
               <button
@@ -1112,15 +1112,15 @@ const WordsPage = () => {
                 className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100"
                 disabled={isDeleting}
               >
-                Cancel
+                取消
               </button>
               <button
                 type="button"
-                onClick={handleDeleteWord}
+                onClick={handle删除Word}
                 className="rounded-lg bg-rose-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-rose-500 disabled:cursor-not-allowed disabled:bg-rose-400"
                 disabled={isDeleting}
               >
-                {isDeleting ? 'Deleting…' : 'Delete'}
+                {isDeleting ? '删除中…' : '删除'}
               </button>
             </div>
           </div>
@@ -1256,15 +1256,15 @@ const WordForm = ({ formId, mode, initialValues, submitting, onSubmit }: WordFor
     const nextErrors: WordFormErrors = {}
 
     if (!trimmedWord) {
-      nextErrors.word = 'Word is required.'
+      nextErrors.word = '单词为必填项。'
     }
 
     if (!trimmedPhonetic) {
-      nextErrors.phonetic = 'Phonetics are required.'
+      nextErrors.phonetic = '音标为必填项。'
     }
 
     if (!trimmedMeaning) {
-      nextErrors.meaning = 'Description is required.'
+      nextErrors.meaning = '描述为必填项。'
     }
 
     setErrors(nextErrors)
@@ -1290,7 +1290,7 @@ const WordForm = ({ formId, mode, initialValues, submitting, onSubmit }: WordFor
       <div className="grid gap-5 md:grid-cols-2">
         <div>
           <label htmlFor="word" className="block text-sm font-medium text-slate-700">
-            Word<span className="text-rose-500">*</span>
+            单词<span className="text-rose-500">*</span>
           </label>
           <input
             id="word"
@@ -1298,7 +1298,7 @@ const WordForm = ({ formId, mode, initialValues, submitting, onSubmit }: WordFor
             type="text"
             value={values.word}
             onChange={handleChange}
-            placeholder="e.g. Serendipity"
+            placeholder="例如：Serendipity"
             className={`mt-1 w-full rounded-lg border px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-500/60 ${
               errors.word ? 'border-rose-400 focus:ring-rose-500/60' : 'border-slate-300'
             }`}
@@ -1309,7 +1309,7 @@ const WordForm = ({ formId, mode, initialValues, submitting, onSubmit }: WordFor
         </div>
         <div>
           <label htmlFor="phonetic" className="block text-sm font-medium text-slate-700">
-            Phonetics<span className="text-rose-500">*</span>
+            音标<span className="text-rose-500">*</span>
           </label>
           <input
             id="phonetic"
@@ -1317,7 +1317,7 @@ const WordForm = ({ formId, mode, initialValues, submitting, onSubmit }: WordFor
             type="text"
             value={values.phonetic}
             onChange={handleChange}
-            placeholder="e.g. /ˌser.ənˈdɪp.ə.ti/"
+            placeholder="例如：/ˌser.ənˈdɪp.ə.ti/"
             className={`mt-1 w-full rounded-lg border px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-500/60 ${
               errors.phonetic ? 'border-rose-400 focus:ring-rose-500/60' : 'border-slate-300'
             }`}
@@ -1331,7 +1331,7 @@ const WordForm = ({ formId, mode, initialValues, submitting, onSubmit }: WordFor
 
       <div>
         <label htmlFor="meaning" className="block text-sm font-medium text-slate-700">
-          Description<span className="text-rose-500">*</span>
+          描述<span className="text-rose-500">*</span>
         </label>
         <textarea
           id="meaning"
@@ -1339,7 +1339,7 @@ const WordForm = ({ formId, mode, initialValues, submitting, onSubmit }: WordFor
           rows={4}
           value={values.meaning}
           onChange={handleChange}
-          placeholder="Provide a concise explanation for this word."
+          placeholder="为这个单词提供简洁的解释。"
           className={`mt-1 w-full rounded-lg border px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-500/60 ${
             errors.meaning ? 'border-rose-400 focus:ring-rose-500/60' : 'border-slate-300'
           }`}
@@ -1393,7 +1393,7 @@ const WordForm = ({ formId, mode, initialValues, submitting, onSubmit }: WordFor
             htmlFor="pronunciationUrl"
             className="block text-sm font-medium text-slate-700"
           >
-            Pronunciation link
+            发音链接
           </label>
           <input
             id="pronunciationUrl"
@@ -1406,13 +1406,13 @@ const WordForm = ({ formId, mode, initialValues, submitting, onSubmit }: WordFor
             disabled={submitting}
           />
           <p className="mt-1 text-xs text-slate-500">
-            Optional. Provide an audio URL or reference for pronunciation.
+            可选。提供发音的音频URL或参考链接。
           </p>
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <label htmlFor="difficulty" className="block text-sm font-medium text-slate-700">
-              Difficulty
+              难度
             </label>
             <select
               id="difficulty"
@@ -1438,9 +1438,9 @@ const WordForm = ({ formId, mode, initialValues, submitting, onSubmit }: WordFor
               disabled={submitting}
             />
             <div>
-              <span className="font-medium text-slate-800">Mastered</span>
+              <span className="font-medium text-slate-800">已掌握</span>
               <p className="text-xs text-slate-500">
-                Mark this word as mastered when learners have fully grasped it.
+                当学习者完全掌握这个单词时，标记为已掌握。
               </p>
             </div>
           </label>
