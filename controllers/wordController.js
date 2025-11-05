@@ -396,6 +396,7 @@ const getWordById = async (req, res, next) => {
       });
     }
 
+    // 1. 查询单词基本信息
     const rows = await query(
       `SELECT ${baseSelectColumns} FROM words w WHERE w.word_id = ?`,
       sanitizeDbParams([wordId]),
@@ -408,10 +409,45 @@ const getWordById = async (req, res, next) => {
       });
     }
 
-    return res.json({
-      success: true,
-      data: serializeWord(rows[0]),
-    });
+    const word = serializeWord(rows[0]);
+    
+    // 2. 查询关联的发音规则
+    const pronunciationRulesRows = await query(`
+      SELECT 
+        pr.id,
+        pr.letter_combination,
+        pr.pronunciation,
+        pr.rule_description
+      FROM word_pronunciation_rules wpr
+      JOIN pronunciation_rules pr ON wpr.pronunciation_rule_id = pr.id
+      WHERE wpr.word_id = ?
+    `, sanitizeDbParams([wordId]));
+    
+    word.pronunciation_rules = pronunciationRulesRows.map(row => ({
+      id: row.id,
+      letterCombination: row.letter_combination,
+      pronunciation: row.pronunciation,
+      ruleDescription: row.rule_description
+    }));
+    
+    // 3. 查询所属词典
+    const dictionariesRows = await query(`
+      SELECT 
+        d.dictionary_id as id,
+        d.name,
+        dw.is_mastered as isMastered
+      FROM dictionary_words dw
+      JOIN dictionaries d ON dw.dictionary_id = d.dictionary_id
+      WHERE dw.word_id = ?
+    `, sanitizeDbParams([wordId]));
+    
+    word.dictionaries = dictionariesRows.map(row => ({
+      id: row.id,
+      name: row.name,
+      isMastered: Boolean(row.isMastered)
+    }));
+
+    return res.json(word);
   } catch (error) {
     return next(error);
   }

@@ -15,6 +15,9 @@ const MainLayout = () => {
     if (location.pathname.startsWith('/dictionaries/') && location.pathname !== '/dictionaries') {
       return '词典详情'
     }
+    if (location.pathname.startsWith('/words/') && location.pathname !== '/words') {
+      return '单词详情'
+    }
     if (location.pathname.startsWith('/pronunciation-rules/') && location.pathname !== '/pronunciation-rules') {
       return '发音规则详情'
     }

@@ -1,4 +1,5 @@
 import { type ChangeEvent, type FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
 import type { ApiError } from '../services/apiClient'
 import { createWord, deleteWord, listWords, updateWord, type ListWordsParams, type Word } from '../services/words'
 import { fetchDictionaries, batchAddWordsToDictionary } from '../services/dictionaries'
@@ -885,7 +886,12 @@ const WordsPage = () => {
                           />
                         </td>
                         <td className="px-4 py-3">
-                          <div className="font-medium text-slate-900">{word.word}</div>
+                          <Link 
+                            to={`/words/${word.id}`}
+                            className="font-medium text-slate-900 hover:text-blue-600 hover:underline transition-colors"
+                          >
+                            {word.word}
+                          </Link>
                           <div className="mt-0.5 text-xs text-slate-500 lg:hidden">
                             {word.phonetic || '—'}
                           </div>
@@ -978,6 +984,12 @@ const WordsPage = () => {
                         </td>
                         <td className="px-4 py-3 align-top text-right">
                           <div className="flex justify-end gap-3 text-xs font-semibold">
+                            <Link
+                              to={`/words/${word.id}`}
+                              className="rounded-lg border border-slate-200 px-3 py-1.5 text-slate-600 transition hover:bg-slate-100"
+                            >
+                              详情
+                            </Link>
                             <button
                               type="button"
                               onClick={() => openEditForm(word)}
