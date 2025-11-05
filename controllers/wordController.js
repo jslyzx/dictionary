@@ -237,13 +237,16 @@ const getWords = async (req, res, next) => {
       try {
         const wordIds = rows.map(w => w.word_id);
         
-        // Use single ? placeholder with array parameter for MySQL2
+        // Generate dynamic placeholders for IN clause
+        const placeholders = wordIds.map(() => '?').join(',');
+        
+        // Use dynamic placeholders to avoid MySQL array parameter issue
         const [rules] = await query(
           `SELECT wpr.word_id, pr.id, pr.letter_combination, pr.pronunciation
            FROM word_pronunciation_rules wpr
            JOIN pronunciation_rules pr ON wpr.pronunciation_rule_id = pr.id
-           WHERE wpr.word_id IN (?)`,
-          [wordIds]  // Pass array as single parameter
+           WHERE wpr.word_id IN (${placeholders})`,
+          wordIds  // Pass array directly, will be expanded to match placeholders
         );
         
         // Add defensive check to ensure rules is an array

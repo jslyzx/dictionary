@@ -421,9 +421,10 @@ const addWordPronunciationRules = async (req, res, next) => {
     }
 
     // 验证所有发音规则是否存在
+    const placeholders = validRuleIds.map(() => '?').join(',');
     const [ruleCheck] = await pool.execute(
-      `SELECT id FROM pronunciation_rules WHERE id IN (?)`,
-      [validRuleIds],
+      `SELECT id FROM pronunciation_rules WHERE id IN (${placeholders})`,
+      validRuleIds,
     );
     if (ruleCheck.length !== validRuleIds.length) {
       throw createHttpError(404, 'One or more pronunciation rules not found');
