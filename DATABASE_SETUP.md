@@ -219,6 +219,35 @@ mysql -u root -p -e "CREATE DATABASE dictionary CHARACTER SET utf8mb4 COLLATE ut
    DESCRIBE dictionaries;
    ```
 
+## 🔄 数据库迁移
+
+### 运行迁移脚本
+
+对于现有数据库，可以通过运行迁移脚本来添加新功能：
+
+```bash
+# 添加单词图片字段支持
+mysql -u root -p dictionary < scripts/add-word-image-fields.sql
+
+# 添加发音规则表（如果尚未添加）
+mysql -u root -p dictionary < scripts/add_pronunciation_rules_tables.sql
+
+# 添加例句字段（如果尚未添加）
+mysql -u root -p dictionary < scripts/add-notes-sentence-fields.sql
+```
+
+### 验证迁移结果
+
+```sql
+-- 检查 words 表是否包含新的图片字段
+DESCRIBE words;
+
+-- 验证新字段的默认值
+SELECT word_id, word, has_image, image_type, image_value 
+FROM words 
+LIMIT 5;
+```
+
 ## 🔄 重置数据库
 
 如果需要重新开始：
@@ -255,7 +284,11 @@ mysql -u root -p dictionary < English.sql
 | phonetic | VARCHAR(100) | 音标 |
 | meaning | VARCHAR(255) | 含义 |
 | pronunciation1-3 | VARCHAR(255) | 发音文件路径 |
-| notes | VARCHAR(255) | 备注 |
+| notes | TEXT | 备注 |
+| sentence | TEXT | 例句 |
+| has_image | TINYINT | 是否有图片 (0=无, 1=有) |
+| image_type | ENUM | 图片类型 (url/iconfont/emoji) |
+| image_value | VARCHAR(512) | 图片值 (URL/类名/emoji) |
 | difficulty | TINYINT | 难度等级 (0=简单, 1=中等, 2=困难) |
 | is_mastered | TINYINT | 是否已掌握 |
 | created_at | TIMESTAMP | 创建时间 |
