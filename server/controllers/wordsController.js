@@ -3,11 +3,17 @@ const pool = require('../config/db');
 const DEFAULT_PAGE = 1;
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 100;
-const WORD_COLUMNS = 'word_id, word, phonetic, meaning, pronunciation1, pronunciation2, pronunciation3, created_at, difficulty, is_mastered, notes';
+const WORD_COLUMNS = 'word_id, word, phonetic, meaning, pronunciation1, pronunciation2, pronunciation3, created_at, difficulty, is_mastered, notes, has_image, image_type, image_value';
 const DIFFICULTY_LABELS = {
   easy: 0,
   medium: 1,
   hard: 2,
+};
+const IMAGE_TYPE_ENUM = ['url', 'iconfont', 'emoji'];
+const IMAGE_VALUE_MAX_LENGTHS = {
+  url: 500,
+  iconfont: 100,
+  emoji: 50
 };
 
 const createHttpError = (status, message) => {
@@ -161,6 +167,29 @@ const parseOptionalDate = (value, fieldName) => {
   return date;
 };
 
+const validateImageType = (imageType) => {
+  if (!imageType) return null;
+  return IMAGE_TYPE_ENUM.includes(imageType) ? imageType : null;
+};
+
+const validateImageValue = (imageType, imageValue) => {
+  if (!imageType || !imageValue) return null;
+  
+  const maxLength = IMAGE_VALUE_MAX_LENGTHS[imageType];
+  if (!maxLength) return null;
+  
+  const trimmed = String(imageValue).trim();
+  if (!trimmed) return null;
+  
+  return trimmed.length > maxLength ? null : trimmed;
+};
+
+const deriveHasImage = (hasImage, imageType, imageValue) => {
+  if (hasImage === true) return true;
+  if (hasImage === false) return false;
+  return !!(imageType && imageValue);
+};
+
 const getWords = async (req, res, next) => {
   try {
     const page = parsePositiveInteger(req.query.page, DEFAULT_PAGE);
@@ -265,6 +294,9 @@ const createWord = async (req, res, next) => {
     const difficultyInput = getFirstDefined(req.body, ['difficulty']);
     const masteryInput = getFirstDefined(req.body, ['masteryStatus', 'is_mastered', 'isMastered', 'mastered']);
     const createdAtInput = getFirstDefined(req.body, ['created_at', 'createdAt']);
+    const hasImageInput = getFirstDefined(req.body, ['hasImage', 'has_image']);
+    const imageTypeInput = getFirstDefined(req.body, ['imageType', 'image_type']);
+    const imageValueInput = getFirstDefined(req.body, ['imageValue', 'image_value']);
 
     const word = sanitizeRequiredString(wordInput, 'word');
     const phonetic = sanitizeRequiredString(phoneticInput, 'phonetic');
@@ -286,8 +318,16 @@ const createWord = async (req, res, next) => {
     const notes = sanitizeOptionalNullableString(notesInput);
     const createdAt = parseOptionalDate(createdAtInput, 'created_at');
 
-    const columns = ['word', 'phonetic', 'meaning', 'difficulty', 'is_mastered'];
-    const values = [word, phonetic, meaning, difficulty ?? 0, masteryStatus ?? 0];
+    // Handle image fields with validation
+    let hasImage = hasImageInput !== undefined ? parseMasteryStatus(hasImageInput) : undefined;
+    const imageType = validateImageType(imageTypeInput);
+    const imageValue = validateImageValue(imageType, imageValueInput);
+    
+    // Derive has_image if not explicitly provided
+    hasImage = deriveHasImage(hasImage, imageType, imageValue);
+
+    const columns = ['word', 'phonetic', 'meaning', 'difficulty', 'is_mastered', 'has_image', 'image_type', 'image_value'];
+    const values = [word, phonetic, meaning, difficulty ?? 0, masteryStatus ?? 0, hasImage ? 1 : 0, hasImage ? imageType : null, hasImage ? imageValue : null];
 
     const optionalEntries = {
       pronunciation1,
@@ -345,6 +385,9 @@ const updateWord = async (req, res, next) => {
     const difficultyInput = getFirstDefined(req.body, ['difficulty']);
     const masteryInput = getFirstDefined(req.body, ['masteryStatus', 'is_mastered', 'isMastered', 'mastered']);
     const createdAtInput = getFirstDefined(req.body, ['created_at', 'createdAt']);
+    const hasImageInput = getFirstDefined(req.body, ['hasImage', 'has_image']);
+    const imageTypeInput = getFirstDefined(req.body, ['imageType', 'image_type']);
+    const imageValueInput = getFirstDefined(req.body, ['imageValue', 'image_value']);
 
     const updates = [];
     const values = [];
@@ -413,6 +456,20 @@ const updateWord = async (req, res, next) => {
       const createdAt = parseOptionalDate(createdAtInput, 'created_at');
       updates.push('created_at = ?');
       values.push(createdAt);
+    }
+
+    // Handle image fields with validation
+    if (hasImageInput !== undefined || imageTypeInput !== undefined || imageValueInput !== undefined) {
+      let hasImage = hasImageInput !== undefined ? parseMasteryStatus(hasImageInput) : undefined;
+      const imageType = validateImageType(imageTypeInput);
+      const imageValue = validateImageValue(imageType, imageValueInput);
+      
+      // Derive has_image if not explicitly provided
+      hasImage = deriveHasImage(hasImage, imageType, imageValue);
+      
+      // Update all image fields
+      updates.push('has_image = ?', 'image_type = ?', 'image_value = ?');
+      values.push(hasImage ? 1 : 0, hasImage ? imageType : null, hasImage ? imageValue : null);
     }
 
     if (updates.length === 0) {

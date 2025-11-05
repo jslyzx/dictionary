@@ -18,7 +18,10 @@ const baseSelectColumns = `
   w.sentence,
   w.created_at,
   w.difficulty,
-  w.is_mastered
+  w.is_mastered,
+  w.has_image,
+  w.image_type,
+  w.image_value
 `;
 
 const difficultyLabels = {
@@ -39,6 +42,12 @@ const MEANING_MAX_LENGTH = 255;
 const PRONUNCIATION_MAX_LENGTH = 255;
 const NOTES_MAX_LENGTH = 65535;
 const SENTENCE_MAX_LENGTH = 65535;
+const IMAGE_TYPE_ENUM = ['url', 'iconfont', 'emoji'];
+const IMAGE_VALUE_MAX_LENGTHS = {
+  url: 500,
+  iconfont: 100,
+  emoji: 50
+};
 
 const hasOwn = (object, key) =>
   Object.prototype.hasOwnProperty.call(object ?? {}, key);
@@ -46,6 +55,29 @@ const hasOwn = (object, key) =>
 const toDatabaseBoolean = (value) => (value ? 1 : 0);
 
 const sanitizeDbParams = (params) => params.map(param => param === undefined ? null : param);
+
+const validateImageType = (imageType) => {
+  if (!imageType) return null;
+  return IMAGE_TYPE_ENUM.includes(imageType) ? imageType : null;
+};
+
+const validateImageValue = (imageType, imageValue) => {
+  if (!imageType || !imageValue) return null;
+  
+  const maxLength = IMAGE_VALUE_MAX_LENGTHS[imageType];
+  if (!maxLength) return null;
+  
+  const trimmed = String(imageValue).trim();
+  if (!trimmed) return null;
+  
+  return trimmed.length > maxLength ? null : trimmed;
+};
+
+const deriveHasImage = (hasImage, imageType, imageValue) => {
+  if (hasImage === true) return true;
+  if (hasImage === false) return false;
+  return !!(imageType && imageValue);
+};
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const CREATE_WORD_MAX_ATTEMPTS = 3;
@@ -74,6 +106,9 @@ const serializeWord = (row) => ({
   createdAt: row.created_at,
   difficulty: row.difficulty,
   isMastered: row.is_mastered === 1,
+  hasImage: row.has_image === 1,
+  imageType: row.image_type,
+  imageValue: row.image_value,
   pronunciationRules: row.pronunciation_rules || [],
 });
 
@@ -399,6 +434,21 @@ const exportWordsCsv = async (req, res, next) => {
         header: 'Mastered',
         formatter: (value) => (value ? 'Yes' : 'No'),
       },
+      {
+        key: 'hasImage',
+        header: 'Has Image',
+        formatter: (value) => (value ? 'Yes' : 'No'),
+      },
+      {
+        key: 'imageType',
+        header: 'Image Type',
+        formatter: (value) => value ?? '',
+      },
+      {
+        key: 'imageValue',
+        header: 'Image Value',
+        formatter: (value) => value ?? '',
+      },
       { key: 'createdAt', header: 'Created At' },
       { key: 'notes', header: 'Notes' },
       { key: 'sentence', header: 'Sentence' },
@@ -510,13 +560,30 @@ const createWord = async (req, res, next) => {
   const difficulty = hasOwn(body, 'difficulty') ? body.difficulty : 0;
   const isMastered = hasOwn(body, 'isMastered') ? body.isMastered : false;
 
-  const columns = ['word', 'phonetic', 'meaning', 'difficulty', 'is_mastered'];
+  // Handle image fields with validation
+  let hasImage = hasOwn(body, 'hasImage') ? body.hasImage : undefined;
+  const imageType = validateImageType(body.imageType);
+  const imageValue = validateImageValue(imageType, body.imageValue);
+  
+  // Derive has_image if not explicitly provided
+  hasImage = deriveHasImage(hasImage, imageType, imageValue);
+  
+  // If hasImage is false/undefined, clear image fields
+  if (!hasImage) {
+    imageType && (body.imageType = null);
+    imageValue && (body.imageValue = null);
+  }
+
+  const columns = ['word', 'phonetic', 'meaning', 'difficulty', 'is_mastered', 'has_image', 'image_type', 'image_value'];
   const values = [
     body.word === undefined ? null : body.word,
     body.phonetic === undefined ? null : body.phonetic,
     body.meaning === undefined ? null : body.meaning,
     difficulty,
     toDatabaseBoolean(isMastered),
+    toDatabaseBoolean(hasImage),
+    hasImage ? imageType : null,
+    hasImage ? imageValue : null,
   ];
 
   const optionalFields = [
@@ -680,6 +747,24 @@ const updateWord = async (req, res, next) => {
     if (hasOwn(body, 'createdAt')) {
       updates.push('created_at = ?');
       params.push(body.createdAt === undefined ? null : body.createdAt);
+    }
+
+    // Handle image fields with validation
+    if (hasOwn(body, 'hasImage') || hasOwn(body, 'imageType') || hasOwn(body, 'imageValue')) {
+      let hasImage = hasOwn(body, 'hasImage') ? body.hasImage : undefined;
+      const imageType = validateImageType(body.imageType);
+      const imageValue = validateImageValue(imageType, body.imageValue);
+      
+      // Derive has_image if not explicitly provided
+      hasImage = deriveHasImage(hasImage, imageType, imageValue);
+      
+      // Update all image fields
+      updates.push('has_image = ?');
+      params.push(toDatabaseBoolean(hasImage));
+      updates.push('image_type = ?');
+      params.push(hasImage ? imageType : null);
+      updates.push('image_value = ?');
+      params.push(hasImage ? imageValue : null);
     }
 
     if (!updates.length) {
@@ -879,6 +964,42 @@ const importWordsCsv = async (req, res, next) => {
         }
       }
 
+      // Handle image fields in CSV import
+      if (columnExists(record, 'hasImage')) {
+        const normalizedHasImage = normalizeCsvBoolean(record.hasImage);
+        if (normalizedHasImage === null) {
+          issues.push({
+            field: 'hasImage',
+            message: 'hasImage must be a boolean value.',
+          });
+        } else if (normalizedHasImage !== undefined) {
+          sanitized.fields.add('has_image');
+          sanitized.hasImage = normalizedHasImage;
+        }
+      }
+
+      if (columnExists(record, 'imageType')) {
+        const imageType = sanitizeNullableString(record.imageType);
+        if (imageType && !IMAGE_TYPE_ENUM.includes(imageType)) {
+          issues.push({
+            field: 'imageType',
+            message: `imageType must be one of: ${IMAGE_TYPE_ENUM.join(', ')}.`,
+          });
+        } else if (imageType !== undefined) {
+          sanitized.fields.add('image_type');
+          sanitized.imageType = imageType;
+        }
+      }
+
+      if (columnExists(record, 'imageValue')) {
+        const imageValue = sanitizeNullableString(record.imageValue);
+        if (imageValue !== undefined) {
+          // We'll validate length based on imageType in the database insertion logic
+          sanitized.fields.add('image_value');
+          sanitized.imageValue = imageValue;
+        }
+      }
+
       if (issues.length) {
         issues.forEach((issue) =>
           errors.push({ row: rowNumber, field: issue.field, message: issue.message }),
@@ -952,6 +1073,17 @@ const importWordsCsv = async (req, res, next) => {
         if (record.fields.has('created_at')) {
           columns.push('created_at');
           values.push(record.createdAt);
+        }
+
+        // Handle image fields in database insertion
+        if (record.fields.has('has_image') || record.fields.has('image_type') || record.fields.has('image_value')) {
+          const hasImage = record.hasImage ?? (!!(record.imageType && record.imageValue));
+          const imageType = validateImageType(record.imageType);
+          const imageValue = validateImageValue(imageType, record.imageValue);
+          
+          columns.push('has_image', 'image_type', 'image_value');
+          values.push(toDatabaseBoolean(hasImage), hasImage ? imageType : null, hasImage ? imageValue : null);
+          updates.push('has_image = VALUES(has_image)', 'image_type = VALUES(image_type)', 'image_value = VALUES(image_value)');
         }
 
         const placeholders = columns.map(() => '?').join(', ');

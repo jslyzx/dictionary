@@ -1,3 +1,4 @@
+
 -- Migration: Add word image columns
 -- Date: 2025-01-05
 -- Description: Adds optional image metadata support to the words table
@@ -11,3 +12,7 @@ ALTER TABLE words ADD COLUMN image_type ENUM('url','iconfont','emoji') DEFAULT N
 
 -- Add image_value field (NULL when has_image=0)
 ALTER TABLE words ADD COLUMN image_value VARCHAR(512) DEFAULT NULL COMMENT '图片值(根据type存储URL/类名/emoji)' AFTER image_type;
+
+
+-- Add index for performance on has_image field
+ALTER TABLE words ADD INDEX idx_has_image (has_image);
