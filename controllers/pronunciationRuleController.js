@@ -1,4 +1,4 @@
-const pool = require('../config/db');
+const { pool } = require('../config/db');
 
 const DEFAULT_PAGE = 1;
 const DEFAULT_LIMIT = 20;
