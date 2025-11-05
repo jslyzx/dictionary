@@ -32,6 +32,9 @@ CREATE TABLE words (
     is_mastered TINYINT(1) DEFAULT 0 NOT NULL COMMENT '是否掌握(1是 0否)',
     notes TEXT COMMENT '笔记(可选)',
     sentence TEXT COMMENT '例句(可选)',
+    has_image TINYINT(1) NOT NULL DEFAULT 0 COMMENT '是否有图片(0-无 1-有)',
+    image_type ENUM('url','iconfont','emoji') DEFAULT NULL COMMENT '图片类型(url-链接 iconfont-图标字体 emoji-表情)',
+    image_value VARCHAR(512) DEFAULT NULL COMMENT '图片值(根据type存储URL/类名/emoji)',
     UNIQUE KEY uniq_word (word) COMMENT '单词唯一性约束',
     INDEX idx_phonetic (phonetic(10)) COMMENT '音标查询索引'
 ) ENGINE=InnoDB 
