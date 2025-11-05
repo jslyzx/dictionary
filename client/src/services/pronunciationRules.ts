@@ -130,7 +130,7 @@ export const pronunciationRuleService = {
   getAll: async (params: ListPronunciationRulesParams): Promise<PronunciationRuleListResult> => {
     const response = await request<{ success: boolean; data: PronunciationRuleListApiResponse }>({
       method: 'GET',
-      url: '/pronunciation-rules',
+      url: '/api/pronunciation-rules',
       params,
     })
     return {
@@ -145,7 +145,7 @@ export const pronunciationRuleService = {
   getById: async (id: number): Promise<PronunciationRule> => {
     const response = await request<{ success: boolean; data: PronunciationRuleApiResponse }>({
       method: 'GET',
-      url: `/pronunciation-rules/${id}`,
+      url: `/api/pronunciation-rules/${id}`,
     })
     return mapPronunciationRule(response.data)
   },
@@ -154,7 +154,7 @@ export const pronunciationRuleService = {
   getByCombination: async (letterCombination: string): Promise<PronunciationRule[]> => {
     const response = await request<{ success: boolean; data: PronunciationRuleApiResponse[] }>({
       method: 'GET',
-      url: `/pronunciation-rules/by-combination/${encodeURIComponent(letterCombination)}`,
+      url: `/api/pronunciation-rules/by-combination/${encodeURIComponent(letterCombination)}`,
     })
     return response.data.map(mapPronunciationRule)
   },
@@ -191,7 +191,7 @@ export const pronunciationRuleService = {
       limit: number
     } }>({
       method: 'GET',
-      url: `/pronunciation-rules/${id}/words`,
+      url: `/api/pronunciation-rules/${id}/words`,
       params,
     })
     
@@ -217,7 +217,7 @@ export const pronunciationRuleService = {
   create: async (payload: CreatePronunciationRulePayload): Promise<PronunciationRule> => {
     const response = await request<{ success: boolean; data: PronunciationRuleApiResponse }>({
       method: 'POST',
-      url: '/pronunciation-rules',
+      url: '/api/pronunciation-rules',
       data: adaptCreatePayload(payload),
     })
     return mapPronunciationRule(response.data)
@@ -231,7 +231,7 @@ export const pronunciationRuleService = {
     
     const response = await request<{ success: boolean; data: PronunciationRuleApiResponse }>({
       method: 'PUT',
-      url: `/pronunciation-rules/${id}`,
+      url: `/api/pronunciation-rules/${id}`,
       data: adaptUpdatePayload(payload),
     })
     return mapPronunciationRule(response.data)
@@ -241,7 +241,7 @@ export const pronunciationRuleService = {
   delete: async (id: number): Promise<void> => {
     await request<{ success: boolean; data: { message: string } }>({
       method: 'DELETE',
-      url: `/pronunciation-rules/${id}`,
+      url: `/api/pronunciation-rules/${id}`,
     })
   },
 
@@ -249,7 +249,7 @@ export const pronunciationRuleService = {
   getWordPronunciationRules: async (wordId: number): Promise<WordPronunciationRule[]> => {
     const response = await request<{ success: boolean; data: WordPronunciationRuleApiResponse[] }>({
       method: 'GET',
-      url: `/pronunciation-rules/words/${wordId}/pronunciation-rules`,
+      url: `/api/pronunciation-rules/words/${wordId}/pronunciation-rules`,
     })
     return response.data.map(mapWordPronunciationRule)
   },
@@ -271,7 +271,7 @@ export const pronunciationRuleService = {
       }>
     } }>({
       method: 'POST',
-      url: `/pronunciation-rules/words/${wordId}/pronunciation-rules`,
+      url: `/api/pronunciation-rules/words/${wordId}/pronunciation-rules`,
       data: payload,
     })
     
@@ -293,7 +293,7 @@ export const pronunciationRuleService = {
   removeWordPronunciationRule: async (wordId: number, ruleId: number): Promise<void> => {
     await request<{ success: boolean; data: { message: string } }>({
       method: 'DELETE',
-      url: `/pronunciation-rules/words/${wordId}/pronunciation-rules/${ruleId}`,
+      url: `/api/pronunciation-rules/words/${wordId}/pronunciation-rules/${ruleId}`,
     })
   },
 }

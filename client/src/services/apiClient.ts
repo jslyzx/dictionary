@@ -6,7 +6,7 @@ export interface ApiError {
   details?: unknown
 }
 
-const baseURL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3000'
+const baseURL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5000'
 
 const apiClient: AxiosInstance = axios.create({
   baseURL,
