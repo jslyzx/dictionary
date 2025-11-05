@@ -14,6 +14,9 @@ interface WordDetail extends Word {
     name: string
     isMastered: boolean
   }>
+  hasImage: boolean
+  imageType: 'url' | 'iconfont' | 'emoji' | null
+  imageValue: string | null
 }
 
 const WordDetailPage = () => {
@@ -169,10 +172,42 @@ const WordDetailPage = () => {
           {/* 单词基本信息 */}
           <div className="bg-white shadow rounded-lg p-6">
             <div className="mb-6">
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">{word.word}</h1>
-              {word.phonetic && (
-                <p className="text-lg text-gray-600 mb-4">[{word.phonetic}]</p>
-              )}
+              <div className="flex items-start gap-6 mb-4">
+                <div>
+                  <h1 className="text-3xl font-bold text-gray-900 mb-2">{word.word}</h1>
+                  {word.phonetic && (
+                    <p className="text-lg text-gray-600 mb-4">[{word.phonetic}]</p>
+                  )}
+                </div>
+                
+                {/* Image Display */}
+                {word.hasImage && word.imageType && word.imageValue && (
+                  <div className="flex-shrink-0">
+                    <div className="flex items-center justify-center w-20 h-20 bg-gray-50 rounded-lg border border-gray-200">
+                      {word.imageType === 'url' ? (
+                        <img
+                          src={word.imageValue}
+                          alt={word.word}
+                          className="w-full h-full object-cover rounded-lg"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none'
+                            e.currentTarget.nextElementSibling?.classList.remove('hidden')
+                          }}
+                        />
+                      ) : word.imageType === 'iconfont' ? (
+                        <i className={`${word.imageValue} text-4xl text-gray-600`}></i>
+                      ) : word.imageType === 'emoji' ? (
+                        <span className="text-4xl">{word.imageValue}</span>
+                      ) : null}
+                      {word.imageType === 'url' && (
+                        <div className="hidden text-center text-sm text-gray-400">
+                          加载失败
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
               
               <div className="flex items-center space-x-4 mb-4">
                 {word.pronunciation1 && (

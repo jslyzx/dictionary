@@ -31,12 +31,17 @@ interface WordFormValues {
   notes: string
   sentence: string
   pronunciationRules: number[]
+  hasImage: boolean
+  imageType: 'url' | 'iconfont' | 'emoji' | null
+  imageValue: string | null
 }
 
 type WordFormErrors = Partial<{
   word: string
   phonetic: string
   meaning: string
+  imageType: string
+  imageValue: string
 }>
 
 type PronunciationAudioStatus = 'idle' | 'loading' | 'playing' | 'error'
@@ -295,6 +300,9 @@ const WordsPage = () => {
       pronunciationUrl: values.pronunciationUrl ? values.pronunciationUrl : null,
       notes: values.notes ? values.notes : null,
       sentence: values.sentence ? values.sentence : null,
+      hasImage: values.hasImage,
+      imageType: values.hasImage ? values.imageType : null,
+      imageValue: values.hasImage ? values.imageValue : null,
     }
 
     try {
@@ -588,6 +596,9 @@ const WordsPage = () => {
       notes: formState.word.notes ?? '',
       sentence: formState.word.sentence ?? '',
       pronunciationRules: [], // Reset pronunciation rules for editing
+      hasImage: formState.word.hasImage ?? false,
+      imageType: formState.word.imageType ?? null,
+      imageValue: formState.word.imageValue ?? null,
     }
   }, [formState.word])
 
@@ -803,6 +814,12 @@ const WordsPage = () => {
                     </th>
                     <th
                       scope="col"
+                      className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600 w-20"
+                    >
+                      图片
+                    </th>
+                    <th
+                      scope="col"
                       className="hidden px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600 lg:table-cell"
                     >
                       音标
@@ -901,6 +918,34 @@ const WordsPage = () => {
                           <div className="mt-0.5 text-xs text-slate-500 lg:hidden">
                             {word.phonetic || '—'}
                           </div>
+                        </td>
+                        <td className="px-4 py-3 align-top">
+                          {word.hasImage && word.imageType && word.imageValue ? (
+                            <div className="flex items-center justify-center">
+                              {word.imageType === 'url' ? (
+                                <img
+                                  src={word.imageValue}
+                                  alt={word.word}
+                                  className="w-8 h-8 object-cover rounded border border-slate-200"
+                                  onError={(e) => {
+                                    e.currentTarget.style.display = 'none'
+                                    e.currentTarget.nextElementSibling?.classList.remove('hidden')
+                                  }}
+                                />
+                              ) : word.imageType === 'iconfont' ? (
+                                <i className={`${word.imageValue} text-lg text-slate-600`}></i>
+                              ) : word.imageType === 'emoji' ? (
+                                <span className="text-lg">{word.imageValue}</span>
+                              ) : null}
+                              {word.imageType === 'url' && (
+                                <div className="hidden text-center text-xs text-slate-400">
+                                  —
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-slate-400">—</span>
+                          )}
                         </td>
                         <td className="hidden px-4 py-3 align-top text-slate-600 lg:table-cell">
                           {word.phonetic || '—'}
@@ -1287,6 +1332,9 @@ const emptyFormValues: WordFormValues = {
   notes: '',
   sentence: '',
   pronunciationRules: [],
+  hasImage: false,
+  imageType: null,
+  imageValue: null,
 }
 
 const WordForm = ({ formId, mode, initialValues, submitting, onSubmit }: WordFormProps) => {
@@ -1339,6 +1387,7 @@ const WordForm = ({ formId, mode, initialValues, submitting, onSubmit }: WordFor
     const trimmedPronunciation = values.pronunciationUrl.trim()
     const trimmedNotes = values.notes.trim()
     const trimmedSentence = values.sentence.trim()
+    const trimmedImageValue = values.imageValue ? values.imageValue.trim() : null
 
     const nextErrors: WordFormErrors = {}
 
@@ -1352,6 +1401,33 @@ const WordForm = ({ formId, mode, initialValues, submitting, onSubmit }: WordFor
 
     if (!trimmedMeaning) {
       nextErrors.meaning = '描述为必填项。'
+    }
+
+    // Image validation
+    if (values.hasImage) {
+      if (!values.imageType) {
+        nextErrors.imageType = '请选择图片类型。'
+      }
+      if (!trimmedImageValue) {
+        nextErrors.imageValue = '请输入图片内容。'
+      } else {
+        // Type-specific validation
+        if (values.imageType === 'url') {
+          const urlPattern = /^https?:\/\/.+\.(jpg|jpeg|png|gif|webp|svg)(\?.*)?$/i
+          if (!urlPattern.test(trimmedImageValue)) {
+            nextErrors.imageValue = '请输入有效的图片URL（必须以.jpg、.png、.gif等结尾）。'
+          }
+        } else if (values.imageType === 'iconfont') {
+          const iconClassPattern = /^[a-zA-Z0-9_-]+$/
+          if (!iconClassPattern.test(trimmedImageValue)) {
+            nextErrors.imageValue = '图标字体类名只能包含字母、数字、下划线和横线。'
+          }
+        } else if (values.imageType === 'emoji') {
+          if (trimmedImageValue.length > 50) {
+            nextErrors.imageValue = 'emoji内容不能超过50个字符。'
+          }
+        }
+      }
     }
 
     setErrors(nextErrors)
@@ -1370,6 +1446,9 @@ const WordForm = ({ formId, mode, initialValues, submitting, onSubmit }: WordFor
       notes: trimmedNotes,
       sentence: trimmedSentence,
       pronunciationRules: values.pronunciationRules,
+      hasImage: values.hasImage,
+      imageType: values.hasImage ? values.imageType : null,
+      imageValue: values.hasImage ? trimmedImageValue : null,
     })
   }
 
@@ -1592,6 +1671,163 @@ const WordForm = ({ formId, mode, initialValues, submitting, onSubmit }: WordFor
           <p className="mt-1 text-xs text-slate-500">
           可选。选择该单词使用的发音规则（可多选）。
           </p>
+          </div>
+
+          {/* Image Section */}
+          <div>
+            <label className="flex items-start gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm shadow-sm">
+              <input
+                id="hasImage"
+                name="hasImage"
+                type="checkbox"
+                checked={values.hasImage}
+                onChange={(e) => {
+                  const checked = e.target.checked
+                  setValues((prev) => ({
+                    ...prev,
+                    hasImage: checked,
+                    imageType: checked ? prev.imageType || 'url' : null,
+                    imageValue: checked ? prev.imageValue : null,
+                  }))
+                  // Clear image errors when toggling off
+                  if (!checked) {
+                    setErrors((prev) => ({
+                      ...prev,
+                      imageType: undefined,
+                      imageValue: undefined,
+                    }))
+                  }
+                }}
+                className="mt-1 h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900"
+                disabled={submitting}
+              />
+              <div className="flex-1">
+                <span className="font-medium text-slate-800">有图片</span>
+                <p className="text-xs text-slate-500">
+                  为这个单词添加图片、图标或emoji来帮助记忆。
+                </p>
+              </div>
+            </label>
+
+            {values.hasImage && (
+              <div className="mt-4 space-y-4 pl-7">
+                {/* Image Type Selection */}
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    图片类型
+                  </label>
+                  <div className="flex flex-wrap gap-3">
+                    {[
+                      { value: 'url', label: 'URL链接' },
+                      { value: 'iconfont', label: '图标字体' },
+                      { value: 'emoji', label: 'Emoji' },
+                    ].map((type) => (
+                      <label key={type.value} className="flex items-center gap-2 text-sm">
+                        <input
+                          type="radio"
+                          name="imageType"
+                          value={type.value}
+                          checked={values.imageType === type.value}
+                          onChange={(e) => {
+                            setValues((prev) => ({
+                              ...prev,
+                              imageType: e.target.value as 'url' | 'iconfont' | 'emoji',
+                              imageValue: null, // Clear value when type changes
+                            }))
+                          }}
+                          disabled={submitting}
+                          className="rounded border-slate-300 text-slate-900 focus:ring-slate-900"
+                        />
+                        <span>{type.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                  {errors.imageType && (
+                    <p className="mt-1 text-sm text-rose-600">{errors.imageType}</p>
+                  )}
+                </div>
+
+                {/* Image Value Input */}
+                {values.imageType && (
+                  <div>
+                    <label htmlFor="imageValue" className="block text-sm font-medium text-slate-700 mb-1">
+                      {values.imageType === 'url' && '图片URL'}
+                      {values.imageType === 'iconfont' && '图标字体类名'}
+                      {values.imageType === 'emoji' && 'Emoji内容'}
+                    </label>
+                    <input
+                      id="imageValue"
+                      name="imageValue"
+                      type="text"
+                      value={values.imageValue || ''}
+                      onChange={(e) => setValues((prev) => ({ ...prev, imageValue: e.target.value }))}
+                      placeholder={
+                        values.imageType === 'url' 
+                          ? 'https://example.com/image.png'
+                          : values.imageType === 'iconfont'
+                          ? 'icon-home'
+                          : '🏠'
+                      }
+                      className={`mt-1 w-full rounded-lg border px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-500/60 ${
+                        errors.imageValue ? 'border-rose-400 focus:ring-rose-500/60' : 'border-slate-300'
+                      }`}
+                      disabled={submitting}
+                    />
+                    {errors.imageValue && (
+                      <p className="mt-1 text-sm text-rose-600">{errors.imageValue}</p>
+                    )}
+                    <p className="mt-1 text-xs text-slate-500">
+                      {values.imageType === 'url' && '请输入完整的图片URL，必须以.jpg、.png等图片格式结尾。'}
+                      {values.imageType === 'iconfont' && '请输入CSS类名，如"icon-home"。'}
+                      {values.imageType === 'emoji' && '请输入emoji字符。'}
+                    </p>
+                  </div>
+                )}
+
+                {/* Image Preview */}
+                {values.imageType && values.imageValue && (
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      预览
+                    </label>
+                    <div className="flex items-center gap-4 p-4 border border-slate-200 rounded-lg bg-slate-50">
+                      <div className="flex items-center justify-center w-16 h-16 bg-white rounded border border-slate-200">
+                        {values.imageType === 'url' && (
+                          <img
+                            src={values.imageValue}
+                            alt="预览"
+                            className="w-full h-full object-cover rounded"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none'
+                              e.currentTarget.nextElementSibling?.classList.remove('hidden')
+                            }}
+                          />
+                        )}
+                        {values.imageType === 'url' && (
+                          <div className="hidden text-center text-xs text-slate-500">
+                            加载失败
+                          </div>
+                        )}
+                        {values.imageType === 'iconfont' && (
+                          <i className={`${values.imageValue} text-2xl text-slate-600`}></i>
+                        )}
+                        {values.imageType === 'emoji' && (
+                          <span className="text-2xl">{values.imageValue}</span>
+                        )}
+                      </div>
+                      <div className="text-sm text-slate-600">
+                        <p className="font-medium">类型: {values.imageType}</p>
+                        <p className="text-xs text-slate-500 mt-1">
+                          {values.imageType === 'url' && '图片URL'}
+                          {values.imageType === 'iconfont' && '图标字体'}
+                          {values.imageType === 'emoji' && 'Emoji字符'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
           </form>
   )

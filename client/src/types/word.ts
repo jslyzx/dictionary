@@ -13,4 +13,7 @@ export interface Word {
   difficulty: WordDifficulty
   isMastered: boolean | null
   pronunciationRules?: Array<{ id: number; letterCombination: string; pronunciation: string }>
+  hasImage: boolean
+  imageType: 'url' | 'iconfont' | 'emoji' | null
+  imageValue: string | null
 }
