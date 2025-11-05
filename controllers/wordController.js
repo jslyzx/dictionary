@@ -234,32 +234,49 @@ const getWords = async (req, res, next) => {
 
     // Add pronunciation rules to each word
     if (rows.length > 0) {
-      const wordIds = rows.map(w => w.word_id);
-      const placeholders = wordIds.map(() => '?').join(',');
-      
-      const [rules] = await query(
-        `SELECT wpr.word_id, pr.id, pr.letter_combination, pr.pronunciation
-         FROM word_pronunciation_rules wpr
-         JOIN pronunciation_rules pr ON wpr.pronunciation_rule_id = pr.id
-         WHERE wpr.word_id IN (${placeholders})`,
-        sanitizeDbParams(wordIds)
-      );
-      
-      // Group rules by word_id
-      const rulesMap = {};
-      rules.forEach(rule => {
-        if (!rulesMap[rule.word_id]) rulesMap[rule.word_id] = [];
-        rulesMap[rule.word_id].push({
-          id: rule.id,
-          letterCombination: rule.letter_combination,
-          pronunciation: rule.pronunciation
+      try {
+        const wordIds = rows.map(w => w.word_id);
+        
+        // Use single ? placeholder with array parameter for MySQL2
+        const [rules] = await query(
+          `SELECT wpr.word_id, pr.id, pr.letter_combination, pr.pronunciation
+           FROM word_pronunciation_rules wpr
+           JOIN pronunciation_rules pr ON wpr.pronunciation_rule_id = pr.id
+           WHERE wpr.word_id IN (?)`,
+          [wordIds]  // Pass array as single parameter
+        );
+        
+        // Add defensive check to ensure rules is an array
+        if (Array.isArray(rules)) {
+          // Group rules by word_id
+          const rulesMap = {};
+          rules.forEach(rule => {
+            if (!rulesMap[rule.word_id]) rulesMap[rule.word_id] = [];
+            rulesMap[rule.word_id].push({
+              id: rule.id,
+              letterCombination: rule.letter_combination,
+              pronunciation: rule.pronunciation
+            });
+          });
+          
+          // Add pronunciation rules to each word
+          rows.forEach(word => {
+            word.pronunciation_rules = rulesMap[word.word_id] || [];
+          });
+        } else {
+          console.error('Rules query returned non-array:', rules);
+          // Ensure each word has empty array if query fails
+          rows.forEach(word => {
+            word.pronunciation_rules = [];
+          });
+        }
+      } catch (rulesError) {
+        console.error('Error fetching pronunciation rules:', rulesError);
+        // If query fails, ensure words list still returns with empty pronunciation rules
+        rows.forEach(word => {
+          word.pronunciation_rules = [];
         });
-      });
-      
-      // Add pronunciation rules to each word
-      rows.forEach(word => {
-        word.pronunciation_rules = rulesMap[word.word_id] || [];
-      });
+      }
     }
 
     return res.json({
