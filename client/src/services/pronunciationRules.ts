@@ -128,35 +128,35 @@ const adaptUpdatePayload = (payload: UpdatePronunciationRulePayload) => {
 export const pronunciationRuleService = {
   // 获取发音规则列表
   getAll: async (params: ListPronunciationRulesParams): Promise<PronunciationRuleListResult> => {
-    const response = await request<{ success: boolean; data: PronunciationRuleListApiResponse }>({
+    const response = await request<PronunciationRuleListApiResponse>({
       method: 'GET',
       url: '/api/pronunciation-rules',
       params,
     })
     return {
-      items: response.data.items.map(mapPronunciationRule),
-      total: response.data.total,
-      page: response.data.page,
-      limit: response.data.limit,
+      items: (response.items || []).map(mapPronunciationRule),
+      total: response.total || 0,
+      page: response.page || 1,
+      limit: response.limit || 10,
     }
   },
 
   // 根据ID获取单个发音规则
   getById: async (id: number): Promise<PronunciationRule> => {
-    const response = await request<{ success: boolean; data: PronunciationRuleApiResponse }>({
+    const response = await request<{ item: PronunciationRuleApiResponse }>({
       method: 'GET',
       url: `/api/pronunciation-rules/${id}`,
     })
-    return mapPronunciationRule(response.data)
+    return mapPronunciationRule(response.item)
   },
 
   // 根据字母组合获取发音规则
   getByCombination: async (letterCombination: string): Promise<PronunciationRule[]> => {
-    const response = await request<{ success: boolean; data: PronunciationRuleApiResponse[] }>({
+    const response = await request<{ items: PronunciationRuleApiResponse[] }>({
       method: 'GET',
       url: `/api/pronunciation-rules/by-combination/${encodeURIComponent(letterCombination)}`,
     })
-    return response.data.map(mapPronunciationRule)
+    return (response.items || []).map(mapPronunciationRule)
   },
 
   // 获取使用指定发音规则的单词列表
@@ -175,7 +175,7 @@ export const pronunciationRuleService = {
     page: number
     limit: number
   }> => {
-    const response = await request<{ success: boolean; data: {
+    const response = await request<{
       items: Array<{
         word_id: number
         word: string
@@ -189,7 +189,7 @@ export const pronunciationRuleService = {
       total: number
       page: number
       limit: number
-    } }>({
+    }>({
       method: 'GET',
       url: `/api/pronunciation-rules/${id}/words`,
       params,
@@ -197,7 +197,7 @@ export const pronunciationRuleService = {
     
     // Transform the response data to match the expected interface
     return {
-      items: response.data.items.map(item => ({
+      items: (response.items || []).map(item => ({
         wordId: item.word_id,
         word: item.word,
         phonetic: item.phonetic,
@@ -207,20 +207,20 @@ export const pronunciationRuleService = {
         positionInWord: item.position_in_word,
         ruleAddedAt: item.rule_added_at,
       })),
-      total: response.data.total,
-      page: response.data.page,
-      limit: response.data.limit,
+      total: response.total || 0,
+      page: response.page || 1,
+      limit: response.limit || 10,
     }
   },
 
   // 创建发音规则
   create: async (payload: CreatePronunciationRulePayload): Promise<PronunciationRule> => {
-    const response = await request<{ success: boolean; data: PronunciationRuleApiResponse }>({
+    const response = await request<{ item: PronunciationRuleApiResponse }>({
       method: 'POST',
       url: '/api/pronunciation-rules',
       data: adaptCreatePayload(payload),
     })
-    return mapPronunciationRule(response.data)
+    return mapPronunciationRule(response.item)
   },
 
   // 更新发音规则
@@ -229,17 +229,17 @@ export const pronunciationRuleService = {
       throw new Error('Valid pronunciation rule ID is required for update');
     }
     
-    const response = await request<{ success: boolean; data: PronunciationRuleApiResponse }>({
+    const response = await request<{ item: PronunciationRuleApiResponse }>({
       method: 'PUT',
       url: `/api/pronunciation-rules/${id}`,
       data: adaptUpdatePayload(payload),
     })
-    return mapPronunciationRule(response.data)
+    return mapPronunciationRule(response.item)
   },
 
   // 删除发音规则
   delete: async (id: number): Promise<void> => {
-    await request<{ success: boolean; data: { message: string } }>({
+    await request<{ message: string }>({
       method: 'DELETE',
       url: `/api/pronunciation-rules/${id}`,
     })
@@ -247,11 +247,11 @@ export const pronunciationRuleService = {
 
   // 获取单词的发音规则
   getWordPronunciationRules: async (wordId: number): Promise<WordPronunciationRule[]> => {
-    const response = await request<{ success: boolean; data: WordPronunciationRuleApiResponse[] }>({
+    const response = await request<{ items: WordPronunciationRuleApiResponse[] }>({
       method: 'GET',
       url: `/api/pronunciation-rules/words/${wordId}/pronunciation-rules`,
     })
-    return response.data.map(mapWordPronunciationRule)
+    return (response.items || []).map(mapWordPronunciationRule)
   },
 
   // 为单词添加发音规则关联
@@ -259,7 +259,7 @@ export const pronunciationRuleService = {
     message: string
     items: WordPronunciationRule[]
   }> => {
-    const response = await request<{ success: boolean; data: {
+    const response = await request<{
       message: string
       items: Array<{
         id: number
@@ -269,7 +269,7 @@ export const pronunciationRuleService = {
         position_in_word?: number | null
         rule_associated_at: string
       }>
-    } }>({
+    }>({
       method: 'POST',
       url: `/api/pronunciation-rules/words/${wordId}/pronunciation-rules`,
       data: payload,
@@ -277,8 +277,8 @@ export const pronunciationRuleService = {
     
     // Transform the response data to match the expected interface
     return {
-      message: response.data.message,
-      items: response.data.items.map(item => ({
+      message: response.message,
+      items: (response.items || []).map(item => ({
         id: item.id,
         letterCombination: item.letter_combination,
         pronunciation: item.pronunciation,
@@ -291,7 +291,7 @@ export const pronunciationRuleService = {
 
   // 移除单词的发音规则关联
   removeWordPronunciationRule: async (wordId: number, ruleId: number): Promise<void> => {
-    await request<{ success: boolean; data: { message: string } }>({
+    await request<{ message: string }>({
       method: 'DELETE',
       url: `/api/pronunciation-rules/words/${wordId}/pronunciation-rules/${ruleId}`,
     })
