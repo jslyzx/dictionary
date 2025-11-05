@@ -14,6 +14,9 @@ export interface Word {
   notes: string | null
   sentence: string | null
   pronunciationRules?: Array<{ id: number; letterCombination: string; pronunciation: string }>
+  hasImage: boolean
+  imageType: 'url' | 'iconfont' | 'emoji' | null
+  imageValue: string | null
 }
 
 interface WordApiResponse {
@@ -30,6 +33,9 @@ interface WordApiResponse {
   isMastered: boolean
   createdAt: string | null
   pronunciationRules?: Array<{ id: number; letterCombination: string; pronunciation: string }>
+  hasImage: boolean
+  imageType: 'url' | 'iconfont' | 'emoji' | null
+  imageValue: string | null
 }
 
 interface WordListApiResponse {
@@ -65,6 +71,9 @@ export interface UpsertWordPayload {
   pronunciation3?: string | null
   notes?: string | null
   sentence?: string | null
+  hasImage?: boolean
+  imageType?: 'url' | 'iconfont' | 'emoji' | null
+  imageValue?: string | null
 }
 
 const mapWord = (word: WordApiResponse): Word => ({
@@ -81,6 +90,9 @@ const mapWord = (word: WordApiResponse): Word => ({
   isMastered: word.isMastered,
   createdAt: word.createdAt ?? null,
   pronunciationRules: word.pronunciationRules ?? [],
+  hasImage: word.hasImage ?? false,
+  imageType: word.imageType ?? null,
+  imageValue: word.imageValue ?? null,
 })
 
 const adaptUpsertPayload = (payload: UpsertWordPayload) => {
@@ -110,6 +122,18 @@ const adaptUpsertPayload = (payload: UpsertWordPayload) => {
 
   if (payload.sentence !== undefined) {
     data.sentence = payload.sentence ? payload.sentence : null
+  }
+
+  if (payload.hasImage !== undefined) {
+    data.hasImage = payload.hasImage
+  }
+
+  if (payload.imageType !== undefined) {
+    data.imageType = payload.imageType
+  }
+
+  if (payload.imageValue !== undefined) {
+    data.imageValue = payload.imageValue ? payload.imageValue : null
   }
 
   return data
@@ -185,7 +209,10 @@ export const fetchWords = async (params: ListWordsParams): Promise<{
       ...item,
       createdAt: item.createdAt || new Date().toISOString(), // Ensure non-null string
       difficulty: item.difficulty as import('../types/word').WordDifficulty, // Ensure correct difficulty type
-      isMastered: item.isMastered as boolean | null // Ensure boolean | null type
+      isMastered: item.isMastered as boolean | null, // Ensure boolean | null type
+      hasImage: item.hasImage || false, // Ensure boolean
+      imageType: item.imageType || null, // Ensure proper type
+      imageValue: item.imageValue || null, // Ensure proper type
     }))
   }
 }
