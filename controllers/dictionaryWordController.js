@@ -381,9 +381,10 @@ const importDictionaryWordsCsv = async (req, res, next) => {
 
     const uniqueDictionaryIds = [...new Set(sanitizedRecords.map((record) => record.dictionaryId))];
     if (uniqueDictionaryIds.length) {
+      const placeholders = uniqueDictionaryIds.map(() => '?').join(',');
       const existingDictionaries = await query(
-        `SELECT dictionary_id FROM dictionaries WHERE dictionary_id IN (?)`,
-        [uniqueDictionaryIds],
+        `SELECT dictionary_id FROM dictionaries WHERE dictionary_id IN (${placeholders})`,
+        uniqueDictionaryIds,
       );
       const existingDictionaryIds = new Set(
         existingDictionaries.map((row) => row.dictionary_id),
@@ -402,9 +403,10 @@ const importDictionaryWordsCsv = async (req, res, next) => {
     const recordsWithWordId = sanitizedRecords.filter((record) => record.wordId);
     if (recordsWithWordId.length) {
       const uniqueWordIds = [...new Set(recordsWithWordId.map((record) => record.wordId))];
+      const placeholders = uniqueWordIds.map(() => '?').join(',');
       const existingWordRows = await query(
-        `SELECT word_id FROM words WHERE word_id IN (?)`,
-        [uniqueWordIds],
+        `SELECT word_id FROM words WHERE word_id IN (${placeholders})`,
+        uniqueWordIds,
       );
       const existingWordIds = new Set(existingWordRows.map((row) => row.word_id));
       recordsWithWordId.forEach((record) => {
@@ -424,9 +426,10 @@ const importDictionaryWordsCsv = async (req, res, next) => {
 
     if (recordsWithWordName.length) {
       const uniqueWordNames = [...new Set(recordsWithWordName.map((record) => record.wordName))];
+      const placeholders = uniqueWordNames.map(() => '?').join(',');
       const wordRows = await query(
-        `SELECT word_id, word FROM words WHERE word IN (?)`,
-        [uniqueWordNames],
+        `SELECT word_id, word FROM words WHERE word IN (${placeholders})`,
+        uniqueWordNames,
       );
       const wordMap = new Map(wordRows.map((row) => [row.word, row.word_id]));
       recordsWithWordName.forEach((record) => {
