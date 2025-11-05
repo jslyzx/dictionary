@@ -268,6 +268,77 @@ const createWordRules = [
       req.body.createdAt = date;
       return true;
     }),
+  body('hasImage')
+    .optional()
+    .custom((value, { req }) => {
+      const normalized = normalizeBoolean(value);
+      if (normalized === undefined) {
+        throw new Error('hasImage must be a boolean value.');
+      }
+      req.body.hasImage = normalized;
+      return true;
+    }),
+  body('imageType')
+    .optional()
+    .custom((value, { req }) => {
+      if (value === null || value === '') {
+        req.body.imageType = null;
+        return true;
+      }
+      if (typeof value !== 'string') {
+        throw new Error('imageType must be a string.');
+      }
+      const trimmed = value.trim();
+      if (!trimmed) {
+        req.body.imageType = null;
+        return true;
+      }
+      if (!['url', 'iconfont', 'emoji'].includes(trimmed)) {
+        throw new Error('imageType must be one of: url, iconfont, emoji.');
+      }
+      req.body.imageType = trimmed;
+      return true;
+    }),
+  body('imageValue')
+    .optional()
+    .custom((value, { req }) => {
+      if (value === null || value === '') {
+        req.body.imageValue = null;
+        return true;
+      }
+      if (typeof value !== 'string') {
+        throw new Error('imageValue must be a string.');
+      }
+      const trimmed = value.trim();
+      if (!trimmed) {
+        req.body.imageValue = null;
+        return true;
+      }
+      
+      // Validate length based on imageType if provided
+      const imageType = req.body.imageType;
+      let maxLength = 500; // default for URL
+      
+      if (imageType === 'iconfont') {
+        maxLength = 100;
+      } else if (imageType === 'emoji') {
+        maxLength = 50;
+      }
+      
+      if (trimmed.length > maxLength) {
+        throw new Error(`imageValue must be ${maxLength} characters or fewer for type ${imageType || 'url'}.`);
+      }
+      
+      req.body.imageValue = trimmed;
+      return true;
+    })
+    .custom((value, { req }) => {
+      // If hasImage is true, imageValue is required
+      if (req.body.hasImage === true && (!value || !value.trim())) {
+        throw new Error('imageValue is required when hasImage is true.');
+      }
+      return true;
+    }),
 ];
 
 const updateWordRules = [
@@ -285,6 +356,9 @@ const updateWordRules = [
         'difficulty',
         'isMastered',
         'createdAt',
+        'hasImage',
+        'imageType',
+        'imageValue',
       ];
       const hasField = fields.some((field) => hasOwn(req.body, field));
       if (!hasField) {
@@ -390,6 +464,77 @@ const updateWordRules = [
         throw new Error('createdAt must be a valid date.');
       }
       req.body.createdAt = date;
+      return true;
+    }),
+  body('hasImage')
+    .optional()
+    .custom((value, { req }) => {
+      const normalized = normalizeBoolean(value);
+      if (normalized === undefined) {
+        throw new Error('hasImage must be a boolean value.');
+      }
+      req.body.hasImage = normalized;
+      return true;
+    }),
+  body('imageType')
+    .optional()
+    .custom((value, { req }) => {
+      if (value === null || value === '') {
+        req.body.imageType = null;
+        return true;
+      }
+      if (typeof value !== 'string') {
+        throw new Error('imageType must be a string.');
+      }
+      const trimmed = value.trim();
+      if (!trimmed) {
+        req.body.imageType = null;
+        return true;
+      }
+      if (!['url', 'iconfont', 'emoji'].includes(trimmed)) {
+        throw new Error('imageType must be one of: url, iconfont, emoji.');
+      }
+      req.body.imageType = trimmed;
+      return true;
+    }),
+  body('imageValue')
+    .optional()
+    .custom((value, { req }) => {
+      if (value === null || value === '') {
+        req.body.imageValue = null;
+        return true;
+      }
+      if (typeof value !== 'string') {
+        throw new Error('imageValue must be a string.');
+      }
+      const trimmed = value.trim();
+      if (!trimmed) {
+        req.body.imageValue = null;
+        return true;
+      }
+      
+      // Validate length based on imageType if provided
+      const imageType = req.body.imageType;
+      let maxLength = 500; // default for URL
+      
+      if (imageType === 'iconfont') {
+        maxLength = 100;
+      } else if (imageType === 'emoji') {
+        maxLength = 50;
+      }
+      
+      if (trimmed.length > maxLength) {
+        throw new Error(`imageValue must be ${maxLength} characters or fewer for type ${imageType || 'url'}.`);
+      }
+      
+      req.body.imageValue = trimmed;
+      return true;
+    })
+    .custom((value, { req }) => {
+      // If hasImage is true, imageValue is required
+      if (req.body.hasImage === true && (!value || !value.trim())) {
+        throw new Error('imageValue is required when hasImage is true.');
+      }
       return true;
     }),
 ];
