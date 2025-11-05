@@ -170,7 +170,7 @@ const PronunciationRulesPage = () => {
                       {rule.pronunciation}
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-500">
-                      <div className="max-w-xs truncate" title={rule.ruleDescription || ''}>
+                      <div className="truncate" title={rule.ruleDescription || ''}>
                         {rule.ruleDescription || '-'}
                       </div>
                     </td>
