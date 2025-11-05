@@ -821,6 +821,12 @@ const WordsPage = () => {
                     </th>
                     <th
                       scope="col"
+                      className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600"
+                    >
+                      发音规则
+                    </th>
+                    <th
+                      scope="col"
                       className="hidden px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600 lg:table-cell"
                     >
                       笔记
@@ -945,6 +951,27 @@ const WordsPage = () => {
                         </td>
                         <td className="px-4 py-3 align-top text-slate-600">
                           <p className="text-sm leading-relaxed">{word.meaning}</p>
+                        </td>
+                        <td className="px-4 py-3 align-top">
+                          {word.pronunciationRules && word.pronunciationRules.length > 0 ? (
+                            <div className="flex flex-wrap gap-1">
+                              {word.pronunciationRules.slice(0, 2).map(rule => (
+                                <span 
+                                  key={rule.id}
+                                  className="inline-block rounded bg-blue-100 px-2 py-1 text-xs text-blue-800"
+                                >
+                                  {rule.letterCombination}
+                                </span>
+                              ))}
+                              {word.pronunciationRules.length > 2 && (
+                                <span className="inline-block rounded bg-gray-100 px-2 py-1 text-xs text-gray-600">
+                                  +{word.pronunciationRules.length - 2}
+                                </span>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-xs text-gray-400">-</span>
+                          )}
                         </td>
                         <td className="hidden px-4 py-3 align-top lg:table-cell">
                           {word.notes ? (
