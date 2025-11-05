@@ -1060,8 +1060,9 @@ const WordsPage = () => {
 
       {formState.open ? (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-900/40 px-4">
-          <div className="w-full max-w-2xl overflow-hidden rounded-2xl bg-white shadow-xl">
-            <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
+          <div className="flex h-[90vh] max-h-[900px] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-xl md:h-[85vh]">
+            {/* Fixed Header */}
+            <div className="flex flex-shrink-0 items-center justify-between border-b border-slate-200 px-6 py-4">
               <h2 className="text-lg font-semibold text-slate-900">
                 {formState.mode === 'edit' ? '编辑单词' : '添加单词'}
               </h2>
@@ -1074,7 +1075,9 @@ const WordsPage = () => {
                 <span className="sr-only">关闭</span>
               </button>
             </div>
-            <div className="px-6 py-6">
+            
+            {/* Scrollable Content Area */}
+            <div className="flex-1 overflow-y-auto px-6 py-4 scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-slate-100 md:px-4 md:py-3">
               {formError ? (
                 <div className="mb-4 rounded-lg border border-rose-200 bg-rose-50 px-4 py-2 text-sm text-rose-700">
                   {formError}
@@ -1089,7 +1092,9 @@ const WordsPage = () => {
                 onSubmit={handleSubmitWord}
               />
             </div>
-            <div className="flex items-center justify-end gap-3 border-t border-slate-200 px-6 py-4">
+            
+            {/* Fixed Footer */}
+            <div className="flex flex-shrink-0 items-center justify-end gap-3 border-t border-slate-200 px-6 py-4">
               <button
                 type="button"
                 onClick={closeForm}
@@ -1331,7 +1336,7 @@ const WordForm = ({ formId, mode, initialValues, submitting, onSubmit }: WordFor
 
   return (
     <form id={formId} onSubmit={handleSubmit} className="space-y-5">
-      <div className="grid gap-5 md:grid-cols-2">
+      <div className="grid gap-5 gap-y-4 md:grid-cols-2">
         <div>
           <label htmlFor="word" className="block text-sm font-medium text-slate-700">
             单词<span className="text-rose-500">*</span>
@@ -1380,11 +1385,11 @@ const WordForm = ({ formId, mode, initialValues, submitting, onSubmit }: WordFor
         <textarea
           id="meaning"
           name="meaning"
-          rows={4}
+          rows={3}
           value={values.meaning}
           onChange={handleChange}
           placeholder="为这个单词提供简洁的解释。"
-          className={`mt-1 w-full rounded-lg border px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-500/60 ${
+          className={`mt-1 w-full resize-none rounded-lg border px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-500/60 ${
             errors.meaning ? 'border-rose-400 focus:ring-rose-500/60' : 'border-slate-300'
           }`}
           disabled={submitting}
@@ -1392,7 +1397,7 @@ const WordForm = ({ formId, mode, initialValues, submitting, onSubmit }: WordFor
         {errors.meaning ? <p className="mt-1 text-sm text-rose-600">{errors.meaning}</p> : null}
       </div>
 
-      <div className="grid gap-5 md:grid-cols-2">
+      <div className="grid gap-5 gap-y-4 md:grid-cols-2">
         <div>
           <label htmlFor="notes" className="block text-sm font-medium text-slate-700">
             笔记
@@ -1400,11 +1405,11 @@ const WordForm = ({ formId, mode, initialValues, submitting, onSubmit }: WordFor
           <textarea
             id="notes"
             name="notes"
-            rows={6}
+            rows={4}
             value={values.notes}
             onChange={handleChange}
             placeholder="记录学习笔记、记忆技巧等..."
-            className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-500/60"
+            className="mt-1 w-full resize-none rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-500/60"
             disabled={submitting}
           />
           <p className="mt-1 text-xs text-slate-500">
@@ -1418,11 +1423,11 @@ const WordForm = ({ formId, mode, initialValues, submitting, onSubmit }: WordFor
           <textarea
             id="sentence"
             name="sentence"
-            rows={4}
+            rows={3}
             value={values.sentence}
             onChange={handleChange}
             placeholder="提供例句帮助理解单词用法..."
-            className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-500/60"
+            className="mt-1 w-full resize-none rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-500/60"
             disabled={submitting}
           />
           <p className="mt-1 text-xs text-slate-500">
@@ -1431,7 +1436,7 @@ const WordForm = ({ formId, mode, initialValues, submitting, onSubmit }: WordFor
         </div>
       </div>
 
-      <div className="grid gap-5 md:grid-cols-2">
+      <div className="grid gap-5 gap-y-4 md:grid-cols-2">
         <div>
           <label
             htmlFor="pronunciationUrl"
@@ -1453,7 +1458,7 @@ const WordForm = ({ formId, mode, initialValues, submitting, onSubmit }: WordFor
             可选。提供发音的音频URL或参考链接。
           </p>
         </div>
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 gap-y-3 sm:grid-cols-2">
           <div>
             <label htmlFor="difficulty" className="block text-sm font-medium text-slate-700">
               难度
@@ -1506,7 +1511,7 @@ const WordForm = ({ formId, mode, initialValues, submitting, onSubmit }: WordFor
               {pronunciationRulesError}
             </div>
           ) : (
-            <div className="space-y-2 max-h-48 overflow-y-auto border border-slate-300 rounded-lg p-2">
+            <div className="space-y-2 max-h-32 overflow-y-auto border border-slate-300 rounded-lg p-2 scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-slate-100">
               {pronunciationRules.length === 0 ? (
                 <div className="text-sm text-slate-500 text-center py-4">
                   暂无发音规则

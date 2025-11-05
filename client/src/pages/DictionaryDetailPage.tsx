@@ -299,6 +299,7 @@ const AddDictionaryWordModal = ({
         </>
       }
       isOpen={isOpen}
+      maxHeight={true}
       onClose={submitting ? () => {} : onClose}
       size="lg"
       title="添加单词到词典"
