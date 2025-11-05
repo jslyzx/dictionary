@@ -78,8 +78,8 @@ const serializeWord = (row) => ({
 });
 
 const getPagination = (filters = {}) => {
-  const page = filters.page ?? DEFAULT_PAGE;
-  const limit = filters.limit ?? DEFAULT_LIMIT;
+  const page = parseInt(filters.page ?? DEFAULT_PAGE, 10);
+  const limit = parseInt(filters.limit ?? DEFAULT_LIMIT, 10);
   return {
     page,
     limit,
@@ -221,8 +221,8 @@ const getWords = async (req, res, next) => {
          FROM words w${joinClause}
          ${whereClause}
          ORDER BY w.word_id DESC
-         LIMIT ? OFFSET ?`,
-      sanitizeDbParams([...params, limit, offset]),
+         LIMIT ${limit} OFFSET ${offset}`,
+      params,
     );
 
     const [countRow] = await query(
@@ -241,7 +241,7 @@ const getWords = async (req, res, next) => {
         const placeholders = wordIds.map(() => '?').join(',');
         
         // Use dynamic placeholders to avoid MySQL array parameter issue
-        const [rules] = await query(
+        const rules = await query(
           `SELECT wpr.word_id, pr.id, pr.letter_combination, pr.pronunciation
            FROM word_pronunciation_rules wpr
            JOIN pronunciation_rules pr ON wpr.pronunciation_rule_id = pr.id
