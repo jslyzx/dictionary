@@ -18,17 +18,17 @@ CREATE TABLE pronunciation_rules (
 -- 2. 创建单词-发音规则关联表
 CREATE TABLE word_pronunciation_rules (
   id INT AUTO_INCREMENT PRIMARY KEY COMMENT '关联关系唯一标识',
-  word_id INT NOT NULL COMMENT '单词ID',
-  pronunciation_rule_id INT NOT NULL COMMENT '发音规则ID',
+  word_id INT NOT NULL COMMENT '单词ID，外键关联words表的word_id字段',
+  pronunciation_rule_id INT NOT NULL COMMENT '发音规则ID，外键关联pronunciation_rules表的id字段',
   position_in_word INT COMMENT '该规则在单词中的位置（可选）',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  FOREIGN KEY (word_id) REFERENCES words(word_id) ON DELETE CASCADE COMMENT '关联单词表',
-  FOREIGN KEY (pronunciation_rule_id) REFERENCES pronunciation_rules(id) ON DELETE CASCADE COMMENT '关联发音规则表',
+  FOREIGN KEY (word_id) REFERENCES words(word_id) ON DELETE CASCADE,
+  FOREIGN KEY (pronunciation_rule_id) REFERENCES pronunciation_rules(id) ON DELETE CASCADE,
   UNIQUE KEY uk_word_rule (word_id, pronunciation_rule_id) COMMENT '防止重复关联'
 ) ENGINE=InnoDB 
   DEFAULT CHARSET=utf8mb4 
   COLLATE=utf8mb4_unicode_ci
-  COMMENT='单词-发音规则关联表';
+  COMMENT='单词-发音规则多对多关联表，支持一个单词关联多个发音规则';
 
 -- 3. 添加额外索引以优化查询性能
 CREATE INDEX idx_word_pronunciation_rule_word ON word_pronunciation_rules(word_id) COMMENT '根据单词ID查询关联规则';
