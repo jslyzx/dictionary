@@ -195,7 +195,7 @@ const WordDetailPage = () => {
                           }}
                         />
                       ) : word.imageType === 'iconfont' ? (
-                        <i className={`${word.imageValue} text-4xl text-gray-600`}></i>
+                        <i className={`iconfont ${word.imageValue} text-4xl cursor-pointer text-gray-600 hover:text-6xl transition-all`}></i>
                       ) : word.imageType === 'emoji' ? (
                         <span className="text-4xl">{word.imageValue}</span>
                       ) : null}

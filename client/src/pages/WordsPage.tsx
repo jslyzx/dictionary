@@ -1809,7 +1809,7 @@ const WordForm = ({ formId, mode, initialValues, submitting, onSubmit }: WordFor
                           </div>
                         )}
                         {values.imageType === 'iconfont' && (
-                          <i className={`${values.imageValue} text-2xl text-slate-600`}></i>
+                          <i className={`iconfont ${values.imageValue} text-3xl cursor-pointer text-slate-600 hover:text-5xl transition-all`}></i>
                         )}
                         {values.imageType === 'emoji' && (
                           <span className="text-2xl">{values.imageValue}</span>
