@@ -430,9 +430,9 @@ const batchAddDictionaryWords = async (req, res, next) => {
 
     // Check which words exist and filter out invalid ones
     const uniqueWordIds = [...new Set(wordIds)];
-    const placeholders = uniqueWordIds.map(() => '?').join(',');
+    const wordIdPlaceholders = uniqueWordIds.map(() => '?').join(',');
     const [existingWordRows] = await connection.execute(
-      `SELECT word_id FROM words WHERE word_id IN (${placeholders})`,
+      `SELECT word_id FROM words WHERE word_id IN (${wordIdPlaceholders})`,
       uniqueWordIds
     );
     
@@ -451,9 +451,9 @@ const batchAddDictionaryWords = async (req, res, next) => {
     }
 
     // Check for existing associations to avoid duplicates
-    const placeholders2 = uniqueWordIds.map(() => '?').join(',');
+    const associationPlaceholders = uniqueWordIds.map(() => '?').join(',');
     const [existingAssociationRows] = await connection.execute(
-      `SELECT word_id FROM dictionary_words WHERE dictionary_id = ? AND word_id IN (${placeholders2})`,
+      `SELECT word_id FROM dictionary_words WHERE dictionary_id = ? AND word_id IN (${associationPlaceholders})`,
       [dictionaryId, ...uniqueWordIds]
     );
     

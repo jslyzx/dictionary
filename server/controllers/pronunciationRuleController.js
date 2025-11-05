@@ -421,9 +421,9 @@ const addWordPronunciationRules = async (req, res, next) => {
     }
 
     // 验证所有发音规则是否存在
-    const placeholders = validRuleIds.map(() => '?').join(',');
+    const rulePlaceholders = validRuleIds.map(() => '?').join(',');
     const [ruleCheck] = await pool.execute(
-      `SELECT id FROM pronunciation_rules WHERE id IN (${placeholders})`,
+      `SELECT id FROM pronunciation_rules WHERE id IN (${rulePlaceholders})`,
       validRuleIds,
     );
     if (ruleCheck.length !== validRuleIds.length) {
@@ -432,12 +432,12 @@ const addWordPronunciationRules = async (req, res, next) => {
 
     // 批量插入关联关系（忽略已存在的关联）
     const insertValues = validRuleIds.map(ruleId => [wordId, ruleId, positionInWord || null]);
-    const placeholders = insertValues.map(() => '(?, ?, ?)').join(', ');
+    const insertPlaceholders = insertValues.map(() => '(?, ?, ?)').join(', ');
     const flatValues = insertValues.flat();
 
     const [result] = await pool.execute(
       `INSERT IGNORE INTO word_pronunciation_rules (word_id, pronunciation_rule_id, position_in_word) 
-       VALUES ${placeholders}`,
+       VALUES ${insertPlaceholders}`,
       flatValues,
     );
 
