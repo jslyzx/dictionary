@@ -74,6 +74,7 @@ const serializeWord = (row) => ({
   createdAt: row.created_at,
   difficulty: row.difficulty,
   isMastered: row.is_mastered === 1,
+  pronunciationRules: row.pronunciation_rules || [],
 });
 
 const getPagination = (filters = {}) => {
@@ -230,6 +231,36 @@ const getWords = async (req, res, next) => {
          ${whereClause}`,
       sanitizeDbParams(params),
     );
+
+    // Add pronunciation rules to each word
+    if (rows.length > 0) {
+      const wordIds = rows.map(w => w.word_id);
+      const placeholders = wordIds.map(() => '?').join(',');
+      
+      const [rules] = await query(
+        `SELECT wpr.word_id, pr.id, pr.letter_combination, pr.pronunciation
+         FROM word_pronunciation_rules wpr
+         JOIN pronunciation_rules pr ON wpr.pronunciation_rule_id = pr.id
+         WHERE wpr.word_id IN (${placeholders})`,
+        sanitizeDbParams(wordIds)
+      );
+      
+      // Group rules by word_id
+      const rulesMap = {};
+      rules.forEach(rule => {
+        if (!rulesMap[rule.word_id]) rulesMap[rule.word_id] = [];
+        rulesMap[rule.word_id].push({
+          id: rule.id,
+          letterCombination: rule.letter_combination,
+          pronunciation: rule.pronunciation
+        });
+      });
+      
+      // Add pronunciation rules to each word
+      rows.forEach(word => {
+        word.pronunciation_rules = rulesMap[word.word_id] || [];
+      });
+    }
 
     return res.json({
       success: true,

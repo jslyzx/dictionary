@@ -12,4 +12,5 @@ export interface Word {
   createdAt: string
   difficulty: WordDifficulty
   isMastered: boolean | null
+  pronunciationRules?: Array<{ id: number; letterCombination: string; pronunciation: string }>
 }
