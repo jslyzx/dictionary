@@ -18,7 +18,6 @@ export interface Word {
 
 interface WordApiResponse {
   id: number
-  word_id: number
   word: string
   phonetic: string
   meaning: string
@@ -28,9 +27,9 @@ interface WordApiResponse {
   notes: string | null
   sentence: string | null
   difficulty: number | null
-  is_mastered: 0 | 1 | null
-  created_at: string | null
-  pronunciation_rules?: Array<{ id: number; letterCombination: string; pronunciation: string }>
+  isMastered: boolean
+  createdAt: string | null
+  pronunciationRules?: Array<{ id: number; letterCombination: string; pronunciation: string }>
 }
 
 interface WordListApiResponse {
@@ -79,9 +78,9 @@ const mapWord = (word: WordApiResponse): Word => ({
   notes: word.notes ?? null,
   sentence: word.sentence ?? null,
   difficulty: word.difficulty ?? 0,
-  isMastered: Boolean(word.is_mastered),
-  createdAt: word.created_at ?? null,
-  pronunciationRules: word.pronunciation_rules ?? [],
+  isMastered: word.isMastered,
+  createdAt: word.createdAt ?? null,
+  pronunciationRules: word.pronunciationRules ?? [],
 })
 
 const adaptUpsertPayload = (payload: UpsertWordPayload) => {

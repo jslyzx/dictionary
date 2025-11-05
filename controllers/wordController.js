@@ -474,7 +474,7 @@ const getWordById = async (req, res, next) => {
       WHERE wpr.word_id = ?
     `, sanitizeDbParams([wordId]));
     
-    word.pronunciation_rules = pronunciationRulesRows.map(row => ({
+    word.pronunciationRules = pronunciationRulesRows.map(row => ({
       id: row.id,
       letterCombination: row.letter_combination,
       pronunciation: row.pronunciation,
