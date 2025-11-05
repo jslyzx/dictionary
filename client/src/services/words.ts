@@ -158,6 +158,15 @@ export const deleteWord = async (id: number): Promise<void> => {
   })
 }
 
+export const getById = async (id: number): Promise<Word & { pronunciation_rules?: Array<{ id: number; letterCombination: string; pronunciation: string; ruleDescription?: string | null }>; dictionaries?: Array<{ id: number; name: string; isMastered: boolean }> }> => {
+  const response = await request<Word & { pronunciation_rules?: Array<{ id: number; letterCombination: string; pronunciation: string; ruleDescription?: string | null }>; dictionaries?: Array<{ id: number; name: string; isMastered: boolean }> }>({
+    method: 'GET',
+    url: `/api/words/${id}`,
+  })
+  
+  return response
+}
+
 // Added for compatibility with existing components
 export const fetchWords = async (params: ListWordsParams): Promise<{
   items: import('../types/word').Word[]
