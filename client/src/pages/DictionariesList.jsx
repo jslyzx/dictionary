@@ -5,7 +5,12 @@ import toast from 'react-hot-toast';
 import ConfirmDialog from '../components/ConfirmDialog.jsx';
 import DictionaryForm from '../components/DictionaryForm.jsx';
 import Modal from '../components/Modal.jsx';
-import { ApiError, apiClient } from '../lib/apiClient.js';
+import {
+  fetchDictionaries,
+  createDictionary,
+  updateDictionary,
+  deleteDictionary
+} from '../services/dictionaries';
 
 const FORM_ID = 'dictionary-form';
 
@@ -27,13 +32,12 @@ function DictionariesList() {
     setIsLoading(true);
     setLoadError(null);
     try {
-      const data = await apiClient.listDictionaries();
+      const data = await fetchDictionaries();
       setDictionaries(data);
       setHasFetched(true);
     } catch (error) {
       console.error(error);
-      const message =
-        error instanceof ApiError ? error.message : '无法加载词典列表。';
+      const message = error?.message || '无法加载词典列表。';
       setLoadError(message);
       toast.error(message);
     } finally {
@@ -66,7 +70,7 @@ function DictionariesList() {
     setIsSubmitting(true);
     try {
       if (formMode === 'edit' && activeDictionary) {
-        const updated = await apiClient.updateDictionary(activeDictionary.id, payload);
+        const updated = await updateDictionary(activeDictionary.id, payload);
         toast.success('词典更新成功。');
         setDictionaries((prev) =>
           prev.map((dictionary) =>
@@ -74,7 +78,7 @@ function DictionariesList() {
           )
         );
       } else {
-        const created = await apiClient.createDictionary(payload);
+        const created = await createDictionary(payload);
         toast.success('词典创建成功。');
         setDictionaries((prev) => [created, ...prev]);
       }
@@ -82,8 +86,7 @@ function DictionariesList() {
       await loadDictionaries();
     } catch (error) {
       console.error(error);
-      const message =
-        error instanceof ApiError ? error.message : '无法保存词典。';
+      const message = error?.message || '无法保存词典。';
       toast.error(message);
     } finally {
       setIsSubmitting(false);
@@ -99,7 +102,7 @@ function DictionariesList() {
     setIsDeleting(true);
     try {
       const deletedId = dictionaryToDelete.id;
-      await apiClient.deleteDictionary(deletedId);
+      await deleteDictionary(deletedId);
       toast.success('词典已删除。');
       setDictionaries((prev) =>
         prev.filter((dictionary) => dictionary.id !== deletedId)
@@ -108,8 +111,7 @@ function DictionariesList() {
       await loadDictionaries();
     } catch (error) {
       console.error(error);
-      const message =
-        error instanceof ApiError ? error.message : '无法删除词典。';
+      const message = error?.message || '无法删除词典。';
       toast.error(message);
     } finally {
       setIsDeleting(false);

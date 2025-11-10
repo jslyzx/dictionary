@@ -16,3 +16,4 @@ logs/
 frontend/dist
 frontend/dist/*
 config.js
+/.trae

@@ -174,10 +174,8 @@ From the repository root:
 # Install dependencies
 npm install
 
-# Set up environment variables
-cd server
-cp .env.example .env
-cd ..
+# Ensure environment variables at project root
+# .env already created from .env.example above
 
 # Start the API with live reload (nodemon)
 npm run dev
@@ -186,9 +184,9 @@ npm run dev
 npm start
 ```
 
-When running locally the API will be available at `http://localhost:3000/api`. You can verify the service with:
+When running locally the API will be available at `http://localhost:5000/api`. You can verify the service with:
 ```bash
-curl http://localhost:3000/api/dictionaries
+curl http://localhost:5000/api/dictionaries
 ```
 
 ### API endpoints
@@ -213,7 +211,7 @@ Key resources exposed by the service:
 #### Sample requests
 Create a dictionary:
 ```bash
-curl -X POST http://localhost:3000/api/dictionaries \
+curl -X POST http://localhost:5000/api/dictionaries \
   -H "Content-Type: application/json" \
   -d '{
         "name": "Beginner Verbs",

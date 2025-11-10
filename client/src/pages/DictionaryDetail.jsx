@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
-import { ApiError, apiClient } from '../lib/apiClient.js';
+import { fetchDictionary } from '../services/dictionaries';
 
 const formatDateTime = (value) => {
   if (!value) return '—';
@@ -24,11 +24,11 @@ function DictionaryDetail() {
       setIsLoading(true);
       setNotFound(false);
       try {
-        const data = await apiClient.getDictionary(id);
+        const data = await fetchDictionary(Number(id));
         setDictionary(data);
       } catch (error) {
         console.error(error);
-        if (error instanceof ApiError && error.status === 404) {
+        if (error?.status === 404) {
           setNotFound(true);
         } else {
           toast.error('无法加载词典详情。');

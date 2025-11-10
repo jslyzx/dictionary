@@ -1,0 +1,296 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "English Dictionary API",
+    "version": "1.0.0",
+    "description": "REST API for dictionaries, words, and pronunciation rules."
+  },
+  "servers": [
+    { "url": "http://localhost:5000" }
+  ],
+  "paths": {
+    "/api/dictionaries": {
+      "get": {
+        "summary": "List dictionaries",
+        "responses": {
+          "200": {
+            "description": "List of dictionaries",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "data": { "type": "array", "items": { "$ref": "#/components/schemas/Dictionary" } }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create a dictionary",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateDictionaryPayload" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Dictionary created",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DictionaryResponse" } } }
+          }
+        }
+      }
+    },
+    "/api/dictionaries/{id}": {
+      "get": {
+        "summary": "Get dictionary by id",
+        "parameters": [ { "$ref": "#/components/parameters/DictionaryId" } ],
+        "responses": { "200": { "description": "Dictionary", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DictionaryResponse" } } } }, "404": { "$ref": "#/components/responses/NotFound" } }
+      },
+      "put": {
+        "summary": "Update dictionary",
+        "parameters": [ { "$ref": "#/components/parameters/DictionaryId" } ],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UpdateDictionaryPayload" } } } },
+        "responses": { "200": { "description": "Updated", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DictionaryResponse" } } } }, "404": { "$ref": "#/components/responses/NotFound" } }
+      },
+      "delete": {
+        "summary": "Delete dictionary",
+        "parameters": [ { "$ref": "#/components/parameters/DictionaryId" } ],
+        "responses": { "200": { "$ref": "#/components/responses/Message" }, "404": { "$ref": "#/components/responses/NotFound" } }
+      }
+    },
+    "/api/dictionaries/{id}/words": {
+      "get": {
+        "summary": "List words in dictionary",
+        "parameters": [ { "$ref": "#/components/parameters/DictionaryId" } ],
+        "responses": { "200": { "description": "Associations", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DictionaryWordAssociationListResponse" } } } } }
+      },
+      "post": {
+        "summary": "Add word to dictionary",
+        "parameters": [ { "$ref": "#/components/parameters/DictionaryId" } ],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DictionaryWordAssociationPayload" } } } },
+        "responses": { "201": { "description": "Association created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DictionaryWordAssociationResponse" } } } } }
+      }
+    },
+    "/api/dictionaries/{id}/words/{wordId}": {
+      "delete": {
+        "summary": "Remove word from dictionary",
+        "parameters": [ { "$ref": "#/components/parameters/DictionaryId" }, { "$ref": "#/components/parameters/WordId" } ],
+        "responses": { "200": { "$ref": "#/components/responses/Message" }, "404": { "$ref": "#/components/responses/NotFound" } }
+      }
+    },
+    "/api/dictionary-word-associations/{id}": {
+      "put": {
+        "summary": "Update dictionary-word association",
+        "parameters": [ { "$ref": "#/components/parameters/AssociationId" } ],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DictionaryWordAssociationUpdatePayload" } } } },
+        "responses": { "200": { "description": "Updated association", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DictionaryWordAssociationResponse" } } } }, "404": { "$ref": "#/components/responses/NotFound" } }
+      }
+    },
+    "/api/words": {
+      "get": {
+        "summary": "List words (paginated)",
+        "parameters": [
+          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 10 } }
+        ],
+        "responses": { "200": { "description": "Paginated words", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PaginatedWordListResponse" } } } } }
+      }
+    },
+    "/api/words/stats": {
+      "get": {
+        "summary": "Word statistics",
+        "responses": { "200": { "description": "Stats", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/WordStatsResponse" } } } } }
+      }
+    },
+    "/api/words/export": {
+      "get": {
+        "summary": "Export words CSV",
+        "responses": { "200": { "description": "CSV", "content": { "text/csv": { } } } }
+      }
+    },
+    "/api/words/import": {
+      "post": {
+        "summary": "Import words CSV",
+        "requestBody": { "required": true, "content": { "multipart/form-data": { "schema": { "type": "object", "properties": { "file": { "type": "string", "format": "binary" } } } } } },
+        "responses": { "200": { "description": "Import summary", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ImportSummaryResponse" } } } } }
+      }
+    },
+    "/api/dictionary-words": {
+      "get": {
+        "summary": "List dictionary-word relations",
+        "responses": { "200": { "description": "Relations", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DictionaryWordRelationListResponse" } } } } }
+      }
+    },
+    "/api/dictionary-words/export": {
+      "get": {
+        "summary": "Export dictionary words CSV",
+        "responses": { "200": { "description": "CSV", "content": { "text/csv": { } } } }
+      }
+    },
+    "/api/dictionary-words/import": {
+      "post": {
+        "summary": "Import dictionary words CSV",
+        "requestBody": { "required": true, "content": { "multipart/form-data": { "schema": { "type": "object", "properties": { "file": { "type": "string", "format": "binary" }, "dictionaryId": { "type": "integer" } } } } } },
+        "responses": { "200": { "description": "Import summary", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ImportSummaryResponse" } } } } }
+      }
+    },
+    "/api/pronunciation-rules": {
+      "get": {
+        "summary": "List pronunciation rules (paginated)",
+        "responses": { "200": { "description": "Rules", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PronunciationRuleListResponse" } } } } }
+      }
+    },
+    "/api/pronunciation-rules/{id}": {
+      "get": {
+        "summary": "Get pronunciation rule",
+        "parameters": [ { "$ref": "#/components/parameters/PronunciationRuleId" } ],
+        "responses": { "200": { "description": "Rule", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PronunciationRuleResponse" } } } }, "404": { "$ref": "#/components/responses/NotFound" } }
+      }
+    },
+    "/api/pronunciation-rules/by-combination/{letterCombination}": {
+      "get": {
+        "summary": "Get rules by letter combination",
+        "parameters": [ { "name": "letterCombination", "in": "path", "required": true, "schema": { "type": "string" } } ],
+        "responses": { "200": { "description": "Rules", "content": { "application/json": { "schema": { "type": "object", "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/PronunciationRule" } } } } } } } }
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "DictionaryId": { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } },
+      "WordId": { "name": "wordId", "in": "path", "required": true, "schema": { "type": "integer" } },
+      "AssociationId": { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } },
+      "PronunciationRuleId": { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+    },
+    "responses": {
+      "NotFound": { "description": "Resource not found", "content": { "application/json": { "schema": { "type": "object", "properties": { "message": { "type": "string" } } } } } },
+      "Message": { "description": "Message response", "content": { "application/json": { "schema": { "type": "object", "properties": { "success": { "type": "boolean" }, "message": { "type": "string" } } } } } }
+    },
+    "schemas": {
+      "Dictionary": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "name": { "type": "string" },
+          "description": { "type": "string", "nullable": true },
+          "isEnabled": { "type": "boolean" },
+          "isMastered": { "type": "boolean" },
+          "createdAt": { "type": "string" },
+          "updatedAt": { "type": "string" }
+        }
+      },
+      "CreateDictionaryPayload": {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "isEnabled": { "type": "boolean" },
+          "isMastered": { "type": "boolean" }
+        }
+      },
+      "UpdateDictionaryPayload": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "isEnabled": { "type": "boolean" },
+          "isMastered": { "type": "boolean" }
+        }
+      },
+      "DictionaryResponse": {
+        "type": "object",
+        "properties": { "success": { "type": "boolean" }, "data": { "$ref": "#/components/schemas/Dictionary" } }
+      },
+      "DictionaryWordAssociation": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "dictionaryId": { "type": "integer" },
+          "wordId": { "type": "integer" },
+          "difficulty": { "type": "string", "enum": ["easy", "medium", "hard"] },
+          "isMastered": { "type": "boolean", "nullable": true },
+          "notes": { "type": "string", "nullable": true },
+          "addedAt": { "type": "string" },
+          "word": { "$ref": "#/components/schemas/Word" }
+        }
+      },
+      "DictionaryWordAssociationPayload": {
+        "type": "object",
+        "required": ["wordId"],
+        "properties": {
+          "wordId": { "type": "integer" },
+          "difficulty": { "type": "string", "enum": ["easy", "medium", "hard"] },
+          "isMastered": { "type": "boolean" },
+          "notes": { "type": "string" }
+        }
+      },
+      "DictionaryWordAssociationUpdatePayload": {
+        "type": "object",
+        "properties": {
+          "difficulty": { "type": "string", "enum": ["easy", "medium", "hard"] },
+          "isMastered": { "type": "boolean" },
+          "notes": { "type": "string" }
+        }
+      },
+      "DictionaryWordAssociationResponse": {
+        "type": "object",
+        "properties": { "success": { "type": "boolean" }, "data": { "$ref": "#/components/schemas/DictionaryWordAssociation" } }
+      },
+      "Word": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "word": { "type": "string" },
+          "phonetic": { "type": "string" },
+          "meaning": { "type": "string" },
+          "pronunciation1": { "type": "string", "nullable": true },
+          "pronunciation2": { "type": "string", "nullable": true },
+          "pronunciation3": { "type": "string", "nullable": true },
+          "notes": { "type": "string", "nullable": true },
+          "createdAt": { "type": "string" },
+          "difficulty": { "type": "integer" },
+          "isMastered": { "type": "boolean" }
+        }
+      },
+      "WordStats": {
+        "type": "object",
+        "properties": {
+          "total": { "type": "integer" },
+          "masteredCount": { "type": "integer" },
+          "unmasteredCount": { "type": "integer" },
+          "masteredPercentage": { "type": "number" },
+          "unmasteredPercentage": { "type": "number" },
+          "difficulty": {
+            "type": "object",
+            "properties": { "easy": { "type": "integer" }, "medium": { "type": "integer" }, "hard": { "type": "integer" } }
+          }
+        }
+      },
+      "ImportSummary": {
+        "type": "object",
+        "properties": { "totalRows": { "type": "integer" }, "created": { "type": "integer" }, "updated": { "type": "integer" }, "skipped": { "type": "integer" } }
+      },
+      "PaginatedWordList": {
+        "type": "object",
+        "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/Word" } }, "page": { "type": "integer" }, "limit": { "type": "integer" }, "total": { "type": "integer" } }
+      },
+      "DictionaryWordRelationList": {
+        "type": "object",
+        "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/DictionaryWordAssociation" } }, "page": { "type": "integer" }, "limit": { "type": "integer" }, "total": { "type": "integer" } }
+      },
+      "DictionaryWordAssociationListResponse": { "type": "object", "properties": { "success": { "type": "boolean" }, "data": { "type": "array", "items": { "$ref": "#/components/schemas/DictionaryWordAssociation" } } } },
+      "PaginatedWordListResponse": { "type": "object", "properties": { "success": { "type": "boolean" }, "data": { "$ref": "#/components/schemas/PaginatedWordList" } } },
+      "DictionaryWordRelationListResponse": { "type": "object", "properties": { "success": { "type": "boolean" }, "data": { "$ref": "#/components/schemas/DictionaryWordRelationList" } } },
+      "WordStatsResponse": { "type": "object", "properties": { "success": { "type": "boolean" }, "data": { "$ref": "#/components/schemas/WordStats" } } },
+      "ImportSummaryResponse": { "type": "object", "properties": { "success": { "type": "boolean" }, "data": { "$ref": "#/components/schemas/ImportSummary" } } }
+    }
+  }
+}

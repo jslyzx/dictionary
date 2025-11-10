@@ -1,5 +1,7 @@
 const express = require('express');
 const cors = require('cors');
+const swaggerUi = require('swagger-ui-express');
+const swaggerDocument = require('./docs/openapi.json');
 
 const dictionariesRouter = require('./routes/dictionaries');
 const wordsRouter = require('./routes/words');
@@ -14,6 +16,9 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+// Swagger UI - API documentation
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 app.use('/api/dictionaries', dictionariesRouter);
 app.use('/api/words', wordsRouter);
