@@ -2,17 +2,32 @@
   font-family: "iconfont"; /* Project id 5057689 */
   /* Color fonts */
   src: 
-       url('iconfont.woff2?t=1762331553473') format('woff2'),
-       url('iconfont.woff?t=1762331553473') format('woff'),
-       url('iconfont.ttf?t=1762331553473') format('truetype');
+       url('iconfont.woff2?t=1762428976898') format('woff2'),
+       url('iconfont.woff?t=1762428976898') format('woff'),
+       url('iconfont.ttf?t=1762428976898') format('truetype');
 }
 
 .iconfont {
   font-family: "iconfont" !important;
-  font-size: 16px;
   font-style: normal;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+.icon-caigoudayintiezhi:before {
+  content: "\e6f8";
+}
+
+.icon-shoupa:before {
+  content: "\e602";
+}
+
+.icon-pingzi:before {
+  content: "\e60a";
+}
+
+.icon-yudingyishitu:before {
+  content: "\e653";
 }
 
 .icon-sjump:before {

@@ -7,6 +7,9 @@ import WordDetailPage from './pages/WordDetailPage'
 import PronunciationRulesPage from './pages/PronunciationRulesPage'
 import PronunciationRuleDetailPage from './pages/PronunciationRuleDetailPage'
 import PronunciationRuleEditPage from './pages/PronunciationRuleEditPage'
+import WordPlansPage from './pages/WordPlansPage'
+import WordPlanDetailPage from './pages/WordPlanDetailPage'
+import VocabularyLearningPage from './pages/VocabularyLearningPage'
 
 const App = () => {
   return (
@@ -18,6 +21,9 @@ const App = () => {
           <Route element={<DictionaryDetailPage />} path="dictionaries/:id" />
           <Route element={<WordsPage />} path="words" />
           <Route element={<WordDetailPage />} path="words/:id" />
+          <Route element={<VocabularyLearningPage />} path="learning" />
+          <Route element={<WordPlansPage />} path="word-plans" />
+          <Route element={<WordPlanDetailPage />} path="word-plans/:id" />
           <Route element={<PronunciationRulesPage />} path="pronunciation-rules" />
           <Route element={<PronunciationRuleDetailPage />} path="pronunciation-rules/:id" />
           <Route element={<PronunciationRuleEditPage />} path="pronunciation-rules/:id/edit" />

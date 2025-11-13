@@ -8,6 +8,8 @@ const wordsRouter = require('./routes/words');
 const dictionaryWordsRouter = require('./routes/dictionaryWords');
 const dictionaryWordAssociationsRouter = require('./routes/dictionaryWordAssociations');
 const pronunciationRulesRouter = require('./routes/pronunciationRules');
+const wordPlansRouter = require('./routes/wordPlans');
+const wordPlanDetailsRouter = require('./routes/wordPlanDetails');
 const notFound = require('./middleware/notFound');
 const errorHandler = require('./middleware/errorHandler');
 
@@ -25,6 +27,8 @@ app.use('/api/words', wordsRouter);
 app.use('/api/dictionary-words', dictionaryWordsRouter);
 app.use('/api/dictionary-word-associations', dictionaryWordAssociationsRouter);
 app.use('/api/pronunciation-rules', pronunciationRulesRouter);
+app.use('/api/word-plans', wordPlansRouter);
+app.use('/api/word-plans', wordPlanDetailsRouter);
 
 app.use(notFound);
 app.use(errorHandler);

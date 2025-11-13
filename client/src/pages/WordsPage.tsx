@@ -1,5 +1,5 @@
 import { type ChangeEvent, type FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import type { ApiError } from '../services/apiClient'
 import { createWord, deleteWord, listWords, updateWord, type ListWordsParams, type Word } from '../services/words'
 import { fetchDictionaries, batchAddWordsToDictionary } from '../services/dictionaries'
@@ -89,6 +89,7 @@ const getDifficultyMeta = (difficulty: number | null | undefined) => {
 const WORD_FORM_ID = 'word-form'
 
 const WordsPage = () => {
+  const navigate = useNavigate()
   const [words, setWords] = useState<Word[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
@@ -611,6 +612,7 @@ const WordsPage = () => {
             搜索、创建和管理您的单词列表。使用筛选器专注于特定的难度级别或掌握状态。
           </p>
         </div>
+        <div className="flex gap-3">
         <button
           type="button"
           onClick={openCreateForm}
@@ -618,6 +620,14 @@ const WordsPage = () => {
         >
           新建单词
         </button>
+          <button
+            type="button"
+            onClick={() => navigate('/learning')}
+            className="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-green-700"
+          >
+            开始背单词
+          </button>
+        </div>
       </div>
 
       {flash ? (
