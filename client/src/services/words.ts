@@ -76,24 +76,28 @@ export interface UpsertWordPayload {
   imageValue?: string | null
 }
 
-const mapWord = (word: WordApiResponse): Word => ({
-  id: word.id,
-  word: word.word,
-  phonetic: word.phonetic,
-  meaning: word.meaning,
-  pronunciation1: word.pronunciation1 ?? null,
-  pronunciation2: word.pronunciation2 ?? null,
-  pronunciation3: word.pronunciation3 ?? null,
-  notes: word.notes ?? null,
-  sentence: word.sentence ?? null,
-  difficulty: word.difficulty ?? 0,
-  isMastered: word.isMastered,
-  createdAt: word.createdAt ?? null,
-  pronunciationRules: word.pronunciationRules ?? [],
-  hasImage: word.hasImage ?? false,
-  imageType: word.imageType ?? null,
-  imageValue: word.imageValue ?? null,
-})
+const mapWord = (word: WordApiResponse): Word => {
+  const d = (word.difficulty ?? 1) as number
+  const normalized = d === 0 ? 1 : d
+  return {
+    id: word.id,
+    word: word.word,
+    phonetic: word.phonetic,
+    meaning: word.meaning,
+    pronunciation1: word.pronunciation1 ?? null,
+    pronunciation2: word.pronunciation2 ?? null,
+    pronunciation3: word.pronunciation3 ?? null,
+    notes: word.notes ?? null,
+    sentence: word.sentence ?? null,
+    difficulty: normalized,
+    isMastered: word.isMastered,
+    createdAt: word.createdAt ?? null,
+    pronunciationRules: word.pronunciationRules ?? [],
+    hasImage: word.hasImage ?? false,
+    imageType: word.imageType ?? null,
+    imageValue: word.imageValue ?? null,
+  }
+}
 
 const adaptUpsertPayload = (payload: UpsertWordPayload) => {
   const data: Record<string, unknown> = {

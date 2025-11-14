@@ -15,6 +15,7 @@ const SpellingMode = ({ word, onAnswer, onSkip }: SpellingModeProps) => {
   const [showResult, setShowResult] = useState(false)
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null)
   const [isPlaying, setIsPlaying] = useState(false)
+  const [showErrorOverlay, setShowErrorOverlay] = useState(false)
 
   const targetWord = word.word?.word || 'testword'
   const correctAnswer = targetWord.toLowerCase()
@@ -46,12 +47,18 @@ const SpellingMode = ({ word, onAnswer, onSkip }: SpellingModeProps) => {
 
   const handleLetterClick = (letter: string) => {
     if (showResult) return
-    
+    if (userAnswer.length >= correctAnswer.length) return
     const letterIndex = availableLetters.indexOf(letter)
     if (letterIndex > -1) {
-      setAvailableLetters(availableLetters.filter((_, index) => index !== letterIndex))
-      setUsedLetters([...usedLetters, letter])
-      setUserAnswer(userAnswer + letter)
+      const nextAvailable = availableLetters.filter((_, index) => index !== letterIndex)
+      const nextUsed = [...usedLetters, letter]
+      const nextAnswer = userAnswer + letter
+      setAvailableLetters(nextAvailable)
+      setUsedLetters(nextUsed)
+      setUserAnswer(nextAnswer)
+      if (nextAnswer.length === correctAnswer.length) {
+        handleSubmit(nextAnswer)
+      }
     }
   }
 
@@ -72,18 +79,18 @@ const SpellingMode = ({ word, onAnswer, onSkip }: SpellingModeProps) => {
     setUserAnswer('')
   }
 
-  const handleSubmit = () => {
-    if (userAnswer.trim()) {
-      const correct = userAnswer.trim().toLowerCase() === correctAnswer
+  const handleSubmit = (overrideAnswer?: string) => {
+    const answer = (overrideAnswer !== undefined ? overrideAnswer : userAnswer).trim()
+    if (answer) {
+      const correct = answer.toLowerCase() === correctAnswer
       setIsCorrect(correct)
       setShowResult(true)
-      
-      // 播放音效
       playSound(correct)
-      
-      // 延迟提交答案
+      if (!correct) {
+        setShowErrorOverlay(true)
+      }
       setTimeout(() => {
-        onAnswer(correct, userAnswer.trim())
+        onAnswer(correct, answer)
       }, 1000)
     }
   }
@@ -266,71 +273,7 @@ const SpellingMode = ({ word, onAnswer, onSkip }: SpellingModeProps) => {
               ✓ 正确！
             </div>
           )}
-          {showResult && isCorrect === false && (
-            <div style={{ textAlign: 'left' }}>
-              <div style={{
-                padding: '1rem',
-                borderRadius: '12px',
-                margin: '0 0 1rem 0',
-                background: 'white',
-                border: '2px solid #e2e8f0'
-              }}>
-                <div style={{ fontSize: '1.75rem', fontWeight: 700, color: '#2d3748' }}>{word.word?.word}</div>
-                <div style={{ fontSize: '1rem', color: '#718096', marginTop: '0.25rem' }}>{word.word?.phonetic}</div>
-                <button
-                  onClick={playPronunciation}
-                  disabled={isPlaying}
-                  style={{
-                    marginTop: '0.5rem',
-                    background: 'rgba(255, 255, 255, 0.2)',
-                    border: '1px solid rgba(255, 255, 255, 0.3)',
-                    borderRadius: '50%',
-                    width: '40px',
-                    height: '40px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: 'pointer'
-                  }}
-                >
-                  {isPlaying ? '🔊' : '🔈'}
-                </button>
-                {word.word?.hasImage && word.word?.imageValue && (
-                  <div style={{ marginTop: '0.75rem' }}>
-                    {word.word.imageType === 'emoji' ? (
-                      <span style={{ fontSize: '3rem' }}>{word.word.imageValue}</span>
-                    ) : word.word.imageType === 'url' ? (
-                      <img src={word.word.imageValue || ''} alt={word.word?.word || ''} style={{ maxWidth: '200px', borderRadius: '8px' }} />
-                    ) : null}
-                  </div>
-                )}
-                <div style={{ fontSize: '1.125rem', color: '#4a5568', marginTop: '0.75rem' }}>{word.word?.meaning}</div>
-                {word.word?.sentence && (
-                  <div style={{ fontSize: '0.95rem', color: '#4a5568', marginTop: '0.5rem' }}>例句：{word.word.sentence}</div>
-                )}
-                {word.word?.notes && (
-                  <div style={{ fontSize: '0.95rem', color: '#4a5568', marginTop: '0.5rem' }}>笔记：{word.word.notes}</div>
-                )}
-              </div>
-              <div style={{ textAlign: 'center' }}>
-                <button
-                  onClick={onSkip}
-                  style={{
-                    padding: '0.75rem 2rem',
-                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '12px',
-                    fontSize: '1rem',
-                    fontWeight: '600',
-                    cursor: 'pointer'
-                  }}
-                >
-                  继续做题
-                </button>
-              </div>
-            </div>
-          )}
+          {null}
         </div>
         
         {/* 右侧：字母按钮 */}
@@ -372,25 +315,7 @@ const SpellingMode = ({ word, onAnswer, onSkip }: SpellingModeProps) => {
           </div>
           
           {!showResult && (
-            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
-              <button
-                onClick={handleSubmit}
-                disabled={userAnswer.trim().length === 0}
-                style={{
-                  padding: '0.75rem 2rem',
-                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '12px',
-                  fontSize: '1rem',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  opacity: userAnswer.trim().length === 0 ? 0.6 : 1
-                }}
-              >
-                提交答案
-              </button>
-            </div>
+            <div style={{ height: '2rem' }}></div>
           )}
           
           {showResult && (
@@ -414,6 +339,106 @@ const SpellingMode = ({ word, onAnswer, onSkip }: SpellingModeProps) => {
           )}
         </div>
       </div>
+      {showErrorOverlay && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(0,0,0,0.4)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 50
+        }}>
+          <div style={{
+            width: 'min(820px, 92vw)',
+            background: 'white',
+            borderRadius: '20px',
+            boxShadow: '0 16px 40px rgba(0,0,0,0.2)',
+            padding: '1.75rem'
+          }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem', alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {word.word?.hasImage && word.word?.imageValue ? (
+                  word.word.imageType === 'emoji' ? (
+                    <span style={{ fontSize: '4rem' }}>{word.word.imageValue}</span>
+                  ) : word.word.imageType === 'url' ? (
+                    <img src={word.word.imageValue || ''} alt={word.word?.word || ''} style={{ maxWidth: '300px', borderRadius: '12px' }} />
+                  ) : (
+                    <div style={{ fontSize: '3rem' }}>📚</div>
+                  )
+                ) : (
+                  <div style={{ fontSize: '3rem' }}>📚</div>
+                )}
+              </div>
+              <div>
+                <div style={{ fontSize: '2rem', fontWeight: 800, color: '#1f2937' }}>{word.word?.word}</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.5rem' }}>
+                  <div style={{ fontSize: '1.125rem', color: '#374151' }}>{word.word?.phonetic}</div>
+                  <button
+                    onClick={playPronunciation}
+                    disabled={isPlaying}
+                    style={{
+                      background: '#fffbeb',
+                      border: '1px solid #f6e05e',
+                      borderRadius: '50%',
+                      width: '36px',
+                      height: '36px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                  >
+                    {isPlaying ? '🔊' : '🔈'}
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem', marginTop: '1.5rem' }}>
+              <div style={{ background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '1rem' }}>
+                <div style={{ fontSize: '0.95rem', color: '#6b7280', marginBottom: '0.5rem' }}>释义：</div>
+                <div style={{ fontSize: '1.125rem', color: '#374151', marginBottom: '0.75rem' }}>{word.word?.meaning}</div>
+                <div style={{ fontSize: '0.95rem', color: '#6b7280', marginBottom: '0.5rem' }}>笔记：</div>
+                {word.word?.notes ? (
+                  <div style={{ fontSize: '0.95rem', color: '#4b5563' }}>{word.word.notes}</div>
+                ) : (
+                  <div style={{ fontSize: '0.95rem', color: '#9ca3af' }}>暂无笔记</div>
+                )}
+              </div>
+              <div style={{ background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '1rem' }}>
+                <div style={{ fontSize: '0.95rem', color: '#6b7280', marginBottom: '0.5rem' }}>例句：</div>
+                {word.word?.sentence ? (
+                  <div style={{ fontSize: '1.05rem', color: '#374151' }}>{word.word.sentence}</div>
+                ) : (
+                  <div style={{ fontSize: '0.95rem', color: '#9ca3af' }}>暂无例句</div>
+                )}
+              </div>
+            </div>
+            <div style={{ textAlign: 'center', marginTop: '1.5rem' }}>
+              <button
+                onClick={() => {
+                  setShowErrorOverlay(false)
+                  setShowResult(false)
+                  setIsCorrect(null)
+                  setAvailableLetters(generateSpellingLetters(targetWord))
+                  setUsedLetters([])
+                  setUserAnswer('')
+                }}
+                style={{
+                  padding: '0.75rem 2.25rem',
+                  background: '#f6e05e',
+                  color: '#1f2937',
+                  border: '2px solid #d69e2e',
+                  borderRadius: '9999px',
+                  fontSize: '1rem',
+                  fontWeight: 700
+                }}
+              >
+                继续做题
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

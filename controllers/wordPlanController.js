@@ -50,7 +50,7 @@ const getWordPlan = async (req, res) => {
     
     // 获取计划中的单词
     const wordRows = await db.query(`
-      SELECT wpw.*, w.word, w.phonetic, w.meaning, w.has_image, w.image_type, w.image_value, w.difficulty, w.is_mastered
+      SELECT wpw.*, w.word, w.phonetic, w.meaning, w.has_image, w.image_type, w.image_value, w.difficulty, w.is_mastered, w.sentence, w.notes
       FROM word_plan_words wpw
       JOIN words w ON wpw.word_id = w.word_id
       WHERE wpw.plan_id = ?
@@ -80,7 +80,9 @@ const getWordPlan = async (req, res) => {
         imageType: word.image_type,
         imageValue: word.image_value,
         difficulty: word.difficulty,
-        isMastered: word.is_mastered === 1
+        isMastered: word.is_mastered === 1,
+        sentence: word.sentence || null,
+        notes: word.notes || null
       },
       isLearned: word.is_learned === 1,
       isCorrect: word.is_correct === 1,

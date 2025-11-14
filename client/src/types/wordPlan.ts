@@ -30,6 +30,8 @@ export interface WordPlanWord {
     imageValue: string | null
     difficulty: number
     isMastered: boolean
+    sentence?: string | null
+    notes?: string | null
   }
   // 学习状态相关字段
   isLearned?: boolean
