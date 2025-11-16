@@ -34,7 +34,7 @@ interface ApiMessageResponse {
 export const fetchDictionaries = async (): Promise<Dictionary[]> => {
   const response = await request<ApiResponse<Dictionary[]>>({
     method: 'GET',
-    url: '/api/dictionaries',
+    url: '/dictionaries',
   })
 
   return response.data
@@ -43,7 +43,7 @@ export const fetchDictionaries = async (): Promise<Dictionary[]> => {
 export const fetchDictionary = async (id: number): Promise<Dictionary> => {
   const response = await request<ApiResponse<Dictionary>>({
     method: 'GET',
-    url: `/api/dictionaries/${id}`,
+    url: `/dictionaries/${id}`,
   })
 
   return response.data
@@ -54,7 +54,7 @@ export const fetchDictionaryWordAssociations = async (
 ): Promise<DictionaryWordAssociation[]> => {
   const response = await request<ApiResponse<DictionaryWordAssociation[]>>({
     method: 'GET',
-    url: `/api/dictionaries/${dictionaryId}/words`,
+    url: `/dictionaries/${dictionaryId}/words`,
   })
 
   return response.data
@@ -66,7 +66,7 @@ export const addWordToDictionary = async (
 ): Promise<DictionaryWordAssociation> => {
   const response = await request<ApiResponse<DictionaryWordAssociation>>({
     method: 'POST',
-    url: `/api/dictionaries/${dictionaryId}/words`,
+    url: `/dictionaries/${dictionaryId}/words`,
     data: payload,
   })
 
@@ -79,7 +79,7 @@ export const updateDictionaryWordAssociation = async (
 ): Promise<DictionaryWordAssociation> => {
   const response = await request<ApiResponse<DictionaryWordAssociation>>({
     method: 'PUT',
-    url: `/api/dictionary-word-associations/${associationId}`,
+    url: `/dictionary-word-associations/${associationId}`,
     data: payload,
   })
 
@@ -92,7 +92,7 @@ export const removeDictionaryWord = async (
 ): Promise<string> => {
   const response = await request<ApiMessageResponse>({
     method: 'DELETE',
-    url: `/api/dictionaries/${dictionaryId}/words/${wordId}`,
+    url: `/dictionaries/${dictionaryId}/words/${wordId}`,
   })
 
   return response.message
@@ -103,7 +103,7 @@ export const createDictionary = async (
 ): Promise<Dictionary> => {
   const response = await request<ApiResponse<Dictionary>>({
     method: 'POST',
-    url: '/api/dictionaries',
+    url: '/dictionaries',
     data: payload,
   })
 
@@ -116,7 +116,7 @@ export const updateDictionary = async (
 ): Promise<Dictionary> => {
   const response = await request<ApiResponse<Dictionary>>({
     method: 'PUT',
-    url: `/api/dictionaries/${id}`,
+    url: `/dictionaries/${id}`,
     data: payload,
   })
 
@@ -126,7 +126,7 @@ export const updateDictionary = async (
 export const deleteDictionary = async (id: number): Promise<string> => {
   const response = await request<ApiMessageResponse>({
     method: 'DELETE',
-    url: `/api/dictionaries/${id}`,
+    url: `/dictionaries/${id}`,
   })
 
   return response.message
@@ -138,7 +138,7 @@ export const batchAddWordsToDictionary = async (
 ): Promise<BatchAddWordsResult> => {
   const response = await request<ApiResponse<BatchAddWordsResult>>({
     method: 'POST',
-    url: `/api/dictionaries/${dictionaryId}/words/batch`,
+    url: `/dictionaries/${dictionaryId}/words/batch`,
     data: payload,
   })
 

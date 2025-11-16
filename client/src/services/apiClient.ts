@@ -111,20 +111,20 @@ export interface ImportSummary {
 
 export const fetchWords = (params?: Record<string, unknown>) =>
   request<{ success: boolean; data: PaginatedResult<Word> }>({
-    url: '/api/words',
+    url: '/words',
     method: 'GET',
     params,
   })
 
 export const fetchWordStats = (params?: Record<string, unknown>) =>
   request<{ success: boolean; data: WordStats }>({
-    url: '/api/words/stats',
+    url: '/words/stats',
     method: 'GET',
     params,
   })
 
 export const exportWordsCsv = (params?: Record<string, unknown>) =>
-  apiClient.get<Blob>('/api/words/export', {
+  apiClient.get<Blob>('/words/export', {
     params,
     responseType: 'blob',
   })
@@ -134,7 +134,7 @@ export const importWordsCsv = async (file: File): Promise<{ success: boolean; da
   formData.append('file', file)
 
   const response = await apiClient.post<{ success: boolean; data: ImportSummary }>(
-    '/api/words/import',
+    '/words/import',
     formData,
     {
       headers: {
@@ -148,31 +148,31 @@ export const importWordsCsv = async (file: File): Promise<{ success: boolean; da
 
 export const fetchDictionaries = () =>
   request<{ success: boolean; data: Dictionary[] }>({
-    url: '/api/dictionaries',
+    url: '/dictionaries',
     method: 'GET',
   })
 
 export const fetchDictionary = (id: number) =>
   request<{ success: boolean; data: Dictionary }>({
-    url: `/api/dictionaries/${id}`,
+    url: `/dictionaries/${id}`,
     method: 'GET',
   })
 
 export const fetchDictionaryStats = (id: number) =>
   request<{ success: boolean; data: DictionaryStats }>({
-    url: `/api/dictionaries/${id}/stats`,
+    url: `/dictionaries/${id}/stats`,
     method: 'GET',
   })
 
 export const fetchDictionaryWords = (params?: Record<string, unknown>) =>
   request<{ success: boolean; data: DictionaryWordRelation[] }>({
-    url: '/api/dictionary-words',
+    url: '/dictionary-words',
     method: 'GET',
     params,
   })
 
 export const exportDictionaryWordsCsv = (params?: Record<string, unknown>) =>
-  apiClient.get<Blob>('/api/dictionary-words/export', {
+  apiClient.get<Blob>('/dictionary-words/export', {
     params,
     responseType: 'blob',
   })
@@ -188,7 +188,7 @@ export const importDictionaryWordsCsv = async (
   }
 
   const response = await apiClient.post<{ success: boolean; data: ImportSummary }>(
-    '/api/dictionary-words/import',
+    '/dictionary-words/import',
     formData,
     {
       headers: {

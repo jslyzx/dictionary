@@ -15,7 +15,7 @@ export const getWordPlans = async (): Promise<WordPlan[]> => {
   try {
     const response = await request<{ success: boolean; data: WordPlan[] | WordPlan }>({
       method: 'GET',
-      url: '/api/word-plans'
+      url: '/word-plans'
     })
     
     // 处理各种可能的响应格式
@@ -53,7 +53,7 @@ export const getWordPlan = async (id: number): Promise<WordPlan & {
     }
   }>({
     method: 'GET',
-    url: `/api/word-plans/${id}`
+    url: `/word-plans/${id}`
   })
   console.log('getWordPlan API响应:', response)
   return response.data
@@ -63,7 +63,7 @@ export const getWordPlan = async (id: number): Promise<WordPlan & {
 export const createWordPlan = async (payload: CreateWordPlanPayload): Promise<WordPlan> => {
   const response = await request<{ success: boolean; data: WordPlan }>({
     method: 'POST',
-    url: '/api/word-plans',
+    url: '/word-plans',
     data: payload
   })
   return response.data
@@ -73,7 +73,7 @@ export const createWordPlan = async (payload: CreateWordPlanPayload): Promise<Wo
 export const updateWordPlan = async (id: number, payload: UpdateWordPlanPayload): Promise<WordPlan> => {
   const response = await request<{ success: boolean; data: WordPlan }>({
     method: 'PUT',
-    url: `/api/word-plans/${id}`,
+    url: `/word-plans/${id}`,
     data: payload
   })
   return response.data
@@ -83,7 +83,7 @@ export const updateWordPlan = async (id: number, payload: UpdateWordPlanPayload)
 export const deleteWordPlan = async (id: number): Promise<void> => {
   await request<{ success: boolean; data: { message: string } }>({
     method: 'DELETE',
-    url: `/api/word-plans/${id}`
+    url: `/word-plans/${id}`
   })
 }
 
@@ -91,7 +91,7 @@ export const deleteWordPlan = async (id: number): Promise<void> => {
 export const activateWordPlan = async (id: number): Promise<WordPlan> => {
   const response = await request<{ success: boolean; data: WordPlan }>({
     method: 'PUT',
-    url: `/api/word-plans/${id}/activate`
+    url: `/word-plans/${id}/activate`
   })
   return response.data
 }
@@ -100,7 +100,7 @@ export const activateWordPlan = async (id: number): Promise<WordPlan> => {
 export const addWordToPlan = async (planId: number, wordId: number): Promise<void> => {
   await request<{ success: boolean; data: { message: string } }>({
     method: 'POST',
-    url: `/api/word-plans/${planId}/words`,
+    url: `/word-plans/${planId}/words`,
     data: { wordId }
   })
 }
@@ -109,7 +109,7 @@ export const addWordToPlan = async (planId: number, wordId: number): Promise<voi
 export const removeWordFromPlan = async (planId: number, wordId: number): Promise<void> => {
   await request<{ success: boolean; data: { message: string } }>({
     method: 'DELETE',
-    url: `/api/word-plans/${planId}/words/${wordId}`
+    url: `/word-plans/${planId}/words/${wordId}`
   })
 }
 
@@ -117,7 +117,7 @@ export const removeWordFromPlan = async (planId: number, wordId: number): Promis
 export const recordLearning = async (planId: number, wordId: number, isCorrect: boolean, userAnswer?: string, attempts: number = 1): Promise<LearningRecord> => {
   const response = await request<{ success: boolean; data: LearningRecord }>({
     method: 'POST',
-    url: `/api/word-plans/${planId}/learning-records`,
+    url: `/word-plans/${planId}/learning-records`,
     data: {
       wordId,
       isCorrect,
@@ -132,7 +132,7 @@ export const recordLearning = async (planId: number, wordId: number, isCorrect: 
 export const getErrorWords = async (planId: number): Promise<ErrorWord[]> => {
   const response = await request<{ success: boolean; data: ErrorWord[] }>({
     method: 'GET',
-    url: `/api/word-plans/${planId}/error-words`
+    url: `/word-plans/${planId}/error-words`
   })
   return response.data
 }
@@ -141,7 +141,7 @@ export const getErrorWords = async (planId: number): Promise<ErrorWord[]> => {
 export const getLearningRecords = async (planId: number, limit: number = 50): Promise<LearningRecord[]> => {
   const response = await request<{ success: boolean; data: LearningRecord[] }>({
     method: 'GET',
-    url: `/api/word-plans/${planId}/learning-records`,
+    url: `/word-plans/${planId}/learning-records`,
     params: { limit }
   })
   return response.data
@@ -152,7 +152,7 @@ export const getActiveWordPlan = async (): Promise<WordPlan | null> => {
   try {
     const response = await request<{ success: boolean; data: WordPlan }>({
       method: 'GET',
-      url: '/api/word-plans/active'
+      url: '/word-plans/active'
     })
     return response.data
   } catch (error) {

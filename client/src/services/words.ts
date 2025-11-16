@@ -146,7 +146,7 @@ const adaptUpsertPayload = (payload: UpsertWordPayload) => {
 export const listWords = async (params: ListWordsParams): Promise<WordListResult> => {
   const response = await request<{ success: boolean; data: WordListApiResponse }>({
     method: 'GET',
-    url: '/api/words',
+    url: '/words',
     params,
   })
   return {
@@ -160,7 +160,7 @@ export const listWords = async (params: ListWordsParams): Promise<WordListResult
 export const createWord = async (payload: UpsertWordPayload): Promise<Word> => {
   const response = await request<{ success: boolean; data: WordApiResponse }>({
     method: 'POST',
-    url: '/api/words',
+    url: '/words',
     data: adaptUpsertPayload(payload),
   })
 
@@ -174,7 +174,7 @@ export const updateWord = async (id: number, payload: UpsertWordPayload): Promis
   
   const response = await request<{ success: boolean; data: WordApiResponse }>({
     method: 'PUT',
-    url: `/api/words/${id}`,
+    url: `/words/${id}`,
     data: adaptUpsertPayload(payload),
   })
 
@@ -184,14 +184,14 @@ export const updateWord = async (id: number, payload: UpsertWordPayload): Promis
 export const deleteWord = async (id: number): Promise<void> => {
   await request<{ success: boolean; data: { message: string } }>({
     method: 'DELETE',
-    url: `/api/words/${id}`,
+    url: `/words/${id}`,
   })
 }
 
 export const getById = async (id: number): Promise<Word & { pronunciation_rules?: Array<{ id: number; letterCombination: string; pronunciation: string; ruleDescription?: string | null }>; dictionaries?: Array<{ id: number; name: string; isMastered: boolean }> }> => {
   const response = await request<Word & { pronunciation_rules?: Array<{ id: number; letterCombination: string; pronunciation: string; ruleDescription?: string | null }>; dictionaries?: Array<{ id: number; name: string; isMastered: boolean }> }>({
     method: 'GET',
-    url: `/api/words/${id}`,
+    url: `/words/${id}`,
   })
   
   return response
