@@ -4,6 +4,7 @@ import { NavLink, Outlet, useLocation } from 'react-router-dom'
 const navigation = [
   { to: '/dictionaries', label: '词典管理' },
   { to: '/words', label: '单词库' },
+  { to: '/sentences', label: '句子管理' },
   { to: '/word-plans', label: '单词计划' },
   { to: '/learning', label: '背单词' },
   { to: '/pronunciation-rules', label: '发音规则' },
@@ -28,6 +29,9 @@ const MainLayout = () => {
     }
     if (location.pathname.startsWith('/pronunciation-rules/') && location.pathname !== '/pronunciation-rules') {
       return '发音规则详情'
+    }
+    if (location.pathname === '/sentences') {
+      return '句子管理'
     }
 
     const match = navigation.find((item) => location.pathname.startsWith(item.to))
