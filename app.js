@@ -24,6 +24,8 @@ app.use(express.urlencoded({ extended: false }));
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 app.use('/api/dictionaries', dictionariesRouter);
+// Alias without /api prefix for compatibility
+app.use('/dictionaries', dictionariesRouter);
 app.use('/api/words', wordsRouter);
 app.use('/api/sentences', sentencesRouter);
 app.use('/api/dictionary-words', dictionaryWordsRouter);
@@ -31,6 +33,14 @@ app.use('/api/dictionary-word-associations', dictionaryWordAssociationsRouter);
 app.use('/api/pronunciation-rules', pronunciationRulesRouter);
 app.use('/api/word-plans', wordPlansRouter);
 app.use('/api/word-plans', wordPlanDetailsRouter);
+// Aliases without /api prefix for compatibility
+app.use('/words', wordsRouter);
+app.use('/sentences', sentencesRouter);
+app.use('/dictionary-words', dictionaryWordsRouter);
+app.use('/dictionary-word-associations', dictionaryWordAssociationsRouter);
+app.use('/pronunciation-rules', pronunciationRulesRouter);
+app.use('/word-plans', wordPlansRouter);
+app.use('/word-plans', wordPlanDetailsRouter);
 
 app.use(notFound);
 app.use(errorHandler);

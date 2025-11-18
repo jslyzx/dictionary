@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { listWords } from '../services/words';
 import { sentenceService } from '../services/sentenceService';
 import type { Sentence, SentenceToken } from '../types/sentence';
 import { WordSelector } from './WordSelector';
@@ -41,9 +42,42 @@ export const SentenceDetail: React.FC<SentenceDetailProps> = ({ sentenceId, onCl
   /**
    * 处理分词点击
    */
-  const handleTokenClick = (position: number, token: SentenceToken) => {
+  const handleTokenClick = async (position: number, token: SentenceToken) => {
     if (token.type !== 'word') return;
-    
+    if (!sentence) return;
+
+    // 自动尝试精确关联（不区分大小写）
+    const candidateText = token.text.trim();
+    if (candidateText) {
+      try {
+        const result = await listWords({ page: 1, limit: 1, search: candidateText });
+        const exact = result.items.find(w => w.word.toLowerCase() === candidateText.toLowerCase());
+        if (exact) {
+          setUpdatingToken(position);
+          const updatedToken = await sentenceService.updateTokenWord(
+            sentenceId,
+            position,
+            { word_id: exact.id }
+          );
+          const newTokens = [...sentence.tokens];
+          newTokens[position] = {
+            ...newTokens[position],
+            word_id: updatedToken.word_id,
+            word: updatedToken.word_id ? {
+              word_id: updatedToken.word_id,
+              word: updatedToken.word || '',
+              meaning: updatedToken.meaning || '',
+              phonetic: updatedToken.phonetic
+            } : null
+          };
+          setSentence({ ...sentence, tokens: newTokens });
+          setUpdatingToken(null);
+          return; // 自动关联成功，不弹选择器
+        }
+      } catch (e) {
+        // 自动关联失败时进入手动选择
+      }
+    }
     setSelectedToken(position);
     setShowWordSelector(true);
   };

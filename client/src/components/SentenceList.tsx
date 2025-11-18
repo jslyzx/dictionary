@@ -38,11 +38,11 @@ export const SentenceList: React.FC<SentenceListProps> = ({ onSentenceSelect }) 
       };
       
       const response: PaginatedResponse<Sentence> = await sentenceService.listSentences(params);
-      setSentences(response.data);
+      setSentences(Array.isArray(response.data) ? response.data : []);
       setPagination(prev => ({
         ...prev,
-        total: response.pagination.total,
-        totalPages: response.pagination.totalPages
+        total: response.pagination?.total ?? 0,
+        totalPages: response.pagination?.totalPages ?? 0
       }));
     } catch (error) {
       console.error('加载句子失败:', error);

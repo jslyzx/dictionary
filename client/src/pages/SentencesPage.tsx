@@ -17,10 +17,9 @@ export const SentencesPage: React.FC = () => {
    * 处理句子创建成功
    */
   const handleSentenceCreated = (sentence: Sentence) => {
-    // 切换到列表页并显示新创建的句子
-    setActiveTab('list');
+    // 保持在创建页，支持连续创建；可选地在右侧显示详情
     setSelectedSentence(sentence);
-    setShowDetail(true);
+    setShowDetail(false);
   };
 
   /**

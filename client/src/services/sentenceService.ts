@@ -1,7 +1,6 @@
 import apiClient from './apiClient';
 import type {
   Sentence,
-  SentenceToken,
   CreateSentenceRequest,
   TokenizeRequest,
   TokenizeResponse,
@@ -37,7 +36,58 @@ export const sentenceService = {
    */
   async listSentences(params?: SentenceListParams): Promise<PaginatedResponse<Sentence>> {
     const response = await apiClient.get('/sentences', { params });
-    return response.data;
+    type ApiShape = {
+      success?: boolean;
+      data?: {
+        items?: Array<{ id: number; text: string; created_at: string }>;
+        total?: number;
+        page?: number;
+        limit?: number;
+        totalPages?: number;
+      };
+      items?: Array<{ id: number; text: string; created_at: string }>;
+      total?: number;
+      page?: number;
+      limit?: number;
+      totalPages?: number;
+      pagination?: { page?: number; pageSize?: number; total?: number; totalPages?: number };
+    };
+
+    const payload = response.data as ApiShape;
+    const root = payload.success ? (payload.data ?? {}) : payload;
+
+    const ensureArray = <T>(v: unknown): T[] => {
+      if (Array.isArray(v)) return v as T[];
+      if (v && typeof v === 'object') return [v as T];
+      return [];
+    };
+
+    const rawItems = ensureArray<{ id: number; text: string; created_at: string }>(
+      Array.isArray(root.items)
+        ? root.items!
+        : Array.isArray(payload.items)
+          ? payload.items!
+          : Array.isArray(payload.data?.items)
+            ? payload.data!.items!
+            : (payload.data as unknown)
+    );
+
+    const data: Sentence[] = rawItems.map(it => ({ id: it.id, text: it.text, created_at: it.created_at, tokens: [] }));
+
+    const page = typeof (root as { page?: number }).page === 'number'
+      ? (root as { page?: number }).page!
+      : (payload.pagination?.page ?? params?.page ?? 1);
+    const pageSize = typeof (root as { limit?: number }).limit === 'number'
+      ? (root as { limit?: number }).limit!
+      : (payload.pagination?.pageSize ?? params?.pageSize ?? 20);
+    const total = typeof (root as { total?: number }).total === 'number'
+      ? (root as { total?: number }).total!
+      : (payload.pagination?.total ?? data.length);
+    const totalPages = typeof (root as { totalPages?: number }).totalPages === 'number'
+      ? (root as { totalPages?: number }).totalPages!
+      : (payload.pagination?.totalPages ?? Math.ceil(total / pageSize));
+
+    return { data, pagination: { page, pageSize, total, totalPages } };
   },
 
   /**

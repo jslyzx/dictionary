@@ -130,7 +130,7 @@ async function listSentences(req, res, next) {
     }
 
     const [rows] = await query(
-      `SELECT SQL_CALC_FOUND_ROWS
+      `SELECT
               s.id, s.text, s.created_at,
               COUNT(st.id) AS token_count
          FROM sentences s
@@ -142,15 +142,20 @@ async function listSentences(req, res, next) {
       [...params, limit, offset]
     );
 
-    const foundRows = await query('SELECT FOUND_ROWS() as total');
-    const total = Array.isArray(foundRows) && foundRows.length ? Number(foundRows[0].total) : 0;
+    const [countRows] = await query(
+      `SELECT COUNT(*) AS total FROM sentences s ${whereClause || ''}`,
+      params
+    );
+    const total = Array.isArray(countRows) && countRows.length ? Number(countRows[0].total) : 0;
 
+    const items = Array.isArray(rows) ? rows : (rows ? [rows] : []);
     res.json({
-      data: rows,
-      pagination: {
-        page: pageNum,
-        pageSize: limit,
+      success: true,
+      data: {
+        items,
         total,
+        page: pageNum,
+        limit,
         totalPages: Math.ceil(total / limit)
       }
     });
