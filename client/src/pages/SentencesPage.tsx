@@ -9,7 +9,7 @@ import type { Sentence } from '../types/sentence';
  * 包含句子创建、列表查看、详情编辑功能
  */
 export const SentencesPage: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'create' | 'list'>('create');
+  const [activeTab, setActiveTab] = useState<'create' | 'list'>('list');
   const [selectedSentence, setSelectedSentence] = useState<Sentence | null>(null);
   const [showDetail, setShowDetail] = useState(false);
 
@@ -17,9 +17,10 @@ export const SentencesPage: React.FC = () => {
    * 处理句子创建成功
    */
   const handleSentenceCreated = (sentence: Sentence) => {
-    // 保持在创建页，支持连续创建；可选地在右侧显示详情
+    // 创建成功后返回列表，并显示详情
+    setActiveTab('list');
     setSelectedSentence(sentence);
-    setShowDetail(false);
+    setShowDetail(true);
   };
 
   /**
@@ -40,44 +41,32 @@ export const SentencesPage: React.FC = () => {
 
   return (
     <div className="sentences-page max-w-6xl mx-auto p-6">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">句子管理</h1>
-        <p className="text-gray-600">
-          输入完整的英文句子，自动分词并关联到已有单词
-        </p>
-      </div>
-
-      {/* 标签页导航 */}
-      <div className="mb-6">
-        <div className="border-b border-gray-200">
-          <nav className="flex space-x-8">
+      <div className="mb-6 flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">句子管理</h1>
+          <p className="text-gray-600">
+            管理和学习英语句子，支持自动分词和单词关联
+          </p>
+        </div>
+        <div>
+          {activeTab === 'list' ? (
             <button
               onClick={() => setActiveTab('create')}
-              className={`
-                py-2 px-1 border-b-2 font-medium text-sm
-                ${
-                  activeTab === 'create'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }
-              `}
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             >
+              <svg className="mr-2 -ml-1 w-5 h-5" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+                <path d="M12 4v16m8-8H4" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
               创建句子
             </button>
+          ) : (
             <button
               onClick={() => setActiveTab('list')}
-              className={`
-                py-2 px-1 border-b-2 font-medium text-sm
-                ${
-                  activeTab === 'list'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }
-              `}
+              className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             >
-              句子列表
+              返回列表
             </button>
-          </nav>
+          )}
         </div>
       </div>
 
@@ -111,8 +100,8 @@ export const SentencesPage: React.FC = () => {
                   ✕
                 </button>
               </div>
-              <SentenceDetail 
-                sentenceId={selectedSentence.id} 
+              <SentenceDetail
+                sentenceId={selectedSentence.id}
                 onClose={handleCloseDetail}
               />
             </div>
@@ -124,7 +113,7 @@ export const SentencesPage: React.FC = () => {
                   <div className="w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-medium">1</div>
                   <div>
                     <p className="font-medium text-gray-900">输入完整句子</p>
-                    <p>在创建页面输入完整的英文句子，系统会自动进行分词</p>
+                    <p>点击"创建句子"按钮，输入完整的英文句子，系统会自动进行分词</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">

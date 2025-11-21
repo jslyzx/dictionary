@@ -4,13 +4,15 @@ import type { WordPlanWord } from '../../types/wordPlan'
 
 interface FlashCardModeProps {
   word: WordPlanWord
+  allWords?: WordPlanWord[]
   onAnswer: (isCorrect: boolean) => void
   onSkip: () => void
   progress: { current: number; total: number; percentage: number }
+  initialStep?: 'front' | 'quiz'
 }
 
-const FlashCardMode = ({ word, onAnswer }: FlashCardModeProps) => {
-  const [currentStep, setCurrentStep] = useState<'card' | 'quiz'>('card')
+const FlashCardMode = ({ word, allWords, onAnswer, initialStep = 'front' }: FlashCardModeProps) => {
+  const [currentStep, setCurrentStep] = useState<'front' | 'back' | 'quiz'>(initialStep)
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null)
   const [showResult, setShowResult] = useState(false)
   const [isPlaying, setIsPlaying] = useState(false)
@@ -20,49 +22,66 @@ const FlashCardMode = ({ word, onAnswer }: FlashCardModeProps) => {
   const generateOptions = () => {
     const correctAnswer = word.word?.meaning || '测试'
     const options = [correctAnswer]
-    
-    // 添加一些常见的中文释义作为干扰项
-    const distractors = [
-      '时间', '地点', '人物', '事件', '物品', '概念', '动作', '状态',
-      '性质', '关系', '过程', '结果', '原因', '目的', '方法', '工具'
-    ]
-    
+    let distractors: string[] = []
+
+    // 优先从当前计划的其他单词中获取干扰项
+    if (allWords && allWords.length > 0) {
+      const otherMeanings = allWords
+        .filter(w => w.word?.meaning && w.word.meaning !== correctAnswer)
+        .map(w => w.word!.meaning!)
+
+      // 去重
+      distractors = Array.from(new Set(otherMeanings))
+    }
+
+    // 如果干扰项不足3个，使用默认干扰项补充
+    if (distractors.length < 3) {
+      const defaultDistractors = [
+        '时间', '地点', '人物', '事件', '物品', '概念', '动作', '状态',
+        '性质', '关系', '过程', '结果', '原因', '目的', '方法', '工具'
+      ]
+      // 过滤掉已经是正确答案或已存在的干扰项
+      const availableDefaults = defaultDistractors.filter(
+        d => d !== correctAnswer && !distractors.includes(d)
+      )
+      distractors = [...distractors, ...availableDefaults]
+    }
+
     // 随机选择3个干扰项
     const shuffled = distractors.sort(() => Math.random() - 0.5)
     const selectedDistractors = shuffled.slice(0, 3)
-    
+
     options.push(...selectedDistractors)
-    
+
     return options.sort(() => Math.random() - 0.5)
   }
 
   useEffect(() => {
     setOptions(generateOptions())
-    setCurrentStep('card')
+    setCurrentStep(initialStep)
     setSelectedAnswer(null)
     setShowResult(false)
     setIsPlaying(false)
-  }, [word])
+  }, [word, initialStep])
 
   const handleCardClick = () => {
-    if (currentStep === 'card') {
-      // 2秒后自动进入答题模式
-      setTimeout(() => {
-        setCurrentStep('quiz')
-      }, 2000)
+    if (currentStep === 'front') {
+      setCurrentStep('back')
+    } else if (currentStep === 'back') {
+      setCurrentStep('quiz')
     }
   }
 
   const handleAnswerSelect = (answer: string) => {
     if (showResult) return
-    
+
     setSelectedAnswer(answer)
     const isCorrect = answer === (word.word?.meaning || '测试')
     setShowResult(true)
-    
+
     // 播放音效
     playSound(isCorrect)
-    
+
     // 延迟提交答案
     setTimeout(() => {
       onAnswer(isCorrect)
@@ -74,10 +93,10 @@ const FlashCardMode = ({ word, onAnswer }: FlashCardModeProps) => {
     const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)()
     const oscillator = audioContext.createOscillator()
     const gainNode = audioContext.createGain()
-    
+
     oscillator.connect(gainNode)
     gainNode.connect(audioContext.destination)
-    
+
     if (isCorrect) {
       // 正确答案音效 - 高音
       oscillator.frequency.setValueAtTime(800, audioContext.currentTime)
@@ -87,19 +106,19 @@ const FlashCardMode = ({ word, onAnswer }: FlashCardModeProps) => {
       oscillator.frequency.setValueAtTime(300, audioContext.currentTime)
       oscillator.frequency.setValueAtTime(250, audioContext.currentTime + 0.1)
     }
-    
+
     gainNode.gain.setValueAtTime(0.3, audioContext.currentTime)
     gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3)
-    
+
     oscillator.start(audioContext.currentTime)
     oscillator.stop(audioContext.currentTime + 0.3)
   }
 
   const playPronunciation = async () => {
     if (!word.word?.word) return
-    
+
     setIsPlaying(true)
-    
+
     try {
       // 使用Web Speech API
       if ('speechSynthesis' in window) {
@@ -107,11 +126,11 @@ const FlashCardMode = ({ word, onAnswer }: FlashCardModeProps) => {
         utterance.lang = 'en-US'
         utterance.rate = 0.8
         utterance.pitch = 1
-        
+
         utterance.onend = () => {
           setIsPlaying(false)
         }
-        
+
         speechSynthesis.speak(utterance)
       }
     } catch (error) {
@@ -121,44 +140,83 @@ const FlashCardMode = ({ word, onAnswer }: FlashCardModeProps) => {
   }
 
   const handleNext = () => {
-    setCurrentStep('card')
+    setCurrentStep('front')
     setSelectedAnswer(null)
     setShowResult(false)
   }
 
-  if (currentStep === 'card') {
-    return (
-      <div className="flash-card" onClick={handleCardClick}>
-        <div className="word-display">
-          <div className="word-text">{word.word?.word}</div>
-          <div className="phonetic-text">{word.word?.phonetic}</div>
+  // Common card content for Front
+  const renderFront = () => (
+    <div className="flash-card-face flash-card-front">
+      <div className="word-display">
+        <div className="word-text">{word.word?.word}</div>
+        <div className="phonetic-text">{word.word?.phonetic}</div>
+      </div>
+
+      <button
+        className="pronunciation-button"
+        onClick={(e) => {
+          e.stopPropagation()
+          playPronunciation()
+        }}
+        disabled={isPlaying}
+      >
+        {isPlaying ? '🔊' : '🔈'}
+      </button>
+
+      {word.word?.hasImage && word.word?.imageValue && (
+        <div className="word-image">
+          {word.word.imageType === 'emoji' ? (
+            <span style={{ fontSize: '4rem' }}>{word.word.imageValue}</span>
+          ) : word.word.imageType === 'url' ? (
+            <img src={word.word.imageValue} alt={word.word.word} />
+          ) : (
+            <div className="text-4xl">📚</div>
+          )}
         </div>
-        
-        <button
-          className="pronunciation-button"
-          onClick={(e) => {
-            e.stopPropagation()
-            playPronunciation()
-          }}
-          disabled={isPlaying}
-        >
-          {isPlaying ? '🔊' : '🔈'}
-        </button>
-        
-        {word.word?.hasImage && word.word?.imageValue && (
-          <div className="word-image">
-            {word.word.imageType === 'emoji' ? (
-              <span style={{ fontSize: '4rem' }}>{word.word.imageValue}</span>
-            ) : word.word.imageType === 'url' ? (
-              <img src={word.word.imageValue} alt={word.word.word} />
-            ) : (
-              <div className="text-4xl">📚</div>
-            )}
-          </div>
-        )}
-        
-        <div style={{ marginTop: '2rem', color: '#718096', fontSize: '1rem' }}>
-          点击查看释义
+      )}
+
+      <div style={{ marginTop: '2rem', color: '#718096', fontSize: '1rem' }}>
+        点击查看释义
+      </div>
+    </div>
+  )
+
+  // Common card content for Back
+  const renderBack = () => (
+    <div className="flash-card-face flash-card-back">
+      <div className="word-display">
+        <div className="word-text">{word.word?.word}</div>
+        <div className="phonetic-text">{word.word?.phonetic}</div>
+      </div>
+
+      <button
+        className="pronunciation-button"
+        onClick={(e) => {
+          e.stopPropagation()
+          playPronunciation()
+        }}
+        disabled={isPlaying}
+      >
+        {isPlaying ? '🔊' : '🔈'}
+      </button>
+
+      <div style={{ marginTop: '1rem', fontSize: '1.5rem', fontWeight: 'bold', color: '#2d3748' }}>
+        {word.word?.meaning}
+      </div>
+
+      <div style={{ marginTop: '2rem', color: '#718096', fontSize: '1rem' }}>
+        点击开始测试
+      </div>
+    </div>
+  )
+
+  if (currentStep === 'front' || currentStep === 'back') {
+    return (
+      <div className="flash-card-container" onClick={handleCardClick}>
+        <div className={`flash-card-inner ${currentStep === 'back' ? 'is-flipped' : ''}`}>
+          {renderFront()}
+          {renderBack()}
         </div>
       </div>
     )
@@ -171,7 +229,7 @@ const FlashCardMode = ({ word, onAnswer }: FlashCardModeProps) => {
         <div style={{ flex: 1, textAlign: 'left' }}>
           <div className="word-text">{word.word?.word}</div>
           <div className="phonetic-text">{word.word?.phonetic}</div>
-          
+
           <button
             className="pronunciation-button"
             onClick={playPronunciation}
@@ -180,7 +238,7 @@ const FlashCardMode = ({ word, onAnswer }: FlashCardModeProps) => {
           >
             {isPlaying ? '🔊' : '🔈'}
           </button>
-          
+
           {word.word?.hasImage && word.word?.imageValue && (
             <div className="word-image">
               {word.word.imageType === 'emoji' ? (
@@ -193,13 +251,13 @@ const FlashCardMode = ({ word, onAnswer }: FlashCardModeProps) => {
             </div>
           )}
         </div>
-        
+
         {/* 右侧：选择题 */}
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: '1.25rem', fontWeight: '600', marginBottom: '1.5rem', color: '#2d3748', textAlign: 'left' }}>
             选择正确的中文释义：
           </div>
-          
+
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
             {options.map((option, index) => {
               let buttonStyle: React.CSSProperties = {
@@ -214,7 +272,7 @@ const FlashCardMode = ({ word, onAnswer }: FlashCardModeProps) => {
                 transition: 'all 0.2s ease',
                 textAlign: 'left'
               }
-              
+
               if (showResult) {
                 if (option === (word.word?.meaning || '测试')) {
                   // 正确答案
@@ -242,7 +300,7 @@ const FlashCardMode = ({ word, onAnswer }: FlashCardModeProps) => {
               } else {
                 // 非结果状态，保持基础样式
               }
-              
+
               return (
                 <button
                   key={index}
@@ -258,7 +316,7 @@ const FlashCardMode = ({ word, onAnswer }: FlashCardModeProps) => {
               )
             })}
           </div>
-          
+
           {showResult && (
             <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
               <button

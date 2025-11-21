@@ -32,6 +32,15 @@ export interface WordPlanWord {
     isMastered: boolean
     sentence?: string | null
     notes?: string | null
+    pronunciation1?: string | null
+    pronunciation2?: string | null
+    pronunciation3?: string | null
+    pronunciationRules?: Array<{
+      id: number
+      letterCombination: string
+      pronunciation: string
+      ruleDescription?: string | null
+    }> | null
   }
   // 学习状态相关字段
   isLearned?: boolean
