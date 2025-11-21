@@ -4,19 +4,22 @@ import { getActiveWordPlan, recordLearning } from './services/wordPlans'
 import { type WordPlan, type WordPlanWord } from './types/wordPlan'
 import FlashCardModeNew from './components/learning/FlashCardModeNew'
 import SpellingModeNew from './components/learning/SpellingModeNew'
+import WordDetailModal from './components/learning/WordDetailModal'
 import './styles/learning.css'
 
 const LearningApp = () => {
   const [searchParams] = useSearchParams()
   const planId = searchParams.get('planId')
-  
+
   const [wordPlan, setWordPlan] = useState<WordPlan | null>(null)
   const [currentWords, setCurrentWords] = useState<WordPlanWord[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [showErrorModal, setShowErrorModal] = useState(false)
-  const [errorData, setErrorData] = useState<{ word: string; correctAnswer: string } | null>(null)
+  const [errorData, setErrorData] = useState<WordPlanWord | null>(null)
+  const [retryCount, setRetryCount] = useState(0)
+  const [initialStep, setInitialStep] = useState<'front' | 'quiz'>('front')
 
   useEffect(() => {
     loadActivePlan()
@@ -25,7 +28,7 @@ const LearningApp = () => {
   const loadActivePlan = async () => {
     try {
       setLoading(true)
-      
+
       if (planId) {
         // 如果有指定的计划ID，加载该计划
         const response = await fetch(`/api/word-plans/${planId}`)
@@ -58,7 +61,7 @@ const LearningApp = () => {
     if (!wordPlan || !currentWords[currentIndex]) return
 
     const currentWord = currentWords[currentIndex]
-    
+
     try {
       await recordLearning(
         wordPlan.id,
@@ -69,10 +72,7 @@ const LearningApp = () => {
 
       if (!isCorrect) {
         if (wordPlan.mode === 'flash-card') {
-          setErrorData({
-            word: currentWord.word?.word || '',
-            correctAnswer: currentWord.word?.meaning || ''
-          })
+          setErrorData(currentWord)
           setShowErrorModal(true)
         }
       } else {
@@ -89,6 +89,8 @@ const LearningApp = () => {
       setCurrentIndex(currentIndex + 1)
       setShowErrorModal(false)
       setErrorData(null)
+      setRetryCount(0) // Reset retry count for new word
+      setInitialStep('front') // Reset to front for new word
     } else {
       // 学习完成
       alert('恭喜！本轮学习完成！')
@@ -99,8 +101,8 @@ const LearningApp = () => {
 
   const handleErrorModalClose = () => {
     setShowErrorModal(false)
-    setErrorData(null)
-    nextWord()
+    setInitialStep('quiz') // Start at quiz for retry
+    setRetryCount(c => c + 1)
   }
 
   if (loading) {
@@ -117,7 +119,7 @@ const LearningApp = () => {
       <div className="loading-container">
         <div style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>⚠️</div>
         <div>{error}</div>
-        <button 
+        <button
           onClick={() => window.close()}
           style={{ marginTop: '2rem', padding: '0.5rem 1rem', borderRadius: '8px', background: 'white', color: '#667eea', border: 'none', cursor: 'pointer' }}
         >
@@ -160,10 +162,13 @@ const LearningApp = () => {
       <div className="learning-content">
         {wordPlan.mode === 'flash-card' ? (
           <FlashCardModeNew
+            key={`${currentWord.id}-${retryCount}`}
             word={currentWord}
+            allWords={currentWords}
             onAnswer={handleAnswerSubmit}
             onSkip={nextWord}
             progress={progress}
+            initialStep={initialStep}
           />
         ) : (
           <SpellingModeNew
@@ -175,23 +180,13 @@ const LearningApp = () => {
         )}
       </div>
 
-      {/* 错误提示模态框 */}
+      {/* 错误提示模态框 - 使用详细信息 */}
       {showErrorModal && errorData && (
-        <div className="error-modal">
-          <div className="error-content">
-            <div className="error-icon">❌</div>
-            <div className="error-message">回答错误</div>
-            <div className="error-correct">
-              正确答案是：<strong>{errorData.correctAnswer}</strong>
-            </div>
-            <button
-              onClick={handleErrorModalClose}
-              className="btn btn-primary"
-            >
-              继续
-            </button>
-          </div>
-        </div>
+        <WordDetailModal
+          word={errorData}
+          onClose={handleErrorModalClose}
+          onNext={handleErrorModalClose}
+        />
       )}
     </div>
   )
