@@ -384,3 +384,5 @@ npm run dev
 - Connect the "Words" page to the existing `/api/words` endpoints for full CRUD coverage.
 
 With the database in place and both services running, you can manage dictionaries immediately and iterate on new features with confidence.
+
+[在线词典查询接口](https://api.dictionaryapi.dev/api/v2/entries/en/sing)

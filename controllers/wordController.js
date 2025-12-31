@@ -63,13 +63,13 @@ const validateImageType = (imageType) => {
 
 const validateImageValue = (imageType, imageValue) => {
   if (!imageType || !imageValue) return null;
-  
+
   const maxLength = IMAGE_VALUE_MAX_LENGTHS[imageType];
   if (!maxLength) return null;
-  
+
   const trimmed = String(imageValue).trim();
   if (!trimmed) return null;
-  
+
   return trimmed.length > maxLength ? null : trimmed;
 };
 
@@ -271,10 +271,10 @@ const getWords = async (req, res, next) => {
     if (rows.length > 0) {
       try {
         const wordIds = rows.map(w => w.word_id);
-        
+
         // Generate dynamic placeholders for IN clause
         const placeholders = wordIds.map(() => '?').join(',');
-        
+
         // Use dynamic placeholders to avoid MySQL array parameter issue
         const rules = await query(
           `SELECT wpr.word_id, pr.id, pr.letter_combination, pr.pronunciation
@@ -283,7 +283,7 @@ const getWords = async (req, res, next) => {
            WHERE wpr.word_id IN (${placeholders})`,
           wordIds  // Pass array directly, will be expanded to match placeholders
         );
-        
+
         // Add defensive check to ensure rules is an array
         if (Array.isArray(rules)) {
           // Group rules by word_id
@@ -296,7 +296,7 @@ const getWords = async (req, res, next) => {
               pronunciation: rule.pronunciation
             });
           });
-          
+
           // Add pronunciation rules to each word
           rows.forEach(word => {
             word.pronunciation_rules = rulesMap[word.word_id] || [];
@@ -328,7 +328,7 @@ const getWords = async (req, res, next) => {
     });
   } catch (error) {
     console.error('获取单词列表失败:', error);
-    
+
     if (error.code === 'ECONNREFUSED') {
       return res.status(503).json({
         success: false,
@@ -336,7 +336,7 @@ const getWords = async (req, res, next) => {
         code: 'DB_CONNECTION_ERROR'
       });
     }
-    
+
     return next(error);
   }
 };
@@ -393,7 +393,7 @@ const getWordStats = async (req, res, next) => {
     });
   } catch (error) {
     console.error('获取单词统计失败:', error);
-    
+
     if (error.code === 'ECONNREFUSED') {
       return res.status(503).json({
         success: false,
@@ -401,7 +401,7 @@ const getWordStats = async (req, res, next) => {
         code: 'DB_CONNECTION_ERROR'
       });
     }
-    
+
     return next(error);
   }
 };
@@ -489,7 +489,7 @@ const getWordIdFromRequest = (req) => {
 const getWordById = async (req, res, next) => {
   try {
     const wordId = getWordIdFromRequest(req);
-    
+
     if (!wordId) {
       throw new AppError('Valid word ID is required.', {
         status: 400,
@@ -511,7 +511,7 @@ const getWordById = async (req, res, next) => {
     }
 
     const word = serializeWord(rows[0]);
-    
+
     // 2. 查询关联的发音规则
     const pronunciationRulesRows = await query(`
       SELECT 
@@ -523,14 +523,14 @@ const getWordById = async (req, res, next) => {
       JOIN pronunciation_rules pr ON wpr.pronunciation_rule_id = pr.id
       WHERE wpr.word_id = ?
     `, sanitizeDbParams([wordId]));
-    
+
     word.pronunciationRules = pronunciationRulesRows.map(row => ({
       id: row.id,
       letterCombination: row.letter_combination,
       pronunciation: row.pronunciation,
       ruleDescription: row.rule_description
     }));
-    
+
     // 3. 查询所属词典
     const dictionariesRows = await query(`
       SELECT 
@@ -541,7 +541,7 @@ const getWordById = async (req, res, next) => {
       JOIN dictionaries d ON dw.dictionary_id = d.dictionary_id
       WHERE dw.word_id = ?
     `, sanitizeDbParams([wordId]));
-    
+
     word.dictionaries = dictionariesRows.map(row => ({
       id: row.id,
       name: row.name,
@@ -564,10 +564,10 @@ const createWord = async (req, res, next) => {
   let hasImage = hasOwn(body, 'hasImage') ? body.hasImage : undefined;
   const imageType = validateImageType(body.imageType);
   const imageValue = validateImageValue(imageType, body.imageValue);
-  
+
   // Derive has_image if not explicitly provided
   hasImage = deriveHasImage(hasImage, imageType, imageValue);
-  
+
   // If hasImage is false/undefined, clear image fields
   if (!hasImage) {
     imageType && (body.imageType = null);
@@ -613,10 +613,10 @@ const createWord = async (req, res, next) => {
   let lastError;
 
   while (attempt < CREATE_WORD_MAX_ATTEMPTS) {
-        try {
-          const [result] = await executeWithRetry(insertSql, sanitizeDbParams(values), {
-            retries: 0,
-          });
+    try {
+      const [result] = await executeWithRetry(insertSql, sanitizeDbParams(values), {
+        retries: 0,
+      });
 
       const rows = await query(
         `SELECT ${baseSelectColumns} FROM words w WHERE w.word_id = ?`,
@@ -659,24 +659,24 @@ const createWord = async (req, res, next) => {
 
   return next(
     lastError ??
-      new AppError('Unable to create word due to repeated database errors.', {
-        status: 500,
-        code: 'WORD_CREATE_FAILED',
-      }),
+    new AppError('Unable to create word due to repeated database errors.', {
+      status: 500,
+      code: 'WORD_CREATE_FAILED',
+    }),
   );
 };
 
 const updateWord = async (req, res, next) => {
   try {
     const wordId = getWordIdFromRequest(req);
-    
+
     if (!wordId) {
       throw new AppError('Valid word ID is required for update.', {
         status: 400,
         code: 'INVALID_WORD_ID',
       });
     }
-    
+
     const body = getValidatedBody(req);
 
     const existingRows = await query(
@@ -744,20 +744,17 @@ const updateWord = async (req, res, next) => {
       params.push(body.isMastered === undefined ? null : toDatabaseBoolean(body.isMastered));
     }
 
-    if (hasOwn(body, 'createdAt')) {
-      updates.push('created_at = ?');
-      params.push(body.createdAt === undefined ? null : body.createdAt);
-    }
+
 
     // Handle image fields with validation
     if (hasOwn(body, 'hasImage') || hasOwn(body, 'imageType') || hasOwn(body, 'imageValue')) {
       let hasImage = hasOwn(body, 'hasImage') ? body.hasImage : undefined;
       const imageType = validateImageType(body.imageType);
       const imageValue = validateImageValue(imageType, body.imageValue);
-      
+
       // Derive has_image if not explicitly provided
       hasImage = deriveHasImage(hasImage, imageType, imageValue);
-      
+
       // Update all image fields
       updates.push('has_image = ?');
       params.push(toDatabaseBoolean(hasImage));
@@ -1080,7 +1077,7 @@ const importWordsCsv = async (req, res, next) => {
           const hasImage = record.hasImage ?? (!!(record.imageType && record.imageValue));
           const imageType = validateImageType(record.imageType);
           const imageValue = validateImageValue(imageType, record.imageValue);
-          
+
           columns.push('has_image', 'image_type', 'image_value');
           values.push(toDatabaseBoolean(hasImage), hasImage ? imageType : null, hasImage ? imageValue : null);
           updates.push('has_image = VALUES(has_image)', 'image_type = VALUES(image_type)', 'image_value = VALUES(image_value)');
@@ -1144,7 +1141,7 @@ const importWordsCsv = async (req, res, next) => {
 const deleteWord = async (req, res, next) => {
   try {
     const wordId = getWordIdFromRequest(req);
-    
+
     if (!wordId) {
       throw new AppError('Valid word ID is required for deletion.', {
         status: 400,

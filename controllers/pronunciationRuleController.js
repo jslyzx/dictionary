@@ -115,7 +115,7 @@ const getPronunciationRules = async (req, res, next) => {
 
     const whereClause = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
 
-    const [rows] = await pool.execute(
+    const [rows] = await pool.query(
       `SELECT id, letter_combination, pronunciation, rule_description, created_at, updated_at,
               (SELECT COUNT(*) FROM word_pronunciation_rules wpr WHERE wpr.pronunciation_rule_id = pronunciation_rules.id) as word_count
        FROM pronunciation_rules ${whereClause} 
@@ -124,7 +124,7 @@ const getPronunciationRules = async (req, res, next) => {
       [...params, limit, offset],
     );
 
-    const [countResult] = await pool.execute(
+    const [countResult] = await pool.query(
       `SELECT COUNT(*) AS total FROM pronunciation_rules ${whereClause}`,
       params,
     );
@@ -208,7 +208,7 @@ const getWordsUsingRule = async (req, res, next) => {
 
     const offset = (page - 1) * limit;
 
-    const [rows] = await pool.execute(
+    const [rows] = await pool.query(
       `SELECT w.word_id, w.word, w.phonetic, w.meaning, w.difficulty, w.is_mastered,
               wpr.position_in_word, wpr.created_at as rule_added_at
        FROM words w
@@ -219,7 +219,7 @@ const getWordsUsingRule = async (req, res, next) => {
       [ruleId, limit, offset],
     );
 
-    const [countResult] = await pool.execute(
+    const [countResult] = await pool.query(
       `SELECT COUNT(*) AS total
        FROM words w
        INNER JOIN word_pronunciation_rules wpr ON w.word_id = wpr.word_id
@@ -452,9 +452,9 @@ const addWordPronunciationRules = async (req, res, next) => {
       [wordId],
     );
 
-    res.status(200).json({ 
+    res.status(200).json({
       message: `Added ${result.affectedRows} pronunciation rule associations`,
-      items: rows 
+      items: rows
     });
   } catch (error) {
     next(error);
