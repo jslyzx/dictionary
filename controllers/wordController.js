@@ -130,6 +130,7 @@ const buildFilter = (filters = {}) => {
   const difficulty = filters.difficulty;
   const masteryStatus = filters.masteryStatus;
   const dictionaryId = filters.dictionaryId;
+  const excludeDictionaryId = filters.excludeDictionaryId !== undefined ? parseInt(filters.excludeDictionaryId, 10) : undefined;
   const createdAfter = filters.createdAfter;
   const createdBefore = filters.createdBefore;
 
@@ -163,6 +164,11 @@ const buildFilter = (filters = {}) => {
     joins.push('INNER JOIN dictionary_words dw ON dw.word_id = w.word_id');
     conditions.push('dw.dictionary_id = ?');
     params.push(dictionaryId);
+  }
+
+  if (excludeDictionaryId !== undefined) {
+    conditions.push('w.word_id NOT IN (SELECT word_id FROM dictionary_words WHERE dictionary_id = ?)');
+    params.push(excludeDictionaryId);
   }
 
   const whereClause = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';

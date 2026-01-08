@@ -137,6 +137,11 @@ const listWordQueryRules = [
     .isInt({ min: 1 })
     .withMessage('dictionaryId must be a positive integer.')
     .toInt(),
+  query('excludeDictionaryId')
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage('excludeDictionaryId must be a positive integer.')
+    .toInt(),
   query('createdAfter')
     .optional()
     .custom((value, { req }) => {
@@ -314,21 +319,21 @@ const createWordRules = [
         req.body.imageValue = null;
         return true;
       }
-      
+
       // Validate length based on imageType if provided
       const imageType = req.body.imageType;
       let maxLength = 500; // default for URL
-      
+
       if (imageType === 'iconfont') {
         maxLength = 100;
       } else if (imageType === 'emoji') {
         maxLength = 50;
       }
-      
+
       if (trimmed.length > maxLength) {
         throw new Error(`imageValue must be ${maxLength} characters or fewer for type ${imageType || 'url'}.`);
       }
-      
+
       req.body.imageValue = trimmed;
       return true;
     })
@@ -512,21 +517,21 @@ const updateWordRules = [
         req.body.imageValue = null;
         return true;
       }
-      
+
       // Validate length based on imageType if provided
       const imageType = req.body.imageType;
       let maxLength = 500; // default for URL
-      
+
       if (imageType === 'iconfont') {
         maxLength = 100;
       } else if (imageType === 'emoji') {
         maxLength = 50;
       }
-      
+
       if (trimmed.length > maxLength) {
         throw new Error(`imageValue must be ${maxLength} characters or fewer for type ${imageType || 'url'}.`);
       }
-      
+
       req.body.imageValue = trimmed;
       return true;
     })

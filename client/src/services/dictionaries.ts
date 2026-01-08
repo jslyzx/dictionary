@@ -51,10 +51,12 @@ export const fetchDictionary = async (id: number): Promise<Dictionary> => {
 
 export const fetchDictionaryWordAssociations = async (
   dictionaryId: number,
-): Promise<DictionaryWordAssociation[]> => {
-  const response = await request<ApiResponse<DictionaryWordAssociation[]>>({
+  params?: { page?: number; limit?: number; search?: string },
+): Promise<{ items: DictionaryWordAssociation[]; total: number }> => {
+  const response = await request<ApiResponse<{ items: DictionaryWordAssociation[]; total: number }>>({
     method: 'GET',
     url: `/dictionaries/${dictionaryId}/words`,
+    params,
   })
 
   return response.data

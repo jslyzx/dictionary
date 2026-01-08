@@ -51,6 +51,7 @@ export interface ListWordsParams {
   search?: string
   difficulty?: number
   masteryStatus?: number
+  excludeDictionaryId?: number
 }
 
 export interface WordListResult {

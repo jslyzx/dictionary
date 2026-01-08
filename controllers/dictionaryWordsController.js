@@ -104,13 +104,16 @@ const ensureWordExists = async (connection, wordId) => {
 const getDictionaryWords = async (req, res, next) => {
   try {
     const dictionaryId = req.params.id;
+    const { page = 1, limit = 20, search = '' } = req.query;
+    const offset = (parseInt(page) - 1) * parseInt(limit);
 
-    const dictionaryRows = await query(
+    // Check if dictionary exists
+    const [dictionaryExists] = await query(
       'SELECT dictionary_id FROM dictionaries WHERE dictionary_id = ?',
       [dictionaryId]
     );
 
-    if (!dictionaryRows.length) {
+    if (!dictionaryExists) {
       return res.status(404).json({
         success: false,
         error: {
@@ -119,18 +122,40 @@ const getDictionaryWords = async (req, res, next) => {
       });
     }
 
+    // Build filter
+    let whereClause = 'WHERE dw.dictionary_id = ?';
+    const params = [dictionaryId];
+
+    if (typeof search === 'string' && search.trim()) {
+      const dbSearch = `%${search.trim()}%`;
+      whereClause += ' AND (w.word LIKE ? OR w.meaning LIKE ? OR w.phonetic LIKE ?)';
+      params.push(dbSearch, dbSearch, dbSearch);
+    }
+
+    // Get items with pagination
     const rows = await query(
-      `${associationSelectBase} WHERE dw.dictionary_id = ? ORDER BY dw.created_at DESC`,
-      [dictionaryId]
+      `${associationSelectBase} ${whereClause} ORDER BY dw.created_at DESC LIMIT ${parseInt(limit)} OFFSET ${offset}`,
+      params
+    );
+
+    // Get total count for this filter
+    const [countRow] = await query(
+      `SELECT COUNT(*) AS total FROM dictionary_words dw INNER JOIN words w ON w.word_id = dw.word_id ${whereClause}`,
+      params
     );
 
     return res.json({
       success: true,
-      data: rows.map(serializeAssociationRow)
+      data: {
+        items: rows.map(serializeAssociationRow),
+        total: Number(countRow?.total ?? 0),
+        page: parseInt(page),
+        limit: parseInt(limit)
+      }
     });
   } catch (error) {
     console.error('获取词典单词关联失败:', error);
-    
+
     if (error.code === 'ECONNREFUSED') {
       return res.status(503).json({
         success: false,
@@ -138,7 +163,7 @@ const getDictionaryWords = async (req, res, next) => {
         code: 'DB_CONNECTION_ERROR'
       });
     }
-    
+
     return next(error);
   }
 };
@@ -435,7 +460,7 @@ const batchAddDictionaryWords = async (req, res, next) => {
       `SELECT word_id FROM words WHERE word_id IN (${wordIdPlaceholders})`,
       uniqueWordIds
     );
-    
+
     const existingWordIds = new Set(existingWordRows.map(row => row.word_id));
     const invalidWordIds = uniqueWordIds.filter(id => !existingWordIds.has(id));
 
@@ -456,7 +481,7 @@ const batchAddDictionaryWords = async (req, res, next) => {
       `SELECT word_id FROM dictionary_words WHERE dictionary_id = ? AND word_id IN (${associationPlaceholders})`,
       [dictionaryId, ...uniqueWordIds]
     );
-    
+
     const existingAssociationWordIds = new Set(existingAssociationRows.map(row => row.word_id));
     const newWordIds = uniqueWordIds.filter(id => !existingAssociationWordIds.has(id));
 
@@ -475,7 +500,7 @@ const batchAddDictionaryWords = async (req, res, next) => {
         `INSERT INTO dictionary_words (dictionary_id, word_id) VALUES ${valuePlaceholders}`,
         values
       );
-      
+
       created = result.affectedRows;
     }
 
@@ -509,7 +534,7 @@ const batchAddDictionaryWords = async (req, res, next) => {
     }
 
     console.error('批量添加词典单词失败:', error);
-    
+
     if (error.code === 'ECONNREFUSED') {
       return res.status(503).json({
         success: false,
