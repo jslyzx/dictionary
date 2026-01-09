@@ -8,6 +8,7 @@ import {
 import { WordFormModal } from "../components/words/WordFormModal";
 import { Link, useParams } from "react-router-dom";
 import Modal from "../components/common/Modal";
+import DictLearningModal from "../components/learning/DictLearningModal";
 import {
   addWordToDictionary,
   batchAddWordsToDictionary,
@@ -859,10 +860,15 @@ const DictionaryDetailPage = () => {
   const [refreshIndex, setRefreshIndex] = useState(0);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isLearningModalOpen, setIsLearningModalOpen] = useState(false);
   const [associationToEdit, setAssociationToEdit] =
     useState<DictionaryWordAssociation | null>(null);
   const [associationToRemove, setAssociationToRemove] =
     useState<DictionaryWordAssociation | null>(null);
+  const [learningAssociations, setLearningAssociations] = useState<
+    DictionaryWordAssociation[]
+  >([]);
+  const [isLearningLoading, setIsLearningLoading] = useState(false);
 
   // Pagination and search state
   const [page, setPage] = useState(1);
@@ -948,6 +954,25 @@ const DictionaryDetailPage = () => {
   const showFeedback = useCallback((type: FeedbackType, message: string) => {
     setFeedback({ type, message });
   }, []);
+
+  const handleStartLearning = async () => {
+    if (total === 0) return;
+
+    setIsLearningLoading(true);
+    try {
+      const response = await fetchDictionaryWordAssociations(dictionaryId, {
+        page: 1,
+        limit: 1000, // Fetch all (up to 1000)
+      });
+      setLearningAssociations(response.items);
+      setIsLearningModalOpen(true);
+    } catch (err) {
+      const apiError = err as ApiError;
+      showFeedback("error", apiError.message ?? "无法加载学习内容。");
+    } finally {
+      setIsLearningLoading(false);
+    }
+  };
 
   const totalWords = total;
   const totalPages = Math.ceil(total / limit);
@@ -1214,26 +1239,49 @@ const DictionaryDetailPage = () => {
               }}
             />
           </div>
-          <button
-            className="inline-flex items-center gap-2 rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-700"
-            onClick={() => setIsAddModalOpen(true)}
-            type="button"
-          >
-            <svg
-              className="h-4 w-4"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              viewBox="0 0 24 24"
+          <div className="flex items-center gap-3">
+            <button
+              className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700"
+              onClick={handleStartLearning}
+              disabled={isLearningLoading}
+              type="button"
             >
-              <path
-                d="M12 4v16m8-8H4"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-            添加单词
-          </button>
+              <svg
+                className="h-4 w-4"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+              {isLearningLoading ? "加载中..." : "开始学习"}
+            </button>
+            <button
+              className="inline-flex items-center gap-2 rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-700"
+              onClick={() => setIsAddModalOpen(true)}
+              type="button"
+            >
+              <svg
+                className="h-4 w-4"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  d="M12 4v16m8-8H4"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+              添加单词
+            </button>
+          </div>
         </div>
 
         {feedback ? (
@@ -1476,26 +1524,51 @@ const DictionaryDetailPage = () => {
                 : "从全局单词目录添加单词以开始构建词典。"}
             </p>
             {!search && (
-              <button
-                className="mt-6 inline-flex items-center gap-2 rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-700"
-                onClick={() => setIsAddModalOpen(true)}
-                type="button"
-              >
-                <svg
-                  className="h-4 w-4"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    d="M12 4v16m8-8H4"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-                添加第一个单词
-              </button>
+              <div className="mt-6 flex flex-col items-center gap-4">
+                <div className="flex justify-center gap-3">
+                  <button
+                    className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 disabled:opacity-50"
+                    onClick={handleStartLearning}
+                    disabled={isLearningLoading || total === 0}
+                    type="button"
+                  >
+                    <svg
+                      className="h-4 w-4"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                    {isLearningLoading ? "加载中..." : "开始学习"}
+                  </button>
+                  <button
+                    className="inline-flex items-center gap-2 rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-700"
+                    onClick={() => setIsAddModalOpen(true)}
+                    type="button"
+                  >
+                    <svg
+                      className="h-4 w-4"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        d="M12 4v16m8-8H4"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                    添加第一个单词
+                  </button>
+                </div>
+              </div>
             )}
             {search && (
               <button
@@ -1516,6 +1589,13 @@ const DictionaryDetailPage = () => {
         onRefresh={refreshData}
         onClose={() => setIsAddModalOpen(false)}
         onFeedback={showFeedback}
+      />
+
+      <DictLearningModal
+        associations={learningAssociations}
+        isOpen={isLearningModalOpen}
+        onClose={() => setIsLearningModalOpen(false)}
+        dictionaryName={dictionary.name}
       />
 
       <EditDictionaryWordModal

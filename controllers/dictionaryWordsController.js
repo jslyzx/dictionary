@@ -19,7 +19,11 @@ const associationSelectBase = `
     w.created_at AS word_created_at,
     w.difficulty AS word_difficulty,
     w.is_mastered AS word_is_mastered,
-    w.notes AS word_notes
+    w.notes AS word_notes,
+    w.sentence AS word_sentence,
+    w.has_image AS word_has_image,
+    w.image_type AS word_image_type,
+    w.image_value AS word_image_value
   FROM dictionary_words dw
   INNER JOIN words w ON w.word_id = dw.word_id
 `;
@@ -63,7 +67,12 @@ const serializeAssociationRow = (row) => ({
     difficulty: toNumberOrNull(row.word_difficulty),
     isMastered: toBooleanOrNull(row.word_is_mastered),
     notes: row.word_notes ?? null,
-    createdAt: row.word_created_at
+    sentence: row.word_sentence ?? null,
+    hasImage: Number(row.word_has_image) === 1,
+    imageType: row.word_image_type ?? null,
+    imageValue: row.word_image_value ?? null,
+    createdAt: row.word_created_at,
+    pronunciationRules: []
   }
 });
 
@@ -138,6 +147,45 @@ const getDictionaryWords = async (req, res, next) => {
       params
     );
 
+    // Fetch pronunciation rules for the words
+    let items = rows.map(serializeAssociationRow);
+    if (rows.length > 0) {
+      const wordIds = rows.map(row => row.word_id);
+      try {
+        const [rules] = await pool.query(
+          `SELECT wpr.word_id, pr.id, pr.letter_combination, pr.pronunciation, pr.rule_description
+           FROM pronunciation_rules pr
+           INNER JOIN word_pronunciation_rules wpr ON pr.id = wpr.pronunciation_rule_id
+           WHERE wpr.word_id IN (?)`,
+          [wordIds]
+        );
+
+        if (rules && rules.length > 0) {
+          const rulesByWordId = {};
+          rules.forEach(rule => {
+            if (!rulesByWordId[rule.word_id]) {
+              rulesByWordId[rule.word_id] = [];
+            }
+            rulesByWordId[rule.word_id].push({
+              id: rule.id,
+              letterCombination: rule.letter_combination,
+              pronunciation: rule.pronunciation,
+              ruleDescription: rule.rule_description
+            });
+          });
+
+          items.forEach(item => {
+            if (rulesByWordId[item.wordId]) {
+              item.word.pronunciationRules = rulesByWordId[item.wordId];
+            }
+          });
+        }
+      } catch (ruleError) {
+        console.error('获取发音规则失败:', ruleError);
+        // Continue without rules if this fails
+      }
+    }
+
     // Get total count for this filter
     const [countRow] = await query(
       `SELECT COUNT(*) AS total FROM dictionary_words dw INNER JOIN words w ON w.word_id = dw.word_id ${whereClause}`,
@@ -147,7 +195,7 @@ const getDictionaryWords = async (req, res, next) => {
     return res.json({
       success: true,
       data: {
-        items: rows.map(serializeAssociationRow),
+        items,
         total: Number(countRow?.total ?? 0),
         page: parseInt(page),
         limit: parseInt(limit)
