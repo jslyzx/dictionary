@@ -5,6 +5,7 @@ import {
   useMemo,
   useState,
 } from "react";
+import { WordFormModal } from "../components/words/WordFormModal";
 import { Link, useParams } from "react-router-dom";
 import Modal from "../components/common/Modal";
 import {
@@ -122,7 +123,7 @@ const mapSelectionToDifficulty = (
   if (selection === "hard") {
     return 2;
   }
-  return null;
+  return 0; // Default or fallback
 };
 
 const mapMasteryToSelection = (value: boolean | null): MasterySelection => {
@@ -142,7 +143,7 @@ const mapSelectionToMastery = (selection: MasterySelection): boolean | null => {
   if (selection === "in-progress") {
     return false;
   }
-  return null;
+  return null; // Default or fallback
 };
 
 interface AddDictionaryWordModalProps {
@@ -552,11 +553,9 @@ const AddDictionaryWordModal = ({
             rows={3}
             value={notes}
           />
-          {selectedWordIds.size > 1 && (
-            <p className="mt-2 text-xs text-amber-600 font-medium">
-              提示：批量添加模式下暂不支持自定义难度、掌握状态和笔记。
-            </p>
-          )}
+          <p className="mt-2 text-xs text-amber-600 font-medium">
+            提示：批量添加模式下暂不支持自定义难度、掌握状态和笔记。
+          </p>
         </div>
 
         {submitError ? (
@@ -870,6 +869,7 @@ const DictionaryDetailPage = () => {
   const [limit] = useState(20);
   const [total, setTotal] = useState(0);
   const [search, setSearch] = useState("");
+  const [wordToEdit, setWordToEdit] = useState<Word | null>(null);
 
   const refreshData = useCallback(() => {
     setRefreshIndex((index) => index + 1);
@@ -1325,7 +1325,14 @@ const DictionaryDetailPage = () => {
                               onClick={() => setAssociationToEdit(association)}
                               type="button"
                             >
-                              编辑
+                              关联
+                            </button>
+                            <button
+                              className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-slate-100"
+                              onClick={() => setWordToEdit(association.word)}
+                              type="button"
+                            >
+                              编辑单词
                             </button>
                             <button
                               className="rounded-lg border border-rose-200 px-3 py-1.5 text-xs font-medium text-rose-600 transition hover:bg-rose-50"
@@ -1526,6 +1533,17 @@ const DictionaryDetailPage = () => {
         onClose={() => setAssociationToRemove(null)}
         onFeedback={showFeedback}
         onRemoved={refreshData}
+      />
+
+      <WordFormModal
+        isOpen={Boolean(wordToEdit)}
+        mode="edit"
+        word={wordToEdit}
+        onClose={() => setWordToEdit(null)}
+        onSuccess={(word, _mode) => {
+          refreshData();
+          showFeedback("success", `单词“${word.word}”定义更新成功。`);
+        }}
       />
     </div>
   );

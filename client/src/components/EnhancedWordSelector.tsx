@@ -1,31 +1,35 @@
-import { useState, useEffect } from 'react'
-import { fetchDictionaries, fetchDictionaryWordAssociations } from '../services/dictionaries'
-import { listWords } from '../services/words'
-import type { Dictionary } from '../types/dictionary'
+import { useState, useEffect } from "react";
+import {
+  fetchDictionaries,
+  fetchDictionaryWordAssociations,
+} from "../services/dictionaries";
+import { listWords } from "../services/words";
+import type { Dictionary } from "../types/dictionary";
+import type { Word } from "../types/word";
 
 interface EnhancedWordSelectorProps {
-  selectedWordIds: Set<number>
-  onWordSelect: (wordId: number) => void
-  onWordsBulkSelect: (wordIds: number[]) => void
-  onClose: () => void
-  onConfirm: () => void
+  selectedWordIds: Set<number>;
+  onWordSelect: (wordId: number) => void;
+  onWordsBulkSelect: (wordIds: number[]) => void;
+  onClose: () => void;
+  onConfirm: () => void;
 }
 
 interface FilterOptions {
-  search: string
-  difficulty: number | null
-  masteryStatus: number | null
-  dictionaryId: number | null
+  search: string;
+  difficulty: number | null;
+  masteryStatus: number | null;
+  dictionaryId: number | null;
 }
 
 interface WordItem {
-  id: number
-  word: string
-  phonetic: string
-  meaning: string
-  difficulty: number
-  isMastered: boolean
-  sentence?: string | null
+  id: number;
+  word: string;
+  phonetic: string;
+  meaning: string;
+  difficulty: number;
+  isMastered: boolean;
+  sentence?: string | null;
 }
 
 const EnhancedWordSelector = ({
@@ -33,151 +37,167 @@ const EnhancedWordSelector = ({
   onWordSelect,
   onWordsBulkSelect,
   onClose,
-  onConfirm
+  onConfirm,
 }: EnhancedWordSelectorProps) => {
-  const [dictionaries, setDictionaries] = useState<Dictionary[]>([])
-  const [words, setWords] = useState<WordItem[]>([])
-  const [loading, setLoading] = useState(false)
-  const [page, setPage] = useState(1)
-  const [total, setTotal] = useState(0)
+  const [dictionaries, setDictionaries] = useState<Dictionary[]>([]);
+  const [words, setWords] = useState<WordItem[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
   const [filters, setFilters] = useState<FilterOptions>({
-    search: '',
+    search: "",
     difficulty: null,
     masteryStatus: null,
-    dictionaryId: null
-  })
-  const [viewMode, setViewMode] = useState<'search' | 'dictionary'>('search')
+    dictionaryId: null,
+  });
+  const [viewMode, setViewMode] = useState<"search" | "dictionary">("search");
 
-  const pageSize = 20
-
-  useEffect(() => {
-    fetchDictionariesList()
-  }, [])
+  const pageSize = 20;
 
   useEffect(() => {
-    if (viewMode === 'search') {
-      fetchWords()
+    fetchDictionariesList();
+  }, []);
+
+  useEffect(() => {
+    if (viewMode === "search") {
+      fetchWords();
     } else {
-      fetchDictionaryWords()
+      fetchDictionaryWords();
     }
-  }, [filters, page, viewMode])
+  }, [filters, page, viewMode]);
 
   const fetchDictionariesList = async () => {
     try {
-      const data = await fetchDictionaries()
-      setDictionaries(data)
+      const data = await fetchDictionaries();
+      setDictionaries(data);
     } catch (error) {
-      console.error('获取词典列表失败:', error)
+      console.error("获取词典列表失败:", error);
     }
-  }
+  };
 
   const fetchWords = async () => {
-    setLoading(true)
+    setLoading(true);
     try {
       const result = await listWords({
         page,
         limit: pageSize,
         search: filters.search || undefined,
         difficulty: filters.difficulty || undefined,
-        masteryStatus: filters.masteryStatus || undefined
-      })
-      const wordItems: WordItem[] = result.items.map(item => ({
+        masteryStatus: filters.masteryStatus || undefined,
+      });
+      const wordItems: WordItem[] = result.items.map((item) => ({
         id: item.id,
         word: item.word,
         phonetic: item.phonetic,
         meaning: item.meaning,
-        difficulty: item.difficulty,
-        isMastered: item.isMastered,
-        sentence: item.sentence
-      }))
-      setWords(wordItems)
-      setTotal(result.total)
+        difficulty: (item.difficulty as number) ?? 0,
+        isMastered: (item.isMastered as boolean) ?? false,
+        sentence: item.sentence,
+      }));
+      setWords(wordItems);
+      setTotal(result.total);
     } catch (error) {
-      console.error('获取单词失败:', error)
+      console.error("获取单词失败:", error);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const fetchDictionaryWords = async () => {
-    setLoading(true)
+    setLoading(true);
     try {
       if (!filters.dictionaryId) {
-        setWords([])
-        setTotal(0)
-        return
+        setWords([]);
+        setTotal(0);
+        return;
       }
 
-      const associations = await fetchDictionaryWordAssociations(filters.dictionaryId)
-      console.log('切换词典后加载单词：', { dictionaryId: filters.dictionaryId, count: associations.length })
+      const associationsResult = await fetchDictionaryWordAssociations(
+        filters.dictionaryId
+      );
+      console.log("切换词典后加载单词：", {
+        dictionaryId: filters.dictionaryId,
+        count: associationsResult.items.length,
+      });
 
-      let wordItemsAll: WordItem[] = associations.map(a => ({
+      let wordItemsAll: WordItem[] = associationsResult.items.map((a: any) => ({
         id: a.word.id,
         word: a.word.word,
         phonetic: a.word.phonetic,
         meaning: a.word.meaning,
         difficulty: (a.word.difficulty as number) ?? 0,
         isMastered: (a.word.isMastered as boolean) ?? false,
-        sentence: a.word.sentence ?? null
-      }))
+        sentence: (a.word as Word).sentence ?? null,
+      }));
 
       if (filters.search) {
-        const s = filters.search.toLowerCase()
-        wordItemsAll = wordItemsAll.filter(w => w.word.toLowerCase().includes(s) || (w.meaning ?? '').includes(filters.search))
+        const s = filters.search.toLowerCase();
+        wordItemsAll = wordItemsAll.filter(
+          (w) =>
+            w.word.toLowerCase().includes(s) ||
+            (w.meaning ?? "").includes(filters.search)
+        );
       }
       if (filters.difficulty !== null && filters.difficulty !== undefined) {
-        wordItemsAll = wordItemsAll.filter(w => w.difficulty === filters.difficulty)
+        wordItemsAll = wordItemsAll.filter(
+          (w) => w.difficulty === filters.difficulty
+        );
       }
-      if (filters.masteryStatus !== null && filters.masteryStatus !== undefined) {
-        const flag = filters.masteryStatus === 1
-        wordItemsAll = wordItemsAll.filter(w => w.isMastered === flag)
+      if (
+        filters.masteryStatus !== null &&
+        filters.masteryStatus !== undefined
+      ) {
+        const flag = filters.masteryStatus === 1;
+        wordItemsAll = wordItemsAll.filter((w) => w.isMastered === flag);
       }
 
-      const start = (page - 1) * pageSize
-      const pagedItems = wordItemsAll.slice(start, start + pageSize)
-      setWords(pagedItems)
-      setTotal(wordItemsAll.length)
+      const start = (page - 1) * pageSize;
+      const pagedItems = wordItemsAll.slice(start, start + pageSize);
+      setWords(pagedItems);
+      setTotal(wordItemsAll.length);
     } catch (error) {
-      console.error('获取词典单词失败:', error)
+      console.error("获取词典单词失败:", error);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleFilterChange = (key: keyof FilterOptions, value: any) => {
-    setFilters(prev => ({ ...prev, [key]: value }))
-    setPage(1)
-  }
+    setFilters((prev) => ({ ...prev, [key]: value }));
+    setPage(1);
+  };
 
   const handleDictionarySelect = (dictionaryId: number | null) => {
-    handleFilterChange('dictionaryId', dictionaryId)
-  }
+    handleFilterChange("dictionaryId", dictionaryId);
+  };
 
   const handleSelectAll = () => {
-    const allWordIds = words.map(word => word.id)
-    onWordsBulkSelect(allWordIds)
-  }
+    const allWordIds = words.map((word) => word.id);
+    onWordsBulkSelect(allWordIds);
+  };
 
   const handleDeselectAll = () => {
-    const allWordIds = words.map(word => word.id)
-    const newSelectedIds = new Set(selectedWordIds)
-    allWordIds.forEach(id => newSelectedIds.delete(id))
-    onWordsBulkSelect(Array.from(newSelectedIds))
-  }
+    const allWordIds = words.map((word) => word.id);
+    const newSelectedIds = new Set(selectedWordIds);
+    allWordIds.forEach((id) => newSelectedIds.delete(id));
+    onWordsBulkSelect(Array.from(newSelectedIds));
+  };
 
   const handleSelectByDifficulty = (difficulty: number) => {
-    const difficultyWords = words.filter(word => word.difficulty === difficulty)
-    const wordIds = difficultyWords.map(word => word.id)
-    onWordsBulkSelect(wordIds)
-  }
+    const difficultyWords = words.filter(
+      (word) => word.difficulty === difficulty
+    );
+    const wordIds = difficultyWords.map((word) => word.id);
+    onWordsBulkSelect(wordIds);
+  };
 
   const handleSelectByMastery = (isMastered: boolean) => {
-    const masteryWords = words.filter(word => word.isMastered === isMastered)
-    const wordIds = masteryWords.map(word => word.id)
-    onWordsBulkSelect(wordIds)
-  }
+    const masteryWords = words.filter((word) => word.isMastered === isMastered);
+    const wordIds = masteryWords.map((word) => word.id);
+    onWordsBulkSelect(wordIds);
+  };
 
-  const totalPages = Math.ceil(total / pageSize)
+  const totalPages = Math.ceil(total / pageSize);
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
@@ -190,8 +210,18 @@ const EnhancedWordSelector = ({
               onClick={onClose}
               className="rounded-md p-2 text-slate-500 hover:bg-slate-100"
             >
-              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              <svg
+                className="h-5 w-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             </button>
           </div>
@@ -199,21 +229,21 @@ const EnhancedWordSelector = ({
           {/* 视图模式切换 */}
           <div className="flex gap-2 mb-4">
             <button
-              onClick={() => setViewMode('search')}
+              onClick={() => setViewMode("search")}
               className={`px-4 py-2 rounded-lg text-sm font-medium ${
-                viewMode === 'search'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                viewMode === "search"
+                  ? "bg-blue-600 text-white"
+                  : "bg-slate-100 text-slate-700 hover:bg-slate-200"
               }`}
             >
               搜索模式
             </button>
             <button
-              onClick={() => setViewMode('dictionary')}
+              onClick={() => setViewMode("dictionary")}
               className={`px-4 py-2 rounded-lg text-sm font-medium ${
-                viewMode === 'dictionary'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                viewMode === "dictionary"
+                  ? "bg-blue-600 text-white"
+                  : "bg-slate-100 text-slate-700 hover:bg-slate-200"
               }`}
             >
               词典浏览
@@ -225,14 +255,19 @@ const EnhancedWordSelector = ({
             <input
               type="text"
               value={filters.search}
-              onChange={(e) => handleFilterChange('search', e.target.value)}
+              onChange={(e) => handleFilterChange("search", e.target.value)}
               placeholder="搜索单词..."
               className="rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
-            
+
             <select
-              value={filters.difficulty ?? ''}
-              onChange={(e) => handleFilterChange('difficulty', e.target.value ? Number(e.target.value) : null)}
+              value={filters.difficulty ?? ""}
+              onChange={(e) =>
+                handleFilterChange(
+                  "difficulty",
+                  e.target.value ? Number(e.target.value) : null
+                )
+              }
               className="rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">所有难度</option>
@@ -242,8 +277,13 @@ const EnhancedWordSelector = ({
             </select>
 
             <select
-              value={filters.masteryStatus ?? ''}
-              onChange={(e) => handleFilterChange('masteryStatus', e.target.value ? Number(e.target.value) : null)}
+              value={filters.masteryStatus ?? ""}
+              onChange={(e) =>
+                handleFilterChange(
+                  "masteryStatus",
+                  e.target.value ? Number(e.target.value) : null
+                )
+              }
               className="rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">所有状态</option>
@@ -251,15 +291,21 @@ const EnhancedWordSelector = ({
               <option value="1">已掌握</option>
             </select>
 
-            {viewMode === 'dictionary' && (
+            {viewMode === "dictionary" && (
               <select
-                value={filters.dictionaryId ?? ''}
-                onChange={(e) => handleDictionarySelect(e.target.value ? Number(e.target.value) : null)}
+                value={filters.dictionaryId ?? ""}
+                onChange={(e) =>
+                  handleDictionarySelect(
+                    e.target.value ? Number(e.target.value) : null
+                  )
+                }
                 className="rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">选择词典</option>
-                {dictionaries.map(dict => (
-                  <option key={dict.id} value={dict.id}>{dict.name}</option>
+                {dictionaries.map((dict) => (
+                  <option key={dict.id} value={dict.id}>
+                    {dict.name}
+                  </option>
                 ))}
               </select>
             )}
@@ -325,21 +371,33 @@ const EnhancedWordSelector = ({
                     onClick={() => onWordSelect(word.id)}
                     className={`p-3 rounded-lg border cursor-pointer transition-colors ${
                       selectedWordIds.has(word.id)
-                        ? 'border-blue-500 bg-blue-50'
-                        : 'border-slate-200 hover:bg-slate-50'
+                        ? "border-blue-500 bg-blue-50"
+                        : "border-slate-200 hover:bg-slate-50"
                     }`}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
-                          <span className="font-medium text-slate-900">{word.word}</span>
-                          <span className="text-sm text-slate-500">{word.phonetic}</span>
-                          <span className={`px-2 py-1 text-xs rounded-full ${
-                            word.difficulty === 1 ? 'bg-green-100 text-green-700' :
-                            word.difficulty === 2 ? 'bg-yellow-100 text-yellow-700' :
-                            'bg-red-100 text-red-700'
-                          }`}>
-                            {word.difficulty === 1 ? '简单' : word.difficulty === 2 ? '中等' : '困难'}
+                          <span className="font-medium text-slate-900">
+                            {word.word}
+                          </span>
+                          <span className="text-sm text-slate-500">
+                            {word.phonetic}
+                          </span>
+                          <span
+                            className={`px-2 py-1 text-xs rounded-full ${
+                              word.difficulty === 1
+                                ? "bg-green-100 text-green-700"
+                                : word.difficulty === 2
+                                ? "bg-yellow-100 text-yellow-700"
+                                : "bg-red-100 text-red-700"
+                            }`}
+                          >
+                            {word.difficulty === 1
+                              ? "简单"
+                              : word.difficulty === 2
+                              ? "中等"
+                              : "困难"}
                           </span>
                           {word.isMastered && (
                             <span className="px-2 py-1 text-xs bg-purple-100 text-purple-700 rounded-full">
@@ -347,9 +405,13 @@ const EnhancedWordSelector = ({
                             </span>
                           )}
                         </div>
-                        <div className="text-sm text-slate-600">{word.meaning}</div>
+                        <div className="text-sm text-slate-600">
+                          {word.meaning}
+                        </div>
                         {word.sentence && (
-                          <div className="text-xs text-slate-500 mt-1">例句: {word.sentence as string}</div>
+                          <div className="text-xs text-slate-500 mt-1">
+                            例句: {word.sentence as string}
+                          </div>
                         )}
                       </div>
                       <div className="flex items-center">
@@ -417,7 +479,7 @@ const EnhancedWordSelector = ({
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default EnhancedWordSelector
+export default EnhancedWordSelector;

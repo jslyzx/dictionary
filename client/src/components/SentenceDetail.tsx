@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { listWords } from '../services/words';
-import { sentenceService } from '../services/sentenceService';
-import type { Sentence, SentenceToken } from '../types/sentence';
-import { WordSelector } from './WordSelector';
+import React, { useState, useEffect } from "react";
+import { listWords } from "../services/words";
+import { sentenceService } from "../services/sentenceService";
+import type { Sentence, SentenceToken } from "../types/sentence";
+import { WordSelector } from "./WordSelector";
 
 interface SentenceDetailProps {
   sentenceId: number;
@@ -13,7 +13,10 @@ interface SentenceDetailProps {
  * 句子详情组件
  * 显示句子分词详情，支持编辑关联
  */
-export const SentenceDetail: React.FC<SentenceDetailProps> = ({ sentenceId, onClose }) => {
+export const SentenceDetail: React.FC<SentenceDetailProps> = ({
+  sentenceId,
+  onClose,
+}) => {
   const [sentence, setSentence] = useState<Sentence | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedToken, setSelectedToken] = useState<number | null>(null);
@@ -33,7 +36,7 @@ export const SentenceDetail: React.FC<SentenceDetailProps> = ({ sentenceId, onCl
       const data = await sentenceService.getSentence(sentenceId);
       setSentence(data);
     } catch (error) {
-      console.error('加载句子详情失败:', error);
+      console.error("加载句子详情失败:", error);
     } finally {
       setLoading(false);
     }
@@ -43,15 +46,21 @@ export const SentenceDetail: React.FC<SentenceDetailProps> = ({ sentenceId, onCl
    * 处理分词点击
    */
   const handleTokenClick = async (position: number, token: SentenceToken) => {
-    if (token.type !== 'word') return;
+    if (token.type !== "word") return;
     if (!sentence) return;
 
     // 自动尝试精确关联（不区分大小写）
     const candidateText = token.text.trim();
     if (candidateText) {
       try {
-        const result = await listWords({ page: 1, limit: 1, search: candidateText });
-        const exact = result.items.find(w => w.word.toLowerCase() === candidateText.toLowerCase());
+        const result = await listWords({
+          page: 1,
+          limit: 1,
+          search: candidateText,
+        });
+        const exact = result.items.find(
+          (w) => w.word.toLowerCase() === candidateText.toLowerCase()
+        );
         if (exact) {
           setUpdatingToken(position);
           const updatedToken = await sentenceService.updateTokenWord(
@@ -63,12 +72,14 @@ export const SentenceDetail: React.FC<SentenceDetailProps> = ({ sentenceId, onCl
           newTokens[position] = {
             ...newTokens[position],
             word_id: updatedToken.word_id,
-            word: updatedToken.word_id ? {
-              word_id: updatedToken.word_id,
-              word: updatedToken.word || '',
-              meaning: updatedToken.meaning || '',
-              phonetic: updatedToken.phonetic
-            } : null
+            word: updatedToken.word_id
+              ? {
+                  word_id: updatedToken.word_id,
+                  word: updatedToken.word || "",
+                  meaning: updatedToken.meaning || "",
+                  phonetic: updatedToken.phonetic,
+                }
+              : null,
           };
           setSentence({ ...sentence, tokens: newTokens });
           setUpdatingToken(null);
@@ -101,24 +112,26 @@ export const SentenceDetail: React.FC<SentenceDetailProps> = ({ sentenceId, onCl
       newTokens[selectedToken] = {
         ...newTokens[selectedToken],
         word_id: updatedToken.word_id,
-        word: updatedToken.word_id ? {
-          word_id: updatedToken.word_id,
-          word: updatedToken.word || '',
-          meaning: updatedToken.meaning || '',
-          phonetic: updatedToken.phonetic
-        } : null
+        word: updatedToken.word_id
+          ? {
+              word_id: updatedToken.word_id,
+              word: updatedToken.word || "",
+              meaning: updatedToken.meaning || "",
+              phonetic: updatedToken.phonetic,
+            }
+          : null,
       };
 
       setSentence({
         ...sentence,
-        tokens: newTokens
+        tokens: newTokens,
       });
 
       setShowWordSelector(false);
       setSelectedToken(null);
     } catch (error) {
-      console.error('更新分词关联失败:', error);
-      alert('更新失败，请重试');
+      console.error("更新分词关联失败:", error);
+      alert("更新失败，请重试");
     } finally {
       setUpdatingToken(null);
     }
@@ -132,30 +145,28 @@ export const SentenceDetail: React.FC<SentenceDetailProps> = ({ sentenceId, onCl
 
     setUpdatingToken(selectedToken);
     try {
-      const updatedToken = await sentenceService.updateTokenWord(
-        sentenceId,
-        selectedToken,
-        { word_id: null }
-      );
+      await sentenceService.updateTokenWord(sentenceId, selectedToken, {
+        word_id: null,
+      });
 
       // 更新本地状态
       const newTokens = [...sentence.tokens];
       newTokens[selectedToken] = {
         ...newTokens[selectedToken],
         word_id: null,
-        word: null
+        word: null,
       };
 
       setSentence({
         ...sentence,
-        tokens: newTokens
+        tokens: newTokens,
       });
 
       setShowWordSelector(false);
       setSelectedToken(null);
     } catch (error) {
-      console.error('取消分词关联失败:', error);
-      alert('操作失败，请重试');
+      console.error("取消分词关联失败:", error);
+      alert("操作失败，请重试");
     } finally {
       setUpdatingToken(null);
     }
@@ -175,25 +186,25 @@ export const SentenceDetail: React.FC<SentenceDetailProps> = ({ sentenceId, onCl
             onClick={() => handleTokenClick(index, token)}
             className={`
               px-3 py-2 rounded cursor-pointer transition-all text-sm
-              ${updatingToken === index ? 'opacity-50' : ''}
+              ${updatingToken === index ? "opacity-50" : ""}
               ${
-                token.type === 'word'
+                token.type === "word"
                   ? token.word_id
-                    ? 'bg-green-100 text-green-800 border border-green-300 hover:bg-green-200'
-                    : 'bg-blue-100 text-blue-800 border border-blue-300 hover:bg-blue-200'
-                  : 'bg-gray-100 text-gray-600 border border-gray-300'
+                    ? "bg-green-100 text-green-800 border border-green-300 hover:bg-green-200"
+                    : "bg-blue-100 text-blue-800 border border-blue-300 hover:bg-blue-200"
+                  : "bg-gray-100 text-gray-600 border border-gray-300"
               }
             `}
             title={
-              token.type === 'word'
+              token.type === "word"
                 ? token.word_id
-                  ? `已关联单词: ${token.word?.word || ''}`
-                  : '点击关联单词'
-                : '标点符号'
+                  ? `已关联单词: ${token.word?.word || ""}`
+                  : "点击关联单词"
+                : "标点符号"
             }
           >
             <span className="font-medium">{token.text}</span>
-            {token.type === 'word' && token.word && (
+            {token.type === "word" && token.word && (
               <div className="text-xs mt-1 text-gray-600">
                 <div>{token.word.word}</div>
                 {token.word.phonetic && (
@@ -220,9 +231,7 @@ export const SentenceDetail: React.FC<SentenceDetailProps> = ({ sentenceId, onCl
 
   if (!sentence) {
     return (
-      <div className="text-center text-gray-500 py-8">
-        句子不存在或加载失败
-      </div>
+      <div className="text-center text-gray-500 py-8">句子不存在或加载失败</div>
     );
   }
 
@@ -230,7 +239,9 @@ export const SentenceDetail: React.FC<SentenceDetailProps> = ({ sentenceId, onCl
     <div className="sentence-detail">
       <div className="flex justify-between items-start mb-4">
         <div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">{sentence.text}</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">
+            {sentence.text}
+          </h2>
           <p className="text-sm text-gray-500">
             创建时间: {new Date(sentence.created_at).toLocaleString()}
           </p>
@@ -250,7 +261,10 @@ export const SentenceDetail: React.FC<SentenceDetailProps> = ({ sentenceId, onCl
         {renderTokens()}
         <div className="mt-3 text-sm text-gray-600">
           <p>💡 提示：点击蓝色单词可关联到已有单词，绿色表示已关联</p>
-          <p>共 {sentence.tokens.length} 个分词，其中 {sentence.tokens.filter(t => t.type === 'word').length} 个单词</p>
+          <p>
+            共 {sentence.tokens.length} 个分词，其中{" "}
+            {sentence.tokens.filter((t) => t.type === "word").length} 个单词
+          </p>
         </div>
       </div>
 
@@ -271,7 +285,10 @@ export const SentenceDetail: React.FC<SentenceDetailProps> = ({ sentenceId, onCl
               <WordSelector
                 onWordSelect={handleWordSelect}
                 onCancel={() => setShowWordSelector(false)}
-                allowUnlink={selectedToken !== null && sentence.tokens[selectedToken]?.word_id !== null}
+                allowUnlink={
+                  selectedToken !== null &&
+                  sentence.tokens[selectedToken]?.word_id !== null
+                }
                 onUnlink={handleUnlinkWord}
               />
             </div>

@@ -1,23 +1,6 @@
 import { request } from './apiClient'
-
-export interface Word {
-  id: number
-  word: string
-  phonetic: string
-  meaning: string
-  pronunciation1: string | null
-  pronunciation2: string | null
-  pronunciation3: string | null
-  difficulty: number
-  isMastered: boolean
-  createdAt: string | null
-  notes: string | null
-  sentence: string | null
-  pronunciationRules?: Array<{ id: number; letterCombination: string; pronunciation: string }>
-  hasImage: boolean
-  imageType: 'url' | 'iconfont' | 'emoji' | null
-  imageValue: string | null
-}
+import type { Word, WordDifficulty } from '../types/word'
+export type { Word, WordDifficulty }
 
 interface WordApiResponse {
   id: number
@@ -65,7 +48,7 @@ export interface UpsertWordPayload {
   word: string
   phonetic: string
   meaning: string
-  difficulty: number
+  difficulty: WordDifficulty
   isMastered: boolean
   pronunciationUrl?: string | null
   pronunciation2?: string | null
@@ -90,9 +73,9 @@ const mapWord = (word: WordApiResponse): Word => {
     pronunciation3: word.pronunciation3 ?? null,
     notes: word.notes ?? null,
     sentence: word.sentence ?? null,
-    difficulty: normalized,
+    difficulty: normalized as WordDifficulty,
     isMastered: word.isMastered,
-    createdAt: word.createdAt ?? null,
+    createdAt: word.createdAt ?? new Date().toISOString(),
     pronunciationRules: word.pronunciationRules ?? [],
     hasImage: word.hasImage ?? false,
     imageType: word.imageType ?? null,
@@ -200,7 +183,7 @@ export const getById = async (id: number): Promise<Word & { pronunciation_rules?
 
 // Added for compatibility with existing components
 export const fetchWords = async (params: ListWordsParams): Promise<{
-  items: import('../types/word').Word[]
+  items: Word[]
   total: number
   page: number
   limit: number
@@ -213,8 +196,8 @@ export const fetchWords = async (params: ListWordsParams): Promise<{
     items: result.items.map(item => ({
       ...item,
       createdAt: item.createdAt || new Date().toISOString(), // Ensure non-null string
-      difficulty: item.difficulty as import('../types/word').WordDifficulty, // Ensure correct difficulty type
-      isMastered: item.isMastered as boolean | null, // Ensure boolean | null type
+      difficulty: item.difficulty as WordDifficulty, // Ensure correct difficulty type
+      isMastered: !!item.isMastered, // Ensure boolean type
       hasImage: item.hasImage || false, // Ensure boolean
       imageType: item.imageType || null, // Ensure proper type
       imageValue: item.imageValue || null, // Ensure proper type

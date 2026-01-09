@@ -1,607 +1,566 @@
-import { type ChangeEvent, type FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import type { ApiError } from '../services/apiClient'
-import { createWord, deleteWord, listWords, updateWord, type ListWordsParams, type Word } from '../services/words'
-import { fetchDictionaries, batchAddWordsToDictionary } from '../services/dictionaries'
-import { pronunciationRuleService, type PronunciationRule } from '../services/pronunciationRules'
-import type { Dictionary } from '../types/dictionary'
-import Modal from '../components/common/Modal'
+import {
+  type ChangeEvent,
+  type FormEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { Link, useNavigate } from "react-router-dom";
+import type { ApiError } from "../services/apiClient";
+import { deleteWord, listWords, type ListWordsParams } from "../services/words";
+import {
+  fetchDictionaries,
+  batchAddWordsToDictionary,
+} from "../services/dictionaries";
+import type { Dictionary } from "../types/dictionary";
+import { type Word, difficultyMetadata } from "../types/word";
+import Modal from "../components/common/Modal";
+import { WordFormModal } from "../components/words/WordFormModal";
+const SpeakerWaveIcon = ({ className }: { className?: string }) => (
+  <svg
+    className={className}
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="currentColor"
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"
+    />
+  </svg>
+);
 
-type DifficultyFilterValue = 'all' | '0' | '1' | '2'
-type MasteryFilterValue = 'all' | 'mastered' | 'unmastered'
+const StopIcon = ({ className }: { className?: string }) => (
+  <svg
+    className={className}
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="currentColor"
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-1.343 3-3s-1.343-3-3-3m0 6c-1.657 0-3-1.343-3-3s1.343-3 3-3m-9 0a9 9 0 019-9"
+    />
+  </svg>
+);
+
+type DifficultyFilterValue = "all" | "0" | "1" | "2";
+type MasteryFilterValue = "all" | "mastered" | "unmastered";
 
 type FlashMessage = {
-  type: 'success' | 'error'
-  message: string
-}
+  type: "success" | "error";
+  message: string;
+};
 
 interface FiltersState {
-  search: string
-  difficulty: DifficultyFilterValue
-  mastery: MasteryFilterValue
+  search: string;
+  difficulty: DifficultyFilterValue;
+  mastery: MasteryFilterValue;
 }
 
-interface WordFormValues {
-  word: string
-  phonetic: string
-  meaning: string
-  pronunciationUrl: string
-  difficulty: number
-  isMastered: boolean
-  notes: string
-  sentence: string
-  pronunciationRules: number[]
-  hasImage: boolean
-  imageType: 'url' | 'iconfont' | 'emoji' | null
-  imageValue: string | null
-}
-
-type WordFormErrors = Partial<{
-  word: string
-  phonetic: string
-  meaning: string
-  imageType: string
-  imageValue: string
-}>
-
-type PronunciationAudioStatus = 'idle' | 'loading' | 'playing' | 'error'
+type PronunciationAudioStatus = "idle" | "loading" | "playing" | "error";
 
 interface PronunciationAudioState {
-  wordId: number | null
-  status: PronunciationAudioStatus
-  errorMessage: string | null
+  wordId: number | null;
+  status: PronunciationAudioStatus;
+  errorMessage: string | null;
 }
 
 const defaultFilters: FiltersState = {
-  search: '',
-  difficulty: 'all',
-  mastery: 'all',
-}
+  search: "",
+  difficulty: "all",
+  mastery: "all",
+};
 
-const limitOptions = [10, 20, 50]
+const limitOptions = [10, 20, 50];
 
 const masteryOptions: Array<{ value: MasteryFilterValue; label: string }> = [
-  { value: 'all', label: '全部' },
-  { value: 'mastered', label: '已掌握' },
-  { value: 'unmastered', label: '学习中' },
-]
+  { value: "all", label: "全部" },
+  { value: "mastered", label: "已掌握" },
+  { value: "unmastered", label: "学习中" },
+];
 
-const difficultyMetadata: Record<0 | 1 | 2, { label: string; className: string }> = {
-  0: { label: '简单', className: 'bg-emerald-50 text-emerald-700' },
-  1: { label: '中等', className: 'bg-amber-50 text-amber-700' },
-  2: { label: '困难', className: 'bg-rose-50 text-rose-700' },
-}
-
-const difficultyFilterOptions: Array<{ value: DifficultyFilterValue; label: string }> = [
-  { value: 'all', label: '全部难度' },
-  { value: '0', label: difficultyMetadata[0].label },
-  { value: '1', label: difficultyMetadata[1].label },
-  { value: '2', label: difficultyMetadata[2].label },
-]
+const difficultyFilterOptions: Array<{
+  value: DifficultyFilterValue;
+  label: string;
+}> = [
+  { value: "all", label: "全部难度" },
+  { value: "0", label: difficultyMetadata[0].label },
+  { value: "1", label: difficultyMetadata[1].label },
+  { value: "2", label: difficultyMetadata[2].label },
+];
 
 const getDifficultyMeta = (difficulty: number | null | undefined) => {
   if (difficulty === 0 || difficulty === 1 || difficulty === 2) {
-    return difficultyMetadata[difficulty]
+    return difficultyMetadata[difficulty as 0 | 1 | 2];
   }
-  return { label: '未知', className: 'bg-slate-100 text-slate-600' }
-}
-
-const WORD_FORM_ID = 'word-form'
+  return { label: "未知", className: "bg-slate-100 text-slate-600" };
+};
 
 const WordsPage = () => {
-  const navigate = useNavigate()
-  const [words, setWords] = useState<Word[]>([])
-  const [total, setTotal] = useState(0)
-  const [page, setPage] = useState(1)
-  const [limit, setLimit] = useState(limitOptions[0])
-  const [loading, setLoading] = useState(false)
-  const [hasFetched, setHasFetched] = useState(false)
-  const [fetchError, setFetchError] = useState<string | null>(null)
+  const navigate = useNavigate();
+  const [words, setWords] = useState<Word[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(limitOptions[0]);
+  const [loading, setLoading] = useState(false);
+  const [hasFetched, setHasFetched] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
-  const [searchInput, setSearchInput] = useState('')
-  const [filters, setFilters] = useState<FiltersState>(defaultFilters)
+  const [searchInput, setSearchInput] = useState("");
+  const [filters, setFilters] = useState<FiltersState>(defaultFilters);
 
-  const [flash, setFlash] = useState<FlashMessage | null>(null)
+  const [flash, setFlash] = useState<FlashMessage | null>(null);
 
   const [formState, setFormState] = useState<{
-    open: boolean
-    mode: 'create' | 'edit'
-    word: Word | null
-  }>({ open: false, mode: 'create', word: null })
-  const [formSubmitting, setFormSubmitting] = useState(false)
-  const [formError, setFormError] = useState<string | null>(null)
+    open: boolean;
+    mode: "create" | "edit";
+    word: Word | null;
+  }>({ open: false, mode: "create", word: null });
 
-  const [wordPendingDeletion, setWordPendingDeletion] = useState<Word | null>(null)
-  const [isDeleting, setIsDeleting] = useState(false)
+  const [wordPendingDeletion, setWordPendingDeletion] = useState<Word | null>(
+    null
+  );
+  const [isDeleting, setIsDeleting] = useState(false);
 
-  const audioRef = useRef<HTMLAudioElement | null>(null)
-  const audioListenersRef = useRef<Array<{ type: keyof HTMLMediaElementEventMap; handler: EventListener }>>([])
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const audioListenersRef = useRef<
+    Array<{ type: keyof HTMLMediaElementEventMap; handler: EventListener }>
+  >([]);
   const [audioState, setAudioState] = useState<PronunciationAudioState>({
     wordId: null,
-    status: 'idle',
+    status: "idle",
     errorMessage: null,
-  })
+  });
 
   // Bulk selection state
-  const [selectedWordIds, setSelectedWordIds] = useState<Set<number>>(new Set())
-  const [selectAll, setSelectAll] = useState(false)
-  
+  const [selectedWordIds, setSelectedWordIds] = useState<Set<number>>(
+    new Set()
+  );
+  const [selectAll, setSelectAll] = useState(false);
+
   // Dictionary selection modal state
-  const [dictionaryModalOpen, setDictionaryModalOpen] = useState(false)
-  const [dictionaries, setDictionaries] = useState<Dictionary[]>([])
-  const [selectedDictionary, setSelectedDictionary] = useState<number | null>(null)
-  const [bulkAdding, setBulkAdding] = useState(false)
-  const [bulkAddError, setBulkAddError] = useState<string | null>(null)
+  const [dictionaryModalOpen, setDictionaryModalOpen] = useState(false);
+  const [dictionaries, setDictionaries] = useState<Dictionary[]>([]);
+  const [selectedDictionary, setSelectedDictionary] = useState<number | null>(
+    null
+  );
+  const [bulkAdding, setBulkAdding] = useState(false);
+  const [bulkAddError, setBulkAddError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!flash) {
-      return
+      return;
     }
 
-    const timer = setTimeout(() => setFlash(null), 4000)
-    return () => clearTimeout(timer)
-  }, [flash])
+    const timer = setTimeout(() => setFlash(null), 4000);
+    return () => clearTimeout(timer);
+  }, [flash]);
 
   const fetchWords = useCallback(async () => {
-    setLoading(true)
-    setFetchError(null)
+    setLoading(true);
+    setFetchError(null);
 
     try {
       const params: ListWordsParams = {
         page,
         limit,
-      }
+      };
 
       if (filters.search) {
-        params.search = filters.search
+        params.search = filters.search;
       }
 
-      if (filters.difficulty !== 'all') {
-        params.difficulty = Number(filters.difficulty)
+      if (filters.difficulty !== "all") {
+        params.difficulty = Number(filters.difficulty);
       }
 
-      if (filters.mastery !== 'all') {
-        params.masteryStatus = filters.mastery === 'mastered' ? 1 : 0
+      if (filters.mastery !== "all") {
+        params.masteryStatus = filters.mastery === "mastered" ? 1 : 0;
       }
 
-      const response = await listWords(params)
-      setWords(response.items)
-      setTotal(response.total)
-      setHasFetched(true)
+      const response = await listWords(params);
+      setWords(response.items);
+      setTotal(response.total);
+      setHasFetched(true);
 
       if (response.total === 0) {
         if (page !== 1) {
-          setPage(1)
+          setPage(1);
         }
-        return
+        return;
       }
 
-      const totalPages = Math.max(1, Math.ceil(response.total / limit))
+      const totalPages = Math.max(1, Math.ceil(response.total / limit));
       if (page > totalPages) {
-        setPage(totalPages)
+        setPage(totalPages);
       }
-    } catch (error) {
-      const apiError = error as ApiError
-      setFetchError(apiError.message ?? '无法加载单词列表。')
-      setWords([])
-      setTotal(0)
-      setHasFetched(true)
+    } catch (error: unknown) {
+      const apiError = error as ApiError;
+      setFetchError(apiError.message ?? "无法加载单词列表。");
+      setWords([]);
+      setTotal(0);
+      setHasFetched(true);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }, [filters.difficulty, filters.mastery, filters.search, limit, page])
+  }, [filters.difficulty, filters.mastery, filters.search, limit, page]);
+
+  const fetchDictionariesData = useCallback(async () => {
+    try {
+      const dictionariesData = await fetchDictionaries();
+      setDictionaries(dictionariesData);
+    } catch (error: unknown) {
+      const apiError = error as ApiError;
+      setBulkAddError(apiError.message ?? "无法加载词典列表。");
+    }
+  }, []);
 
   useEffect(() => {
-    fetchWords()
-  }, [fetchWords])
+    fetchWords();
+    fetchDictionariesData();
+  }, [fetchWords, fetchDictionariesData]);
 
   // Fetch dictionaries when modal opens
   useEffect(() => {
     if (dictionaryModalOpen) {
-      const fetchDictionariesData = async () => {
-        try {
-          const dictionariesData = await fetchDictionaries()
-          setDictionaries(dictionariesData)
-        } catch (error) {
-          const apiError = error as ApiError
-          setBulkAddError(apiError.message ?? '无法加载词典列表。')
-        }
-      }
-      fetchDictionariesData()
+      fetchDictionariesData();
     }
-  }, [dictionaryModalOpen])
+  }, [dictionaryModalOpen, fetchDictionariesData]);
 
   // Handle select all functionality
   useEffect(() => {
     if (selectAll) {
-      const allWordIds = new Set(words.map(word => word.id))
-      setSelectedWordIds(allWordIds)
+      const allWordIds = new Set(words.map((word: Word) => word.id));
+      setSelectedWordIds(allWordIds);
     } else {
-      setSelectedWordIds(new Set())
+      setSelectedWordIds(new Set());
     }
-  }, [selectAll, words])
+  }, [selectAll, words]);
 
   // Update selectAll state when individual selections change
   useEffect(() => {
     if (words.length > 0) {
-      setSelectAll(selectedWordIds.size === words.length && words.length > 0)
+      setSelectAll(selectedWordIds.size === words.length && words.length > 0);
     } else {
-      setSelectAll(false)
+      setSelectAll(false);
     }
-  }, [selectedWordIds, words])
+  }, [selectedWordIds, words]);
 
-  const totalPages = useMemo(() => (total === 0 ? 1 : Math.ceil(total / limit)), [limit, total])
+  const totalPages = useMemo(
+    () => (total === 0 ? 1 : Math.ceil(total / limit)),
+    [limit, total]
+  );
 
-  const hasVisibleWords = words.length > 0
-  const showingFrom = hasVisibleWords ? (page - 1) * limit + 1 : 0
-  const showingTo = hasVisibleWords ? Math.min(total, showingFrom + words.length - 1) : 0
+  const hasVisibleWords = words.length > 0;
+  const showingFrom = hasVisibleWords ? (page - 1) * limit + 1 : 0;
+  const showingTo = hasVisibleWords
+    ? Math.min(total, showingFrom + words.length - 1)
+    : 0;
 
   const handleSearchSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-    const trimmed = searchInput.trim()
-    setFilters((prev) => ({ ...prev, search: trimmed }))
-    setPage(1)
-  }
+    event.preventDefault();
+    const trimmed = searchInput.trim();
+    setFilters((prev) => ({ ...prev, search: trimmed }));
+    setPage(1);
+  };
 
   const handleResetFilters = () => {
-    setFilters(defaultFilters)
-    setSearchInput('')
-    setPage(1)
-  }
+    setFilters(defaultFilters);
+    setSearchInput("");
+    setPage(1);
+  };
 
   const handleDifficultyChange = (event: ChangeEvent<HTMLSelectElement>) => {
-    const value = event.target.value as DifficultyFilterValue
-    setFilters((prev) => ({ ...prev, difficulty: value }))
-    setPage(1)
-  }
+    const value = event.target.value as DifficultyFilterValue;
+    setFilters((prev) => ({ ...prev, difficulty: value }));
+    setPage(1);
+  };
 
   const handleMasteryChange = (value: MasteryFilterValue) => {
-    setFilters((prev) => ({ ...prev, mastery: value }))
-    setPage(1)
-  }
+    setFilters((prev) => ({ ...prev, mastery: value }));
+    setPage(1);
+  };
 
   const handleLimitChange = (event: ChangeEvent<HTMLSelectElement>) => {
-    const nextLimit = Number(event.target.value)
-    setLimit(nextLimit)
-    setPage(1)
-  }
+    const nextLimit = Number(event.target.value);
+    setLimit(nextLimit);
+    setPage(1);
+  };
 
   const openCreateForm = () => {
-    setFormState({ open: true, mode: 'create', word: null })
-    setFormError(null)
-  }
+    setFormState({ open: true, mode: "create", word: null });
+  };
 
   const openEditForm = (word: Word) => {
-    if (!word || !word.id || typeof word.id !== 'number' || word.id <= 0) {
-      setFlash({ type: 'error', message: '无法编辑单词：缺少有效的单词ID' });
+    if (!word || !word.id || typeof word.id !== "number" || word.id <= 0) {
+      setFlash({ type: "error", message: "无法编辑单词：缺少有效的单词ID" });
       return;
     }
-    
-    setFormState({ open: true, mode: 'edit', word })
-    setFormError(null)
-  }
+
+    setFormState({ open: true, mode: "edit", word });
+  };
 
   const closeForm = () => {
-    setFormState({ open: false, mode: 'create', word: null })
-    setFormError(null)
-  }
+    setFormState({ open: false, mode: "create", word: null });
+  };
 
-  const handleSubmitWord = async (values: WordFormValues) => {
-    const { mode, word } = formState
+  const handleFormSuccess = async (_word: Word, mode: "create" | "edit") => {
+    setFlash({
+      type: "success",
+      message: mode === "create" ? "单词创建成功。" : "单词更新成功。",
+    });
 
-    setFormSubmitting(true)
-    setFormError(null)
-
-    const payload = {
-      word: values.word,
-      phonetic: values.phonetic,
-      meaning: values.meaning,
-      difficulty: values.difficulty,
-      isMastered: values.isMastered,
-      pronunciationUrl: values.pronunciationUrl ? values.pronunciationUrl : null,
-      notes: values.notes ? values.notes : null,
-      sentence: values.sentence ? values.sentence : null,
-      hasImage: values.hasImage,
-      imageType: values.hasImage ? values.imageType : null,
-      imageValue: values.hasImage ? values.imageValue : null,
-    }
-
-    try {
-      let wordId: number
-      if (mode === 'edit' && word) {
-        if (!word.id || typeof word.id !== 'number' || word.id <= 0) {
-          throw new Error('无效的单词ID');
-        }
-        await updateWord(word.id, payload)
-        wordId = word.id
-        setFlash({ type: 'success', message: '单词更新成功。' })
+    if (mode === "create") {
+      if (page === 1) {
+        await fetchWords();
       } else {
-        const createdWord = await createWord(payload)
-        wordId = createdWord.id
-        setFlash({ type: 'success', message: '单词创建成功。' })
+        setPage(1);
       }
-
-      // Handle pronunciation rules associations
-      if (values.pronunciationRules && values.pronunciationRules.length > 0) {
-        try {
-          await pronunciationRuleService.addWordPronunciationRules(wordId, {
-            pronunciationRuleIds: values.pronunciationRules,
-          })
-        } catch (error) {
-          console.error('Failed to associate pronunciation rules:', error)
-          setFlash({ 
-            type: 'error', 
-            message: '单词保存成功，但发音规则关联失败。' 
-          })
-        }
-      }
-
-      closeForm()
-
-      if (mode === 'create') {
-        if (page === 1) {
-          await fetchWords()
-        } else {
-          setPage(1)
-        }
-      } else {
-        await fetchWords()
-      }
-    } catch (error) {
-      const apiError = error as ApiError
-      setFormError(apiError.message ?? '保存单词失败。')
-    } finally {
-      setFormSubmitting(false)
+    } else {
+      await fetchWords();
     }
-  }
+  };
 
   const confirmDeletion = (word: Word) => {
-    setWordPendingDeletion(word)
-  }
+    setWordPendingDeletion(word);
+  };
 
   const handleDeleteWord = async () => {
     if (!wordPendingDeletion) {
-      return
+      return;
     }
 
-    setIsDeleting(true)
+    setIsDeleting(true);
     try {
-      await deleteWord(wordPendingDeletion.id)
-      setFlash({ type: 'success', message: '单词删除成功。' })
-      setWordPendingDeletion(null)
-      await fetchWords()
-    } catch (error) {
-      const apiError = error as ApiError
-      setFlash({ type: 'error', message: apiError.message ?? '删除单词失败。' })
+      await deleteWord(wordPendingDeletion.id);
+      setFlash({ type: "success", message: "单词删除成功。" });
+      setWordPendingDeletion(null);
+      await fetchWords();
+    } catch (error: unknown) {
+      const apiError = error as ApiError;
+      setFlash({
+        type: "error",
+        message: apiError.message ?? "删除单词失败。",
+      });
     } finally {
-      setIsDeleting(false)
+      setIsDeleting(false);
     }
-  }
+  };
 
   const handleWordSelection = (wordId: number, checked: boolean) => {
-    setSelectedWordIds(prev => {
-      const newSet = new Set(prev)
+    setSelectedWordIds((prev) => {
+      const newSet = new Set(prev);
       if (checked) {
-        newSet.add(wordId)
+        newSet.add(wordId);
       } else {
-        newSet.delete(wordId)
+        newSet.delete(wordId);
       }
-      return newSet
-    })
-  }
+      return newSet;
+    });
+  };
 
   const openDictionaryModal = () => {
     if (selectedWordIds.size === 0) {
-      setFlash({ type: 'error', message: '请先选择要添加的单词。' })
-      return
+      setFlash({ type: "error", message: "请先选择要添加的单词。" });
+      return;
     }
-    setDictionaryModalOpen(true)
-    setSelectedDictionary(null)
-    setBulkAddError(null)
-  }
+    setDictionaryModalOpen(true);
+    setSelectedDictionary(null);
+    setBulkAddError(null);
+  };
 
   const closeDictionaryModal = () => {
-    setDictionaryModalOpen(false)
-    setSelectedDictionary(null)
-    setBulkAddError(null)
-  }
+    setDictionaryModalOpen(false);
+    setSelectedDictionary(null);
+    setBulkAddError(null);
+  };
 
   const handleBulkAddToDictionary = async () => {
     if (!selectedDictionary || selectedWordIds.size === 0) {
-      return
+      return;
     }
 
-    setBulkAdding(true)
-    setBulkAddError(null)
+    setBulkAdding(true);
+    setBulkAddError(null);
 
     try {
       const result = await batchAddWordsToDictionary(selectedDictionary, {
-        wordIds: Array.from(selectedWordIds)
-      })
+        wordIds: Array.from(selectedWordIds),
+      });
 
-      let message = `成功添加 ${result.created} 个单词到词典`
+      let message = `成功添加 ${result.created} 个单词到词典`;
       if (result.skipped > 0) {
-        message += `，跳过 ${result.skipped} 个已存在的单词`
+        message += `，跳过 ${result.skipped} 个已存在的单词`;
       }
       if (result.duplicates > 0) {
-        message += `，忽略 ${result.duplicates} 个重复的单词`
+        message += `，忽略 ${result.duplicates} 个重复的单词`;
       }
 
-      setFlash({ type: 'success', message })
-      closeDictionaryModal()
-      setSelectedWordIds(new Set())
-      setSelectAll(false)
-      
+      setFlash({ type: "success", message });
+      closeDictionaryModal();
+      setSelectedWordIds(new Set());
+      setSelectAll(false);
+
       // Refresh words list to update any potential changes
-      await fetchWords()
-    } catch (error) {
-      const apiError = error as ApiError
-      setBulkAddError(apiError.message ?? '批量添加单词失败。')
+      await fetchWords();
+    } catch (error: unknown) {
+      const apiError = error as ApiError;
+      setBulkAddError(apiError.message ?? "批量添加单词失败。");
     } finally {
-      setBulkAdding(false)
+      setBulkAdding(false);
     }
-  }
+  };
 
   const appliedPronunciation = (word: Word) =>
-    word.pronunciation1 || word.pronunciation2 || word.pronunciation3 || ''
+    word.pronunciation1 || word.pronunciation2 || word.pronunciation3 || "";
 
-  const detachAudioListeners = useCallback((audioElement?: HTMLAudioElement | null) => {
-    const target = audioElement ?? audioRef.current
-    if (!target) {
-      audioListenersRef.current = []
-      return
-    }
-    audioListenersRef.current.forEach(({ type, handler }) => {
-      target.removeEventListener(type, handler)
-    })
-    audioListenersRef.current = []
-  }, [])
+  const detachAudioListeners = useCallback(
+    (audioElement?: HTMLAudioElement | null) => {
+      const target = audioElement ?? audioRef.current;
+      if (!target) {
+        audioListenersRef.current = [];
+        return;
+      }
+      audioListenersRef.current.forEach(({ type, handler }) => {
+        target.removeEventListener(type, handler);
+      });
+      audioListenersRef.current = [];
+    },
+    []
+  );
 
   const stopCurrentAudio = useCallback(() => {
-    const current = audioRef.current
+    const current = audioRef.current;
     if (current) {
-      current.pause()
-      current.currentTime = 0
-      detachAudioListeners(current)
+      current.pause();
+      current.currentTime = 0;
+      detachAudioListeners(current);
     } else {
-      detachAudioListeners()
+      detachAudioListeners();
     }
-    audioRef.current = null
-    setAudioState({ wordId: null, status: 'idle', errorMessage: null })
-  }, [detachAudioListeners])
+    audioRef.current = null;
+    setAudioState({ wordId: null, status: "idle", errorMessage: null });
+  }, [detachAudioListeners]);
 
   const handleTogglePronunciation = useCallback(
     (word: Word, url: string) => {
       if (!url) {
-        return
+        return;
       }
 
-      const normalizedUrl = url.trim()
+      const normalizedUrl = url.trim();
       if (!/^https?:/i.test(normalizedUrl)) {
-        return
+        return;
       }
 
       if (audioRef.current && audioState.wordId === word.id) {
-        stopCurrentAudio()
-        return
+        stopCurrentAudio();
+        return;
       }
 
-      stopCurrentAudio()
+      stopCurrentAudio();
 
-      const audio = new Audio(normalizedUrl)
-      audioRef.current = audio
-      setAudioState({ wordId: word.id, status: 'loading', errorMessage: null })
+      const audio = new Audio(normalizedUrl);
+      audioRef.current = audio;
+      setAudioState({ wordId: word.id, status: "loading", errorMessage: null });
 
       const handlePlaying: EventListener = () => {
         setAudioState((prev) =>
-          prev.wordId === word.id ? { ...prev, status: 'playing' } : prev,
-        )
-      }
+          prev.wordId === word.id ? { ...prev, status: "playing" } : prev
+        );
+      };
 
       const handleEnded: EventListener = () => {
-        detachAudioListeners(audio)
+        detachAudioListeners(audio);
         if (audioRef.current === audio) {
-          audioRef.current = null
+          audioRef.current = null;
         }
-        setAudioState({ wordId: null, status: 'idle', errorMessage: null })
-      }
+        setAudioState({ wordId: null, status: "idle", errorMessage: null });
+      };
 
       const handleError: EventListener = () => {
-        detachAudioListeners(audio)
+        detachAudioListeners(audio);
         if (audioRef.current === audio) {
-          audioRef.current = null
+          audioRef.current = null;
         }
         setAudioState({
           wordId: word.id,
-          status: 'error',
-          errorMessage: '音频播放失败，请稍后重试。',
-        })
-      }
+          status: "error",
+          errorMessage: "音频播放失败，请稍后重试。",
+        });
+      };
 
       const handleWaiting: EventListener = () => {
         setAudioState((prev) =>
-          prev.wordId === word.id ? { ...prev, status: 'loading' } : prev,
-        )
-      }
+          prev.wordId === word.id ? { ...prev, status: "loading" } : prev
+        );
+      };
 
       audioListenersRef.current = [
-        { type: 'playing', handler: handlePlaying },
-        { type: 'ended', handler: handleEnded },
-        { type: 'error', handler: handleError },
-        { type: 'waiting', handler: handleWaiting },
-        { type: 'stalled', handler: handleWaiting },
-      ]
+        { type: "playing", handler: handlePlaying },
+        { type: "ended", handler: handleEnded },
+        { type: "error", handler: handleError },
+        { type: "waiting", handler: handleWaiting },
+        { type: "stalled", handler: handleWaiting },
+      ];
 
       audioListenersRef.current.forEach(({ type, handler }) => {
-        audio.addEventListener(type, handler)
-      })
+        audio.addEventListener(type, handler);
+      });
 
       void audio.play().catch(() => {
-        handleError(new Event('error'))
-      })
+        handleError(new Event("error"));
+      });
     },
-    [audioState.wordId, detachAudioListeners, stopCurrentAudio],
-  )
+    [audioState.wordId, detachAudioListeners, stopCurrentAudio]
+  );
 
   useEffect(() => {
     return () => {
-      const current = audioRef.current
+      const current = audioRef.current;
       if (current) {
-        detachAudioListeners(current)
-        current.pause()
+        detachAudioListeners(current);
+        current.pause();
       } else {
-        detachAudioListeners()
+        detachAudioListeners();
       }
-      audioRef.current = null
-    }
-  }, [detachAudioListeners])
+      audioRef.current = null;
+    };
+  }, [detachAudioListeners]);
 
   useEffect(() => {
     if (audioState.wordId === null) {
-      return
+      return;
     }
-    const activeWord = words.find((wordItem) => wordItem.id === audioState.wordId)
+    const activeWord = words.find(
+      (wordItem) => wordItem.id === audioState.wordId
+    );
     if (!activeWord) {
-      stopCurrentAudio()
-      return
+      stopCurrentAudio();
+      return;
     }
     const currentPronunciation = (
-      activeWord.pronunciation1 || activeWord.pronunciation2 || activeWord.pronunciation3 || ''
-    ).trim()
+      activeWord.pronunciation1 ||
+      activeWord.pronunciation2 ||
+      activeWord.pronunciation3 ||
+      ""
+    ).trim();
     if (!/^https?:/i.test(currentPronunciation)) {
-      stopCurrentAudio()
+      stopCurrentAudio();
     }
-  }, [audioState.wordId, stopCurrentAudio, words])
+  }, [audioState.wordId, stopCurrentAudio, words]);
 
   const hasActiveFilters =
-    filters.search !== '' || filters.difficulty !== 'all' || filters.mastery !== 'all'
-
-  const formInitialValues = useMemo<WordFormValues | undefined>(() => {
-    if (!formState.word) {
-      return undefined
-    }
-
-    const pronunciation =
-      formState.word.pronunciation1 ||
-      formState.word.pronunciation2 ||
-      formState.word.pronunciation3 ||
-      ''
-
-    return {
-      word: formState.word.word,
-      phonetic: formState.word.phonetic,
-      meaning: formState.word.meaning,
-      pronunciationUrl: pronunciation,
-      difficulty: formState.word.difficulty ?? 0,
-      isMastered: formState.word.isMastered,
-      notes: formState.word.notes ?? '',
-      sentence: formState.word.sentence ?? '',
-      pronunciationRules: [], // Reset pronunciation rules for editing
-      hasImage: formState.word.hasImage ?? false,
-      imageType: formState.word.imageType ?? null,
-      imageValue: formState.word.imageValue ?? null,
-    }
-  }, [formState.word])
+    filters.search !== "" ||
+    filters.difficulty !== "all" ||
+    filters.mastery !== "all";
 
   return (
     <div className="space-y-6">
@@ -613,16 +572,16 @@ const WordsPage = () => {
           </p>
         </div>
         <div className="flex gap-3">
-        <button
-          type="button"
-          onClick={openCreateForm}
-          className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-700"
-        >
-          新建单词
-        </button>
           <button
             type="button"
-            onClick={() => navigate('/learning')}
+            onClick={openCreateForm}
+            className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-700"
+          >
+            新建单词
+          </button>
+          <button
+            type="button"
+            onClick={() => navigate("/learning")}
             className="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-green-700"
           >
             开始背单词
@@ -633,9 +592,9 @@ const WordsPage = () => {
       {flash ? (
         <div
           className={`rounded-xl border px-4 py-3 text-sm shadow-sm ${
-            flash.type === 'success'
-              ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-              : 'border-rose-200 bg-rose-50 text-rose-700'
+            flash.type === "success"
+              ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+              : "border-rose-200 bg-rose-50 text-rose-700"
           }`}
         >
           <div className="flex items-start justify-between gap-3">
@@ -654,9 +613,15 @@ const WordsPage = () => {
 
       <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div className="border-b border-slate-200 px-6 py-5">
-          <form onSubmit={handleSearchSubmit} className="flex flex-col gap-4 lg:flex-row lg:items-end">
+          <form
+            onSubmit={handleSearchSubmit}
+            className="flex flex-col gap-4 lg:flex-row lg:items-end"
+          >
             <div className="flex-1">
-              <label htmlFor="search" className="block text-sm font-medium text-slate-700">
+              <label
+                htmlFor="search"
+                className="block text-sm font-medium text-slate-700"
+              >
                 搜索
               </label>
               <div className="mt-1 flex gap-3">
@@ -701,10 +666,12 @@ const WordsPage = () => {
             </div>
 
             <div className="flex flex-col gap-2 lg:w-56">
-              <span className="text-sm font-medium text-slate-700">掌握状态</span>
+              <span className="text-sm font-medium text-slate-700">
+                掌握状态
+              </span>
               <div className="flex rounded-full border border-slate-200 bg-slate-50 p-1">
                 {masteryOptions.map((option) => {
-                  const isActive = filters.mastery === option.value
+                  const isActive = filters.mastery === option.value;
                   return (
                     <button
                       key={option.value}
@@ -712,13 +679,13 @@ const WordsPage = () => {
                       onClick={() => handleMasteryChange(option.value)}
                       className={`flex-1 rounded-full px-3 py-1 text-sm font-medium transition ${
                         isActive
-                          ? 'bg-slate-900 text-white shadow'
-                          : 'text-slate-600 hover:bg-white'
+                          ? "bg-slate-900 text-white shadow"
+                          : "text-slate-600 hover:bg-white"
                       }`}
                     >
                       {option.label}
                     </button>
-                  )
+                  );
                 })}
               </div>
             </div>
@@ -762,7 +729,9 @@ const WordsPage = () => {
 
           {!loading && hasFetched && words.length === 0 && !fetchError ? (
             <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-8 py-12 text-center">
-              <h3 className="text-lg font-semibold text-slate-900">未找到单词</h3>
+              <h3 className="text-lg font-semibold text-slate-900">
+                未找到单词
+              </h3>
               <p className="mt-2 text-sm text-slate-600">
                 调整您的筛选器或添加新单词以开始使用。
               </p>
@@ -807,292 +776,343 @@ const WordsPage = () => {
               </div>
 
               <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-slate-200">
-                <thead className="bg-slate-50">
-                  <tr>
-                    <th
-                      scope="col"
-                      className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600 w-12"
-                    >
-                      <span className="sr-only">选择</span>
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600"
-                    >
-                      单词
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600 w-20"
-                    >
-                      图片
-                    </th>
-                    <th
-                      scope="col"
-                      className="hidden px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600 lg:table-cell"
-                    >
-                      音标
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600"
-                    >
-                      发音
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600"
-                    >
-                      描述
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600"
-                    >
-                      发音规则
-                    </th>
-                    <th
-                      scope="col"
-                      className="hidden px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600 lg:table-cell"
-                    >
-                      笔记
-                    </th>
-                    <th
-                      scope="col"
-                      className="hidden px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600 lg:table-cell"
-                    >
-                      例句
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600"
-                    >
-                      难度
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600"
-                    >
-                      掌握状态
-                    </th>
-                    <th className="px-4 py-3" />
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-200 text-sm text-slate-700">
-                  {words.map((word) => {
-                    const difficultyMeta = getDifficultyMeta(word.difficulty)
-                    const rawPronunciation = appliedPronunciation(word)
-                    const pronunciation = (rawPronunciation ?? '').trim()
-                    const pronunciationIsLink = /^https?:/i.test(pronunciation)
-                    const hasPronunciation = pronunciation !== ''
-                    const isActiveWord = audioState.wordId === word.id
-                    const isLoadingAudio = isActiveWord && audioState.status === 'loading'
-                    const isPlayingAudio = isActiveWord && audioState.status === 'playing'
-                    const audioErrorMessage =
-                      isActiveWord && audioState.status === 'error' ? audioState.errorMessage : null
-                    const audioButtonLabel = (() => {
-                      if (!pronunciationIsLink) {
-                        return `播放单词“${word.word}”的发音`
-                      }
-                      if (isActiveWord) {
-                        if (isPlayingAudio) {
-                          return `停止播放单词“${word.word}”的发音`
+                <table className="min-w-full divide-y divide-slate-200">
+                  <thead className="bg-slate-50">
+                    <tr>
+                      <th
+                        scope="col"
+                        className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600 w-12"
+                      >
+                        <span className="sr-only">选择</span>
+                      </th>
+                      <th
+                        scope="col"
+                        className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600"
+                      >
+                        单词
+                      </th>
+                      <th
+                        scope="col"
+                        className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600 w-20"
+                      >
+                        图片
+                      </th>
+                      <th
+                        scope="col"
+                        className="hidden px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600 lg:table-cell"
+                      >
+                        音标
+                      </th>
+                      <th
+                        scope="col"
+                        className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600"
+                      >
+                        发音
+                      </th>
+                      <th
+                        scope="col"
+                        className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600"
+                      >
+                        描述
+                      </th>
+                      <th
+                        scope="col"
+                        className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600"
+                      >
+                        发音规则
+                      </th>
+                      <th
+                        scope="col"
+                        className="hidden px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600 lg:table-cell"
+                      >
+                        笔记
+                      </th>
+                      <th
+                        scope="col"
+                        className="hidden px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600 lg:table-cell"
+                      >
+                        例句
+                      </th>
+                      <th
+                        scope="col"
+                        className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600"
+                      >
+                        难度
+                      </th>
+                      <th
+                        scope="col"
+                        className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600"
+                      >
+                        掌握状态
+                      </th>
+                      <th className="px-4 py-3" />
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200 text-sm text-slate-700">
+                    {words.map((word) => {
+                      const difficultyMeta = getDifficultyMeta(word.difficulty);
+                      const rawPronunciation = appliedPronunciation(word);
+                      const pronunciation = (rawPronunciation ?? "").trim();
+                      const pronunciationIsLink = /^https?:/i.test(
+                        pronunciation
+                      );
+                      const hasPronunciation = pronunciation !== "";
+                      const isActiveWord = audioState.wordId === word.id;
+                      const isLoadingAudio =
+                        isActiveWord && audioState.status === "loading";
+                      const isPlayingAudio =
+                        isActiveWord && audioState.status === "playing";
+                      const audioErrorMessage =
+                        isActiveWord && audioState.status === "error"
+                          ? audioState.errorMessage
+                          : null;
+                      const audioButtonLabel = (() => {
+                        if (!pronunciationIsLink) {
+                          return `播放单词“${word.word}”的发音`;
                         }
-                        if (isLoadingAudio) {
-                          return `正在加载单词“${word.word}”的发音`
+                        if (isActiveWord) {
+                          if (isPlayingAudio) {
+                            return `停止播放单词“${word.word}”的发音`;
+                          }
+                          if (isLoadingAudio) {
+                            return `正在加载单词“${word.word}”的发音`;
+                          }
+                          if (audioErrorMessage) {
+                            return `重新播放单词“${word.word}”的发音`;
+                          }
                         }
-                        if (audioErrorMessage) {
-                          return `重新播放单词“${word.word}”的发音`
-                        }
-                      }
-                      return `播放单词“${word.word}”的发音`
-                    })()
-                    return (
-                      <tr key={word.id} className="hover:bg-slate-50">
-                        <td className="px-4 py-3">
-                          <input
-                            type="checkbox"
-                            checked={selectedWordIds.has(word.id)}
-                            onChange={(e) => handleWordSelection(word.id, e.target.checked)}
-                            className="rounded border-slate-300 text-slate-900 focus:ring-slate-500/60"
-                          />
-                        </td>
-                        <td className="px-4 py-3">
-                          <Link 
-                            to={`/words/${word.id}`}
-                            className="font-medium text-slate-900 hover:text-blue-600 hover:underline transition-colors"
-                          >
-                            {word.word}
-                          </Link>
-                          <div className="mt-0.5 text-xs text-slate-500 lg:hidden">
-                            {word.phonetic || '—'}
-                          </div>
-                        </td>
-                        <td className="px-4 py-3 align-top">
-                          {word.hasImage && word.imageType && word.imageValue ? (
-                            <div className="flex items-center justify-center">
-                              {word.imageType === 'url' ? (
-                                <img
-                                  src={word.imageValue}
-                                  alt={word.word}
-                                  className="w-8 h-8 object-cover rounded border border-slate-200"
-                                  onError={(e) => {
-                                    e.currentTarget.style.display = 'none'
-                                    e.currentTarget.nextElementSibling?.classList.remove('hidden')
-                                  }}
-                                />
-                              ) : word.imageType === 'iconfont' ? (
-                                <i className={`${word.imageValue} text-lg text-slate-600`}></i>
-                              ) : word.imageType === 'emoji' ? (
-                                <span className="text-lg">{word.imageValue}</span>
-                              ) : null}
-                              {word.imageType === 'url' && (
-                                <div className="hidden text-center text-xs text-slate-400">
-                                  —
-                                </div>
-                              )}
-                            </div>
-                          ) : (
-                            <span className="text-slate-400">—</span>
-                          )}
-                        </td>
-                        <td className="hidden px-4 py-3 align-top text-slate-600 lg:table-cell">
-                          {word.phonetic || '—'}
-                        </td>
-                        <td className="px-4 py-3 align-top">
-                          {hasPronunciation ? (
-                            pronunciationIsLink ? (
-                              <div className="flex flex-col items-start gap-2">
-                                <button
-                                  type="button"
-                                  onClick={() => handleTogglePronunciation(word, pronunciation)}
-                                  className={`inline-flex h-11 w-11 items-center justify-center rounded-full border text-base shadow-sm transition transform hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-slate-500/50 ${
-                                    isActiveWord
-                                      ? isPlayingAudio
-                                        ? 'border-slate-900 bg-slate-900 text-white hover:bg-slate-800'
-                                        : audioErrorMessage
-                                          ? 'border-rose-300 bg-rose-50 text-rose-600 hover:bg-rose-100'
-                                          : 'border-slate-900 bg-slate-100 text-slate-900 hover:bg-slate-200'
-                                      : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-100 hover:text-slate-900'
-                                  }`}
-                                  aria-label={audioButtonLabel}
-                                  title={audioButtonLabel}
-                                  aria-pressed={isActiveWord && isPlayingAudio}
-                                  aria-busy={isLoadingAudio}
-                                >
-                                  {isLoadingAudio ? (
-                                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                                  ) : isPlayingAudio ? (
-                                    <StopIcon className="h-4 w-4" />
-                                  ) : (
-                                    <SpeakerWaveIcon
-                                      className={`h-5 w-5 ${isActiveWord && !audioErrorMessage ? 'animate-pulse' : ''}`}
-                                    />
-                                  )}
-                                </button>
-                                {audioErrorMessage ? (
-                                  <p aria-live="polite" role="status" className="text-xs text-rose-500">
-                                    {audioErrorMessage}
-                                  </p>
-                                ) : null}
-                              </div>
-                            ) : (
-                              <span className="text-sm text-slate-600">{pronunciation}</span>
-                            )
-                          ) : (
-                            <span className="text-slate-400">—</span>
-                          )}
-                        </td>
-                        <td className="px-4 py-3 align-top text-slate-600">
-                          <p className="text-sm leading-relaxed">{word.meaning}</p>
-                        </td>
-                        <td className="px-4 py-3 align-top">
-                          {word.pronunciationRules && word.pronunciationRules.length > 0 ? (
-                            <div className="flex flex-wrap gap-1">
-                              {word.pronunciationRules.slice(0, 2).map(rule => (
-                                <span 
-                                  key={rule.id}
-                                  className="inline-block rounded bg-blue-100 px-2 py-1 text-xs text-blue-800"
-                                >
-                                  {rule.letterCombination}
-                                </span>
-                              ))}
-                              {word.pronunciationRules.length > 2 && (
-                                <span className="inline-block rounded bg-gray-100 px-2 py-1 text-xs text-gray-600">
-                                  +{word.pronunciationRules.length - 2}
-                                </span>
-                              )}
-                            </div>
-                          ) : (
-                            <span className="text-xs text-gray-400">-</span>
-                          )}
-                        </td>
-                        <td className="hidden px-4 py-3 align-top lg:table-cell">
-                          {word.notes ? (
-                            <p className="max-w-xs truncate text-sm text-slate-600" title={word.notes}>
-                              {word.notes}
-                            </p>
-                          ) : (
-                            <span className="text-slate-400">—</span>
-                          )}
-                        </td>
-                        <td className="hidden px-4 py-3 align-top lg:table-cell">
-                          {word.sentence ? (
-                            <p className="max-w-xs truncate text-sm text-slate-600" title={word.sentence}>
-                              {word.sentence}
-                            </p>
-                          ) : (
-                            <span className="text-slate-400">—</span>
-                          )}
-                        </td>
-                        <td className="px-4 py-3 align-top">
-                          <span
-                            className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${difficultyMeta.className}`}
-                          >
-                            {difficultyMeta.label}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 align-top">
-                          <span
-                            className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${
-                              word.isMastered
-                                ? 'bg-indigo-50 text-indigo-700'
-                                : 'bg-slate-200 text-slate-700'
-                            }`}
-                          >
-                            {word.isMastered ? '已掌握' : '学习中'}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 align-top text-right">
-                          <div className="flex justify-end gap-3 text-xs font-semibold">
+                        return `播放单词“${word.word}”的发音`;
+                      })();
+
+                      return (
+                        <tr key={word.id} className="hover:bg-slate-50">
+                          <td className="px-4 py-3">
+                            <input
+                              type="checkbox"
+                              checked={selectedWordIds.has(word.id)}
+                              onChange={(e) =>
+                                handleWordSelection(word.id, e.target.checked)
+                              }
+                              className="rounded border-slate-300 text-slate-900 focus:ring-slate-500/60"
+                            />
+                          </td>
+                          <td className="px-4 py-3">
                             <Link
                               to={`/words/${word.id}`}
-                              className="rounded-lg border border-slate-200 px-3 py-1.5 text-slate-600 transition hover:bg-slate-100"
+                              className="font-medium text-slate-900 hover:text-blue-600 hover:underline transition-colors"
                             >
-                              详情
+                              {word.word}
                             </Link>
-                            <button
-                              type="button"
-                              onClick={() => openEditForm(word)}
-                              className="rounded-lg border border-slate-200 px-3 py-1.5 text-slate-600 transition hover:bg-slate-100"
+                            <div className="mt-0.5 text-xs text-slate-500 lg:hidden">
+                              {word.phonetic || "—"}
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 align-top">
+                            {word.hasImage &&
+                            word.imageType &&
+                            word.imageValue ? (
+                              <div className="flex items-center justify-center">
+                                {word.imageType === "url" ? (
+                                  <img
+                                    src={word.imageValue}
+                                    alt={word.word}
+                                    className="w-8 h-8 object-cover rounded border border-slate-200"
+                                    onError={(e) => {
+                                      e.currentTarget.style.display = "none";
+                                      e.currentTarget.nextElementSibling?.classList.remove(
+                                        "hidden"
+                                      );
+                                    }}
+                                  />
+                                ) : word.imageType === "iconfont" ? (
+                                  <i
+                                    className={`${word.imageValue} text-lg text-slate-600`}
+                                  ></i>
+                                ) : word.imageType === "emoji" ? (
+                                  <span className="text-lg">
+                                    {word.imageValue}
+                                  </span>
+                                ) : null}
+                                {word.imageType === "url" && (
+                                  <div className="hidden text-center text-xs text-slate-400">
+                                    —
+                                  </div>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-slate-400">—</span>
+                            )}
+                          </td>
+                          <td className="hidden px-4 py-3 align-top text-slate-600 lg:table-cell">
+                            {word.phonetic || "—"}
+                          </td>
+                          <td className="px-4 py-3 align-top">
+                            {hasPronunciation ? (
+                              pronunciationIsLink ? (
+                                <div className="flex flex-col items-start gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      handleTogglePronunciation(
+                                        word,
+                                        pronunciation
+                                      )
+                                    }
+                                    className={`inline-flex h-11 w-11 items-center justify-center rounded-full border text-base shadow-sm transition transform hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-slate-500/50 ${
+                                      isActiveWord
+                                        ? isPlayingAudio
+                                          ? "border-slate-900 bg-slate-900 text-white hover:bg-slate-800"
+                                          : audioErrorMessage
+                                          ? "border-rose-300 bg-rose-50 text-rose-600 hover:bg-rose-100"
+                                          : "border-slate-900 bg-slate-100 text-slate-900 hover:bg-slate-200"
+                                        : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-100 hover:text-slate-900"
+                                    }`}
+                                    aria-label={audioButtonLabel}
+                                    title={audioButtonLabel}
+                                    aria-pressed={
+                                      isActiveWord && isPlayingAudio
+                                    }
+                                    aria-busy={isLoadingAudio}
+                                  >
+                                    {isLoadingAudio ? (
+                                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                                    ) : isPlayingAudio ? (
+                                      <StopIcon className="h-4 w-4" />
+                                    ) : (
+                                      <SpeakerWaveIcon
+                                        className={`h-5 w-5 ${
+                                          isActiveWord && !audioErrorMessage
+                                            ? "animate-pulse"
+                                            : ""
+                                        }`}
+                                      />
+                                    )}
+                                  </button>
+                                  {audioErrorMessage ? (
+                                    <p
+                                      aria-live="polite"
+                                      role="status"
+                                      className="text-xs text-rose-500"
+                                    >
+                                      {audioErrorMessage}
+                                    </p>
+                                  ) : null}
+                                </div>
+                              ) : (
+                                <span className="text-sm text-slate-600">
+                                  {pronunciation}
+                                </span>
+                              )
+                            ) : (
+                              <span className="text-slate-400">—</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 align-top text-slate-600">
+                            <p className="text-sm leading-relaxed">
+                              {word.meaning}
+                            </p>
+                          </td>
+                          <td className="px-4 py-3 align-top">
+                            {word.pronunciationRules &&
+                            word.pronunciationRules.length > 0 ? (
+                              <div className="flex flex-wrap gap-1">
+                                {word.pronunciationRules
+                                  .slice(0, 2)
+                                  .map(
+                                    (rule: {
+                                      id: number;
+                                      letterCombination: string;
+                                      pronunciation: string;
+                                    }) => (
+                                      <span
+                                        key={rule.id}
+                                        className="inline-block rounded bg-blue-100 px-2 py-1 text-xs text-blue-800"
+                                      >
+                                        {rule.letterCombination}
+                                      </span>
+                                    )
+                                  )}
+                                {word.pronunciationRules.length > 2 && (
+                                  <span className="inline-block rounded bg-gray-100 px-2 py-1 text-xs text-gray-600">
+                                    +{word.pronunciationRules.length - 2}
+                                  </span>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-xs text-gray-400">-</span>
+                            )}
+                          </td>
+                          <td className="hidden px-4 py-3 align-top lg:table-cell">
+                            {word.notes ? (
+                              <p
+                                className="max-w-xs truncate text-sm text-slate-600"
+                                title={word.notes}
+                              >
+                                {word.notes}
+                              </p>
+                            ) : (
+                              <span className="text-slate-400">—</span>
+                            )}
+                          </td>
+                          <td className="hidden px-4 py-3 align-top lg:table-cell">
+                            {word.sentence ? (
+                              <p
+                                className="max-w-xs truncate text-sm text-slate-600"
+                                title={word.sentence}
+                              >
+                                {word.sentence}
+                              </p>
+                            ) : (
+                              <span className="text-slate-400">—</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 align-top">
+                            <span
+                              className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${difficultyMeta.className}`}
                             >
-                              编辑
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => confirmDeletion(word)}
-                              className="rounded-lg bg-rose-50 px-3 py-1.5 text-rose-600 transition hover:bg-rose-100"
+                              {difficultyMeta.label}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 align-top">
+                            <span
+                              className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${
+                                word.isMastered
+                                  ? "bg-indigo-50 text-indigo-700"
+                                  : "bg-slate-200 text-slate-700"
+                              }`}
                             >
-                              删除
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
+                              {word.isMastered ? "已掌握" : "学习中"}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 align-top text-right">
+                            <div className="flex justify-end gap-3 text-xs font-semibold">
+                              <Link
+                                to={`/words/${word.id}`}
+                                className="rounded-lg border border-slate-200 px-3 py-1.5 text-slate-600 transition hover:bg-slate-100"
+                              >
+                                详情
+                              </Link>
+                              <button
+                                type="button"
+                                onClick={() => openEditForm(word)}
+                                className="rounded-lg border border-slate-200 px-3 py-1.5 text-slate-600 transition hover:bg-slate-100"
+                              >
+                                编辑
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => confirmDeletion(word)}
+                                className="rounded-lg bg-rose-50 px-3 py-1.5 text-rose-600 transition hover:bg-rose-100"
+                              >
+                                删除
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
             </div>
           ) : null}
@@ -1102,9 +1122,17 @@ const WordsPage = () => {
           <div>
             {hasVisibleWords ? (
               <span>
-                显示第 <span className="font-semibold text-slate-900">{showingFrom}</span> -{' '}
-                <span className="font-semibold text-slate-900">{showingTo}</span> 条，共{' '}
-                <span className="font-semibold text-slate-900">{total}</span> 个单词
+                显示第{" "}
+                <span className="font-semibold text-slate-900">
+                  {showingFrom}
+                </span>{" "}
+                -{" "}
+                <span className="font-semibold text-slate-900">
+                  {showingTo}
+                </span>{" "}
+                条，共{" "}
+                <span className="font-semibold text-slate-900">{total}</span>{" "}
+                个单词
               </span>
             ) : hasFetched && !loading ? (
               <span>无单词显示。</span>
@@ -1137,7 +1165,8 @@ const WordsPage = () => {
                 上一页
               </button>
               <span className="text-sm font-medium text-slate-700">
-                第 {total === 0 ? 0 : page} 页，共 {total === 0 ? 0 : totalPages} 页
+                第 {total === 0 ? 0 : page} 页，共{" "}
+                {total === 0 ? 0 : totalPages} 页
               </span>
               <button
                 type="button"
@@ -1152,78 +1181,16 @@ const WordsPage = () => {
         </div>
       </section>
 
-      {formState.open ? (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-900/40 px-4">
-          <div className="flex h-[90vh] max-h-[900px] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-xl md:h-[85vh]">
-            {/* Fixed Header */}
-            <div className="flex flex-shrink-0 items-center justify-between border-b border-slate-200 px-6 py-4">
-              <h2 className="text-lg font-semibold text-slate-900">
-                {formState.mode === 'edit' ? '编辑单词' : '添加单词'}
-              </h2>
-              <button
-                type="button"
-                onClick={closeForm}
-                className="rounded-md p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
-              >
-                <span aria-hidden="true">&times;</span>
-                <span className="sr-only">关闭</span>
-              </button>
-            </div>
-            
-            {/* Scrollable Content Area */}
-            <div className="flex-1 overflow-y-auto px-6 py-4 scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-slate-100 md:px-4 md:py-3">
-              {formError ? (
-                <div className="mb-4 rounded-lg border border-rose-200 bg-rose-50 px-4 py-2 text-sm text-rose-700">
-                  {formError}
-                </div>
-              ) : null}
-              <WordForm
-                key={`${formState.mode}-${formState.word?.id ?? 'new'}`}
-                formId={WORD_FORM_ID}
-                mode={formState.mode}
-                initialValues={formInitialValues}
-                submitting={formSubmitting}
-                onSubmit={handleSubmitWord}
-              />
-            </div>
-            
-            {/* Fixed Footer */}
-            <div className="flex flex-shrink-0 items-center justify-end gap-3 border-t border-slate-200 px-6 py-4">
-              <button
-                type="button"
-                onClick={closeForm}
-                className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100"
-                disabled={formSubmitting}
-              >
-                取消
-              </button>
-              <button
-                type="submit"
-                form={WORD_FORM_ID}
-                className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-400"
-                disabled={formSubmitting}
-              >
-                {formSubmitting
-                  ? formState.mode === 'edit'
-                    ? '保存中…'
-                    : '创建中…'
-                  : formState.mode === 'edit'
-                    ? '保存更改'
-                    : '创建单词'}
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
-
       {wordPendingDeletion ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 px-4">
           <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
             <h3 className="text-lg font-semibold text-slate-900">删除单词</h3>
             <p className="mt-3 text-sm text-slate-600">
               确定要删除 “
-              <span className="font-semibold text-slate-900">{wordPendingDeletion.word}</span>”? This
-              操作无法撤销.
+              <span className="font-semibold text-slate-900">
+                {wordPendingDeletion.word}
+              </span>
+              ”? This 操作无法撤销.
             </p>
             <div className="mt-6 flex items-center justify-end gap-3">
               <button
@@ -1240,7 +1207,7 @@ const WordsPage = () => {
                 className="rounded-lg bg-rose-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-rose-500 disabled:cursor-not-allowed disabled:bg-rose-400"
                 disabled={isDeleting}
               >
-                {isDeleting ? '删除中…' : '删除'}
+                {isDeleting ? "删除中…" : "删除"}
               </button>
             </div>
           </div>
@@ -1270,7 +1237,7 @@ const WordsPage = () => {
               disabled={bulkAdding || !selectedDictionary}
               className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-700 disabled:bg-slate-400 disabled:cursor-not-allowed"
             >
-              {bulkAdding ? '添加中...' : '添加到词典'}
+              {bulkAdding ? "添加中..." : "添加到词典"}
             </button>
           </div>
         }
@@ -1281,7 +1248,7 @@ const WordsPage = () => {
               {bulkAddError}
             </div>
           ) : null}
-          
+
           {dictionaries.length === 0 && !bulkAddError ? (
             <div className="text-center py-8">
               <p className="text-sm text-slate-600">暂无可用词典</p>
@@ -1298,17 +1265,24 @@ const WordsPage = () => {
                     name="dictionary"
                     value={dictionary.id}
                     checked={selectedDictionary === dictionary.id}
-                    onChange={(e) => setSelectedDictionary(Number(e.target.value))}
+                    onChange={(e) =>
+                      setSelectedDictionary(Number(e.target.value))
+                    }
                     disabled={bulkAdding}
                     className="mt-1 rounded border-slate-300 text-slate-900 focus:ring-slate-500/60"
                   />
                   <div className="flex-1">
-                    <div className="font-medium text-slate-900">{dictionary.name}</div>
+                    <div className="font-medium text-slate-900">
+                      {dictionary.name}
+                    </div>
                     {dictionary.description ? (
-                      <p className="mt-1 text-sm text-slate-600">{dictionary.description}</p>
+                      <p className="mt-1 text-sm text-slate-600">
+                        {dictionary.description}
+                      </p>
                     ) : null}
                     <div className="mt-2 text-xs text-slate-500">
-                      创建于 {new Date(dictionary.createdAt).toLocaleDateString()}
+                      创建于{" "}
+                      {new Date(dictionary.createdAt).toLocaleDateString()}
                       {dictionary.wordCount !== undefined ? (
                         <span> • {dictionary.wordCount} 个单词</span>
                       ) : null}
@@ -1320,554 +1294,16 @@ const WordsPage = () => {
           )}
         </div>
       </Modal>
+
+      <WordFormModal
+        isOpen={formState.open}
+        mode={formState.mode}
+        word={formState.word}
+        onClose={closeForm}
+        onSuccess={handleFormSuccess}
+      />
     </div>
-  )
-}
+  );
+};
 
-interface WordFormProps {
-  formId: string
-  mode: 'create' | 'edit'
-  initialValues?: WordFormValues
-  submitting: boolean
-  onSubmit: (values: WordFormValues) => Promise<void>
-}
-
-const emptyFormValues: WordFormValues = {
-  word: '',
-  phonetic: '',
-  meaning: '',
-  pronunciationUrl: '',
-  difficulty: 0,
-  isMastered: false,
-  notes: '',
-  sentence: '',
-  pronunciationRules: [],
-  hasImage: false,
-  imageType: null,
-  imageValue: null,
-}
-
-const WordForm = ({ formId, mode, initialValues, submitting, onSubmit }: WordFormProps) => {
-  const [values, setValues] = useState<WordFormValues>(initialValues ?? emptyFormValues)
-  const [errors, setErrors] = useState<WordFormErrors>({})
-  const [pronunciationRules, setPronunciationRules] = useState<PronunciationRule[]>([])
-  const [pronunciationRulesLoading, setPronunciationRulesLoading] = useState(false)
-  const [pronunciationRulesError, setPronunciationRulesError] = useState<string | null>(null)
-
-  useEffect(() => {
-    setValues(initialValues ?? emptyFormValues)
-    setErrors({})
-  }, [initialValues])
-
-  // Fetch pronunciation rules when form opens
-  useEffect(() => {
-    const fetchPronunciationRulesData = async () => {
-      try {
-        setPronunciationRulesLoading(true)
-        setPronunciationRulesError(null)
-        const result = await pronunciationRuleService.getAll({ limit: 1000 })
-        setPronunciationRules(result.items)
-      } catch (error) {
-        const apiError = error as ApiError
-        setPronunciationRulesError(apiError.message ?? '无法加载发音规则列表。')
-      } finally {
-        setPronunciationRulesLoading(false)
-      }
-    }
-    fetchPronunciationRulesData()
-  }, [])
-
-  const handleChange = (
-    event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
-  ) => {
-    const { name, value, type } = event.target
-    const checked = type === 'checkbox' || type === 'radio' ? (event.target as HTMLInputElement).checked : undefined
-    setValues((prev) => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : name === 'difficulty' ? Number(value) : value,
-    }))
-  }
-
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-
-    const trimmedWord = values.word.trim()
-    const trimmedPhonetic = values.phonetic.trim()
-    const trimmedMeaning = values.meaning.trim()
-    const trimmedPronunciation = values.pronunciationUrl.trim()
-    const trimmedNotes = values.notes.trim()
-    const trimmedSentence = values.sentence.trim()
-    const trimmedImageValue = values.imageValue ? values.imageValue.trim() : null
-
-    const nextErrors: WordFormErrors = {}
-
-    if (!trimmedWord) {
-      nextErrors.word = '单词为必填项。'
-    }
-
-    if (!trimmedPhonetic) {
-      nextErrors.phonetic = '音标为必填项。'
-    }
-
-    if (!trimmedMeaning) {
-      nextErrors.meaning = '描述为必填项。'
-    }
-
-    // Image validation
-    if (values.hasImage) {
-      if (!values.imageType) {
-        nextErrors.imageType = '请选择图片类型。'
-      }
-      if (!trimmedImageValue) {
-        nextErrors.imageValue = '请输入图片内容。'
-      } else {
-        // Type-specific validation
-        if (values.imageType === 'url') {
-          const urlPattern = /^https?:\/\/.+\.(jpg|jpeg|png|gif|webp|svg)(\?.*)?$/i
-          if (!urlPattern.test(trimmedImageValue)) {
-            nextErrors.imageValue = '请输入有效的图片URL（必须以.jpg、.png、.gif等结尾）。'
-          }
-        } else if (values.imageType === 'iconfont') {
-          const iconClassPattern = /^[a-zA-Z0-9_-]+$/
-          if (!iconClassPattern.test(trimmedImageValue)) {
-            nextErrors.imageValue = '图标字体类名只能包含字母、数字、下划线和横线。'
-          }
-        } else if (values.imageType === 'emoji') {
-          if (trimmedImageValue.length > 50) {
-            nextErrors.imageValue = 'emoji内容不能超过50个字符。'
-          }
-        }
-      }
-    }
-
-    setErrors(nextErrors)
-
-    if (Object.keys(nextErrors).length > 0) {
-      return
-    }
-
-    await onSubmit({
-      word: trimmedWord,
-      phonetic: trimmedPhonetic,
-      meaning: trimmedMeaning,
-      pronunciationUrl: trimmedPronunciation,
-      difficulty: values.difficulty,
-      isMastered: values.isMastered,
-      notes: trimmedNotes,
-      sentence: trimmedSentence,
-      pronunciationRules: values.pronunciationRules,
-      hasImage: values.hasImage,
-      imageType: values.hasImage ? values.imageType : null,
-      imageValue: values.hasImage ? trimmedImageValue : null,
-    })
-  }
-
-  return (
-    <form id={formId} onSubmit={handleSubmit} className="space-y-5">
-      <div className="grid gap-5 gap-y-4 md:grid-cols-2">
-        <div>
-          <label htmlFor="word" className="block text-sm font-medium text-slate-700">
-            单词<span className="text-rose-500">*</span>
-          </label>
-          <input
-            id="word"
-            name="word"
-            type="text"
-            value={values.word}
-            onChange={handleChange}
-            placeholder="例如：Serendipity"
-            className={`mt-1 w-full rounded-lg border px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-500/60 ${
-              errors.word ? 'border-rose-400 focus:ring-rose-500/60' : 'border-slate-300'
-            }`}
-            disabled={submitting}
-            autoFocus={mode === 'create'}
-          />
-          {errors.word ? <p className="mt-1 text-sm text-rose-600">{errors.word}</p> : null}
-        </div>
-        <div>
-          <label htmlFor="phonetic" className="block text-sm font-medium text-slate-700">
-            音标<span className="text-rose-500">*</span>
-          </label>
-          <input
-            id="phonetic"
-            name="phonetic"
-            type="text"
-            value={values.phonetic}
-            onChange={handleChange}
-            placeholder="例如：/ˌser.ənˈdɪp.ə.ti/"
-            className={`mt-1 w-full rounded-lg border px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-500/60 ${
-              errors.phonetic ? 'border-rose-400 focus:ring-rose-500/60' : 'border-slate-300'
-            }`}
-            disabled={submitting}
-          />
-          {errors.phonetic ? (
-            <p className="mt-1 text-sm text-rose-600">{errors.phonetic}</p>
-          ) : null}
-        </div>
-      </div>
-
-      <div>
-        <label htmlFor="meaning" className="block text-sm font-medium text-slate-700">
-          描述<span className="text-rose-500">*</span>
-        </label>
-        <textarea
-          id="meaning"
-          name="meaning"
-          rows={3}
-          value={values.meaning}
-          onChange={handleChange}
-          placeholder="为这个单词提供简洁的解释。"
-          className={`mt-1 w-full resize-none rounded-lg border px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-500/60 ${
-            errors.meaning ? 'border-rose-400 focus:ring-rose-500/60' : 'border-slate-300'
-          }`}
-          disabled={submitting}
-        />
-        {errors.meaning ? <p className="mt-1 text-sm text-rose-600">{errors.meaning}</p> : null}
-      </div>
-
-      <div className="grid gap-5 gap-y-4 md:grid-cols-2">
-        <div>
-          <label htmlFor="notes" className="block text-sm font-medium text-slate-700">
-            笔记
-          </label>
-          <textarea
-            id="notes"
-            name="notes"
-            rows={4}
-            value={values.notes}
-            onChange={handleChange}
-            placeholder="记录学习笔记、记忆技巧等..."
-            className="mt-1 w-full resize-none rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-500/60"
-            disabled={submitting}
-          />
-          <p className="mt-1 text-xs text-slate-500">
-            可选。记录学习笔记、记忆技巧等。
-          </p>
-        </div>
-        <div>
-          <label htmlFor="sentence" className="block text-sm font-medium text-slate-700">
-            例句
-          </label>
-          <textarea
-            id="sentence"
-            name="sentence"
-            rows={3}
-            value={values.sentence}
-            onChange={handleChange}
-            placeholder="提供例句帮助理解单词用法..."
-            className="mt-1 w-full resize-none rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-500/60"
-            disabled={submitting}
-          />
-          <p className="mt-1 text-xs text-slate-500">
-            可选。提供例句帮助理解单词用法。
-          </p>
-        </div>
-      </div>
-
-      <div className="grid gap-5 gap-y-4 md:grid-cols-2">
-        <div>
-          <label
-            htmlFor="pronunciationUrl"
-            className="block text-sm font-medium text-slate-700"
-          >
-            发音链接
-          </label>
-          <input
-            id="pronunciationUrl"
-            name="pronunciationUrl"
-            type="url"
-            value={values.pronunciationUrl}
-            onChange={handleChange}
-            placeholder="https://..."
-            className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-500/60"
-            disabled={submitting}
-          />
-          <p className="mt-1 text-xs text-slate-500">
-            可选。提供发音的音频URL或参考链接。
-          </p>
-        </div>
-        <div className="grid gap-4 gap-y-3 sm:grid-cols-2">
-          <div>
-            <label htmlFor="difficulty" className="block text-sm font-medium text-slate-700">
-              难度
-            </label>
-            <select
-              id="difficulty"
-              name="difficulty"
-              value={values.difficulty}
-              onChange={handleChange}
-              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-500/60"
-              disabled={submitting}
-            >
-              <option value={0}>{difficultyMetadata[0].label}</option>
-              <option value={1}>{difficultyMetadata[1].label}</option>
-              <option value={2}>{difficultyMetadata[2].label}</option>
-            </select>
-          </div>
-          <label className="flex items-start gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm shadow-sm">
-            <input
-              id="isMastered"
-              name="isMastered"
-              type="checkbox"
-              checked={values.isMastered}
-              onChange={handleChange}
-              className="mt-1 h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900"
-              disabled={submitting}
-            />
-            <div>
-              <span className="font-medium text-slate-800">已掌握</span>
-              <p className="text-xs text-slate-500">
-                当学习者完全掌握这个单词时，标记为已掌握。
-              </p>
-            </div>
-          </label>
-          </div>
-          </div>
-
-          <div>
-          <label className="block text-sm font-medium text-slate-700">
-          关联发音规则
-          </label>
-          <div className="mt-1">
-          {pronunciationRulesLoading ? (
-            <div className="flex items-center text-sm text-slate-500">
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-slate-600 mr-2"></div>
-              加载发音规则中...
-            </div>
-          ) : pronunciationRulesError ? (
-            <div className="text-sm text-rose-600">
-              {pronunciationRulesError}
-            </div>
-          ) : (
-            <div className="space-y-2 max-h-32 overflow-y-auto border border-slate-300 rounded-lg p-2 scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-slate-100">
-              {pronunciationRules.length === 0 ? (
-                <div className="text-sm text-slate-500 text-center py-4">
-                  暂无发音规则
-                </div>
-              ) : (
-                pronunciationRules.map((rule) => (
-                  <label key={rule.id} className="flex items-center space-x-2 text-sm">
-                    <input
-                      type="checkbox"
-                      checked={values.pronunciationRules.includes(rule.id)}
-                      onChange={(e) => {
-                        const checked = e.target.checked
-                        setValues((prev) => ({
-                          ...prev,
-                          pronunciationRules: checked
-                            ? [...prev.pronunciationRules, rule.id]
-                            : prev.pronunciationRules.filter(id => id !== rule.id)
-                        }))
-                      }}
-                      disabled={submitting}
-                      className="rounded border-slate-300 text-slate-900 focus:ring-slate-900"
-                    />
-                    <span className="flex-1">
-                      <span className="font-medium text-slate-900">{rule.letterCombination}</span>
-                      <span className="mx-2 text-slate-400">-</span>
-                      <span className="font-mono text-slate-700">{rule.pronunciation}</span>
-                      {rule.ruleDescription && (
-                        <span className="block text-xs text-slate-500 mt-1">
-                          {rule.ruleDescription}
-                        </span>
-                      )}
-                    </span>
-                  </label>
-                ))
-              )}
-            </div>
-          )}
-          </div>
-          <p className="mt-1 text-xs text-slate-500">
-          可选。选择该单词使用的发音规则（可多选）。
-          </p>
-          </div>
-
-          {/* Image Section */}
-          <div>
-            <label className="flex items-start gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm shadow-sm">
-              <input
-                id="hasImage"
-                name="hasImage"
-                type="checkbox"
-                checked={values.hasImage}
-                onChange={(e) => {
-                  const checked = e.target.checked
-                  setValues((prev) => ({
-                    ...prev,
-                    hasImage: checked,
-                    imageType: checked ? prev.imageType || 'url' : null,
-                    imageValue: checked ? prev.imageValue : null,
-                  }))
-                  // Clear image errors when toggling off
-                  if (!checked) {
-                    setErrors((prev) => ({
-                      ...prev,
-                      imageType: undefined,
-                      imageValue: undefined,
-                    }))
-                  }
-                }}
-                className="mt-1 h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900"
-                disabled={submitting}
-              />
-              <div className="flex-1">
-                <span className="font-medium text-slate-800">有图片</span>
-                <p className="text-xs text-slate-500">
-                  为这个单词添加图片、图标或emoji来帮助记忆。
-                </p>
-              </div>
-            </label>
-
-            {values.hasImage && (
-              <div className="mt-4 space-y-4 pl-7">
-                {/* Image Type Selection */}
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
-                    图片类型
-                  </label>
-                  <div className="flex flex-wrap gap-3">
-                    {[
-                      { value: 'url', label: 'URL链接' },
-                      { value: 'iconfont', label: '图标字体' },
-                      { value: 'emoji', label: 'Emoji' },
-                    ].map((type) => (
-                      <label key={type.value} className="flex items-center gap-2 text-sm">
-                        <input
-                          type="radio"
-                          name="imageType"
-                          value={type.value}
-                          checked={values.imageType === type.value}
-                          onChange={(e) => {
-                            setValues((prev) => ({
-                              ...prev,
-                              imageType: e.target.value as 'url' | 'iconfont' | 'emoji',
-                              imageValue: null, // Clear value when type changes
-                            }))
-                          }}
-                          disabled={submitting}
-                          className="rounded border-slate-300 text-slate-900 focus:ring-slate-900"
-                        />
-                        <span>{type.label}</span>
-                      </label>
-                    ))}
-                  </div>
-                  {errors.imageType && (
-                    <p className="mt-1 text-sm text-rose-600">{errors.imageType}</p>
-                  )}
-                </div>
-
-                {/* Image Value Input */}
-                {values.imageType && (
-                  <div>
-                    <label htmlFor="imageValue" className="block text-sm font-medium text-slate-700 mb-1">
-                      {values.imageType === 'url' && '图片URL'}
-                      {values.imageType === 'iconfont' && '图标字体类名'}
-                      {values.imageType === 'emoji' && 'Emoji内容'}
-                    </label>
-                    <input
-                      id="imageValue"
-                      name="imageValue"
-                      type="text"
-                      value={values.imageValue || ''}
-                      onChange={(e) => setValues((prev) => ({ ...prev, imageValue: e.target.value }))}
-                      placeholder={
-                        values.imageType === 'url' 
-                          ? 'https://example.com/image.png'
-                          : values.imageType === 'iconfont'
-                          ? 'icon-home'
-                          : '🏠'
-                      }
-                      className={`mt-1 w-full rounded-lg border px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-500/60 ${
-                        errors.imageValue ? 'border-rose-400 focus:ring-rose-500/60' : 'border-slate-300'
-                      }`}
-                      disabled={submitting}
-                    />
-                    {errors.imageValue && (
-                      <p className="mt-1 text-sm text-rose-600">{errors.imageValue}</p>
-                    )}
-                    <p className="mt-1 text-xs text-slate-500">
-                      {values.imageType === 'url' && '请输入完整的图片URL，必须以.jpg、.png等图片格式结尾。'}
-                      {values.imageType === 'iconfont' && '请输入CSS类名，如"icon-home"。'}
-                      {values.imageType === 'emoji' && '请输入emoji字符。'}
-                    </p>
-                  </div>
-                )}
-
-                {/* Image Preview */}
-                {values.imageType && values.imageValue && (
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">
-                      预览
-                    </label>
-                    <div className="flex items-center gap-4 p-4 border border-slate-200 rounded-lg bg-slate-50">
-                      <div className="flex items-center justify-center w-16 h-16 bg-white rounded border border-slate-200">
-                        {values.imageType === 'url' && (
-                          <img
-                            src={values.imageValue}
-                            alt="预览"
-                            className="w-full h-full object-cover rounded"
-                            onError={(e) => {
-                              e.currentTarget.style.display = 'none'
-                              e.currentTarget.nextElementSibling?.classList.remove('hidden')
-                            }}
-                          />
-                        )}
-                        {values.imageType === 'url' && (
-                          <div className="hidden text-center text-xs text-slate-500">
-                            加载失败
-                          </div>
-                        )}
-                        {values.imageType === 'iconfont' && (
-                          <i className={`iconfont ${values.imageValue} text-3xl cursor-pointer text-slate-600 hover:text-5xl transition-all`}></i>
-                        )}
-                        {values.imageType === 'emoji' && (
-                          <span className="text-2xl">{values.imageValue}</span>
-                        )}
-                      </div>
-                      <div className="text-sm text-slate-600">
-                        <p className="font-medium">类型: {values.imageType}</p>
-                        <p className="text-xs text-slate-500 mt-1">
-                          {values.imageType === 'url' && '图片URL'}
-                          {values.imageType === 'iconfont' && '图标字体'}
-                          {values.imageType === 'emoji' && 'Emoji字符'}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-          </form>
-  )
-}
-
-const SpeakerWaveIcon = ({ className }: { className?: string }) => (
-  <svg
-    aria-hidden="true"
-    className={className}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth={1.6}
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path
-      d="M5.5 9.5H8l4.5-3v11l-4.5-3H5.5a1.5 1.5 0 0 1-1.5-1.5v-2a1.5 1.5 0 0 1 1.5-1.5z"
-      fill="currentColor"
-      stroke="none"
-    />
-    <path d="M16 10a2 2 0 0 1 0 4" />
-    <path d="M18.5 8a4.5 4.5 0 0 1 0 8" />
-  </svg>
-)
-
-const StopIcon = ({ className }: { className?: string }) => (
-  <svg aria-hidden="true" className={className} viewBox="0 0 24 24" fill="currentColor">
-    <rect x="6" y="6" width="12" height="12" rx="2" />
-  </svg>
-)
-
-export default WordsPage
+export default WordsPage;

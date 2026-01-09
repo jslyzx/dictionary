@@ -1,4 +1,5 @@
 import axios, { type AxiosError, type AxiosInstance, type AxiosRequestConfig, type AxiosResponse } from 'axios'
+import type { Word } from '../types/word'
 
 export interface ApiError {
   message: string
@@ -34,19 +35,6 @@ export const request = async <T>(config: AxiosRequestConfig): Promise<T> => {
   return response.data
 }
 
-export interface Word {
-  id: number
-  word: string
-  phonetic: string
-  meaning: string
-  pronunciation1: string | null
-  pronunciation2: string | null
-  pronunciation3: string | null
-  notes: string | null
-  createdAt: string
-  difficulty: number
-  isMastered: boolean
-}
 
 export interface PaginatedResult<T> {
   items: T[]

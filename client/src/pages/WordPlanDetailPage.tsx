@@ -1,98 +1,104 @@
-import { useState, useEffect } from 'react'
-import { useParams, Link, useNavigate } from 'react-router-dom'
-import type { WordPlan, WordPlanWord } from '../types/wordPlan'
-import { getWordPlan, removeWordFromPlan, addWordToPlan } from '../services/wordPlans'
-import EnhancedWordSelector from '../components/EnhancedWordSelector'
+import { useState, useEffect } from "react";
+import { useParams, Link, useNavigate } from "react-router-dom";
+import type { WordPlan, WordPlanWord } from "../types/wordPlan";
+import {
+  getWordPlan,
+  removeWordFromPlan,
+  addWordToPlan,
+} from "../services/wordPlans";
+import EnhancedWordSelector from "../components/EnhancedWordSelector";
 
 const WordPlanDetailPage = () => {
-  const { id } = useParams<{ id: string }>()
-  const navigate = useNavigate()
-  const [wordPlan, setWordPlan] = useState<WordPlan | null>(null)
-  const [words, setWords] = useState<WordPlanWord[]>([])
-  const [loading, setLoading] = useState(true)
-  const [filter, setFilter] = useState<'all' | 'learned' | 'unlearned'>('all')
-  const [searchTerm, setSearchTerm] = useState('')
-  const [showAddWordsModal, setShowAddWordsModal] = useState(false)
-  const [selectedWordIds, setSelectedWordIds] = useState<Set<number>>(new Set())
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const [wordPlan, setWordPlan] = useState<WordPlan | null>(null);
+  const [words, setWords] = useState<WordPlanWord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<"all" | "learned" | "unlearned">("all");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [showAddWordsModal, setShowAddWordsModal] = useState(false);
+  const [selectedWordIds, setSelectedWordIds] = useState<Set<number>>(
+    new Set()
+  );
 
   useEffect(() => {
-    fetchWordPlanDetail()
-  }, [id])
+    fetchWordPlanDetail();
+  }, [id]);
 
   const fetchWordPlanDetail = async () => {
-    if (!id) return
-    
+    if (!id) return;
+
     try {
       // 强制刷新，清除任何缓存数据
-      setWords([])
-      setWordPlan(null)
-      
-      const plan = await getWordPlan(parseInt(id))
-      console.log('API返回的计划数据:', plan)
-      console.log('计划中的单词数据:', plan.words)
+      setWords([]);
+      setWordPlan(null);
+
+      const plan = await getWordPlan(parseInt(id));
+      console.log("API返回的计划数据:", plan);
+      console.log("计划中的单词数据:", plan.words);
       if (plan.words && plan.words.length > 0) {
-        console.log('第一个单词的完整结构:', plan.words[0])
-        console.log('第一个单词的word字段:', plan.words[0].word)
+        console.log("第一个单词的完整结构:", plan.words[0]);
+        console.log("第一个单词的word字段:", plan.words[0].word);
       }
-      setWordPlan(plan)
-      setWords(plan.words || [])
+      setWordPlan(plan);
+      setWords(plan.words || []);
     } catch (error) {
-      console.error('获取计划详情失败:', error)
+      console.error("获取计划详情失败:", error);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleRemoveWord = async (wordId: number) => {
-    if (!confirm('确定要从计划中移除这个单词吗？')) {
-      return
+    if (!confirm("确定要从计划中移除这个单词吗？")) {
+      return;
     }
 
-    if (!id) return
+    if (!id) return;
 
     try {
-      await removeWordFromPlan(parseInt(id), wordId)
-      fetchWordPlanDetail()
+      await removeWordFromPlan(parseInt(id), wordId);
+      fetchWordPlanDetail();
     } catch (error) {
-      console.error('移除单词失败:', error)
-      alert('移除单词失败')
+      console.error("移除单词失败:", error);
+      alert("移除单词失败");
     }
-  }
+  };
 
   const handleWordSelect = (wordId: number) => {
-    const newSelectedIds = new Set(selectedWordIds)
+    const newSelectedIds = new Set(selectedWordIds);
     if (newSelectedIds.has(wordId)) {
-      newSelectedIds.delete(wordId)
+      newSelectedIds.delete(wordId);
     } else {
-      newSelectedIds.add(wordId)
+      newSelectedIds.add(wordId);
     }
-    setSelectedWordIds(newSelectedIds)
-  }
+    setSelectedWordIds(newSelectedIds);
+  };
 
   const handleWordsBulkSelect = (wordIds: number[]) => {
-    const newSelectedIds = new Set(selectedWordIds)
-    wordIds.forEach(id => {
-      newSelectedIds.add(id)
-    })
-    setSelectedWordIds(newSelectedIds)
-  }
+    const newSelectedIds = new Set(selectedWordIds);
+    wordIds.forEach((id) => {
+      newSelectedIds.add(id);
+    });
+    setSelectedWordIds(newSelectedIds);
+  };
 
   const handleAddWords = async () => {
-    if (!id || selectedWordIds.size === 0) return
+    if (!id || selectedWordIds.size === 0) return;
 
     try {
       // 逐个添加单词
       for (const wordId of selectedWordIds) {
-        await addWordToPlan(parseInt(id), wordId)
+        await addWordToPlan(parseInt(id), wordId);
       }
-      setShowAddWordsModal(false)
-      setSelectedWordIds(new Set())
-      fetchWordPlanDetail()
+      setShowAddWordsModal(false);
+      setSelectedWordIds(new Set());
+      fetchWordPlanDetail();
     } catch (error) {
-      console.error('添加单词失败:', error)
-      alert('添加单词失败')
+      console.error("添加单词失败:", error);
+      alert("添加单词失败");
     }
-  }
+  };
 
   if (!id) {
     return (
@@ -104,30 +110,36 @@ const WordPlanDetailPage = () => {
           </Link>
         </div>
       </div>
-    )
+    );
   }
 
   const handleStartLearning = () => {
-    if (!id) return
-    const learningWindow = window.open(`/learning?planId=${id}`, '_blank', 'width=1200,height=800')
+    if (!id) return;
+    const learningWindow = window.open(
+      `/learning?planId=${id}`,
+      "_blank",
+      "width=1200,height=800"
+    );
     if (learningWindow) {
-      learningWindow.focus()
+      learningWindow.focus();
     }
-  }
+  };
 
-  const filteredWords = words.filter(word => {
-    console.log('过滤单词:', word)
-    console.log('单词word字段:', word.word)
-    const matchesSearch = !searchTerm || 
-                         word.word?.word?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         word.word?.meaning?.includes(searchTerm)
-    
-    const matchesFilter = filter === 'all' ||
-                         (filter === 'learned' && word.isLearned) ||
-                         (filter === 'unlearned' && !word.isLearned)
-    
-    return matchesSearch && matchesFilter
-  })
+  const filteredWords = words.filter((word) => {
+    console.log("过滤单词:", word);
+    console.log("单词word字段:", word.word);
+    const matchesSearch =
+      !searchTerm ||
+      word.word?.word?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      word.word?.meaning?.includes(searchTerm);
+
+    const matchesFilter =
+      filter === "all" ||
+      (filter === "learned" && word.isLearned) ||
+      (filter === "unlearned" && !word.isLearned);
+
+    return matchesSearch && matchesFilter;
+  });
 
   if (loading) {
     return (
@@ -137,7 +149,7 @@ const WordPlanDetailPage = () => {
           <p className="mt-4 text-slate-600">加载中...</p>
         </div>
       </div>
-    )
+    );
   }
 
   if (!wordPlan) {
@@ -150,7 +162,7 @@ const WordPlanDetailPage = () => {
           </Link>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -159,10 +171,15 @@ const WordPlanDetailPage = () => {
         <div className="mb-8">
           <div className="flex items-center justify-between">
             <div>
-              <Link to="/word-plans" className="text-blue-600 hover:text-blue-700 mb-4 inline-block">
+              <Link
+                to="/word-plans"
+                className="text-blue-600 hover:text-blue-700 mb-4 inline-block"
+              >
                 ← 返回计划列表
               </Link>
-              <h1 className="text-3xl font-bold text-slate-900">{wordPlan.name}</h1>
+              <h1 className="text-3xl font-bold text-slate-900">
+                {wordPlan.name}
+              </h1>
               {wordPlan.description && (
                 <p className="text-slate-600 mt-2">{wordPlan.description}</p>
               )}
@@ -181,7 +198,9 @@ const WordPlanDetailPage = () => {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-6">
             <div className="bg-white rounded-lg p-4 shadow-sm border border-slate-200">
               <div className="text-sm text-slate-600">总单词数</div>
-              <div className="text-2xl font-bold text-slate-900">{words.length}</div>
+              <div className="text-2xl font-bold text-slate-900">
+                {words.length}
+              </div>
             </div>
             <div className="bg-white rounded-lg p-4 shadow-sm border border-slate-200">
               <div className="text-sm text-slate-600">已学习</div>
@@ -218,7 +237,9 @@ const WordPlanDetailPage = () => {
                 />
                 <select
                   value={filter}
-                  onChange={(e) => setFilter(e.target.value as 'all' | 'learned' | 'unlearned')}
+                  onChange={(e) =>
+                    setFilter(e.target.value as "all" | "learned" | "unlearned")
+                  }
                   className="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="all">全部单词</option>
@@ -239,12 +260,15 @@ const WordPlanDetailPage = () => {
           <div className="divide-y divide-slate-200">
             {filteredWords.map((word) => (
               <div key={word.id} className="p-4 hover:bg-slate-50">
-                {console.log('渲染单词项:', word)}
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-3">
-                      <div className="text-lg font-medium text-slate-900">{word.word?.word}</div>
-                      <div className="text-slate-500">{word.word?.phonetic}</div>
+                      <div className="text-lg font-medium text-slate-900">
+                        {word.word?.word}
+                      </div>
+                      <div className="text-slate-500">
+                        {word.word?.phonetic}
+                      </div>
                       {word.isLearned !== undefined && word.isLearned && (
                         <span className="px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
                           已学习
@@ -256,7 +280,9 @@ const WordPlanDetailPage = () => {
                         </span>
                       )}
                     </div>
-                    <div className="text-slate-600 mt-1">{word.word?.meaning}</div>
+                    <div className="text-slate-600 mt-1">
+                      {word.word?.meaning}
+                    </div>
                     {word.errorCount !== undefined && word.errorCount > 0 && (
                       <div className="text-red-600 text-sm mt-1">
                         错误次数：{word.errorCount}
@@ -287,8 +313,18 @@ const WordPlanDetailPage = () => {
           {filteredWords.length === 0 && (
             <div className="p-8 text-center text-slate-500">
               <div className="mb-4">
-                <svg className="mx-auto h-12 w-12 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                <svg
+                  className="mx-auto h-12 w-12 text-slate-400"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                  />
                 </svg>
               </div>
               <p>没有找到匹配的单词</p>
@@ -308,7 +344,7 @@ const WordPlanDetailPage = () => {
         />
       )}
     </div>
-  )
-}
+  );
+};
 
-export default WordPlanDetailPage
+export default WordPlanDetailPage;

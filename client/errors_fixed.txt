@@ -1,0 +1,39 @@
+src/components/learning/SpellingModeNew.tsx(11,41): error TS6133: 'onSkip' is declared but its value is never read.
+src/components/learning/SpellingModeNew.tsx(74,9): error TS6133: 'handleClear' is declared but its value is never read.
+src/components/SentenceDetail.tsx(135,13): error TS6133: 'updatedToken' is declared but its value is never read.
+src/components/SentenceTokenizer.tsx(2,26): error TS2459: Module '"../services/words"' declares 'Word' locally, but it is not exported.
+src/components/words/WordFormModal.tsx(244,35): error TS2345: Argument of type '{ word: string; phonetic: string; meaning: string; pronunciationUrl: string; difficulty: number; isMastered: boolean; notes: string; sentence: string; pronunciationRules: number[]; hasImage: boolean; imageType: "url" | ... 2 more ... | null; imageValue: string | null; }' is not assignable to parameter of type 'UpsertWordPayload'.
+  Types of property 'difficulty' are incompatible.
+    Type 'number' is not assignable to type 'WordDifficulty'.
+src/components/words/WordFormModal.tsx(247,44): error TS2345: Argument of type '{ word: string; phonetic: string; meaning: string; pronunciationUrl: string; difficulty: number; isMastered: boolean; notes: string; sentence: string; pronunciationRules: number[]; hasImage: boolean; imageType: "url" | ... 2 more ... | null; imageValue: string | null; }' is not assignable to parameter of type 'UpsertWordPayload'.
+  Types of property 'difficulty' are incompatible.
+    Type 'number' is not assignable to type 'WordDifficulty'.
+src/pages/DictionaryDetailPage.tsx(1545,11): error TS2554: Expected 2 arguments, but got 1.
+src/pages/WordDetailPage.tsx(3,36): error TS2459: Module '"../services/words"' declares 'Word' locally, but it is not exported.
+src/pages/WordDetailPage.tsx(48,35): error TS2339: Property 'word' does not exist on type 'WordDetail'.
+src/pages/WordDetailPage.tsx(119,55): error TS2339: Property 'difficulty' does not exist on type 'WordDetail'.
+src/pages/WordDetailPage.tsx(120,49): error TS2339: Property 'isMastered' does not exist on type 'WordDetail'.
+src/pages/WordDetailPage.tsx(177,79): error TS2339: Property 'word' does not exist on type 'WordDetail'.
+src/pages/WordDetailPage.tsx(178,25): error TS2339: Property 'phonetic' does not exist on type 'WordDetail'.
+src/pages/WordDetailPage.tsx(179,70): error TS2339: Property 'phonetic' does not exist on type 'WordDetail'.
+src/pages/WordDetailPage.tsx(190,37): error TS2339: Property 'word' does not exist on type 'WordDetail'.
+src/pages/WordDetailPage.tsx(213,23): error TS2339: Property 'pronunciation1' does not exist on type 'WordDetail'.
+src/pages/WordDetailPage.tsx(216,52): error TS2339: Property 'pronunciation1' does not exist on type 'WordDetail'.
+src/pages/WordDetailPage.tsx(233,52): error TS2339: Property 'meaning' does not exist on type 'WordDetail'.
+src/pages/WordDetailPage.tsx(236,21): error TS2339: Property 'sentence' does not exist on type 'WordDetail'.
+src/pages/WordDetailPage.tsx(239,61): error TS2339: Property 'sentence' does not exist on type 'WordDetail'.
+src/pages/WordDetailPage.tsx(243,21): error TS2339: Property 'notes' does not exist on type 'WordDetail'.
+src/pages/WordDetailPage.tsx(246,54): error TS2339: Property 'notes' does not exist on type 'WordDetail'.
+src/pages/WordDetailPage.tsx(297,71): error TS2339: Property 'createdAt' does not exist on type 'WordDetail'.
+src/pages/WordDetailPage.tsx(340,18): error TS2339: Property 'pronunciation2' does not exist on type 'WordDetail'.
+src/pages/WordDetailPage.tsx(340,41): error TS2339: Property 'pronunciation3' does not exist on type 'WordDetail'.
+src/pages/WordDetailPage.tsx(344,23): error TS2339: Property 'pronunciation2' does not exist on type 'WordDetail'.
+src/pages/WordDetailPage.tsx(347,52): error TS2339: Property 'pronunciation2' does not exist on type 'WordDetail'.
+src/pages/WordDetailPage.tsx(358,23): error TS2339: Property 'pronunciation3' does not exist on type 'WordDetail'.
+src/pages/WordDetailPage.tsx(361,52): error TS2339: Property 'pronunciation3' does not exist on type 'WordDetail'.
+src/pages/WordPlanDetailPage.tsx(242,17): error TS2322: Type 'void' is not assignable to type 'ReactNode'.
+src/pages/WordsPage.tsx(270,9): error TS2451: Cannot redeclare block-scoped variable 'handleSearchSubmit'.
+src/pages/WordsPage.tsx(277,9): error TS2451: Cannot redeclare block-scoped variable 'handleSearchSubmit'.
+src/pages/WordsPage.tsx(323,36): error TS6133: 'word' is declared but its value is never read.
+src/services/words.ts(77,5): error TS2322: Type 'string | null' is not assignable to type 'string'.
+  Type 'null' is not assignable to type 'string'.
