@@ -1,11 +1,15 @@
 import { useState, useEffect } from "react";
-import type { WordPlanWord } from "../../types/wordPlan";
+import type { Word } from "../../types/word";
 
 interface SpellingModeProps {
-  word: WordPlanWord;
+  word: Word;
   onAnswer: (isCorrect: boolean, userAnswer: string) => void;
-  onSkip: () => void;
+  onSkip?: () => void;
   progress: { current: number; total: number; percentage: number };
+  settings?: any;
+  stats?: any;
+  feedback?: any;
+  onEnd?: () => void;
 }
 
 const SpellingMode = ({ word, onAnswer }: SpellingModeProps) => {
@@ -17,7 +21,20 @@ const SpellingMode = ({ word, onAnswer }: SpellingModeProps) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [showErrorOverlay, setShowErrorOverlay] = useState(false);
 
-  const targetWord = word.word?.word || "testword";
+  // Robustly extract the effective word object.
+  // If word is a nested wrapper (e.g. WordPlanWord), word.word will be an object.
+  // If word is a flat Word object, word.word will be a string.
+  let effectiveWord = word;
+  if (word.word && typeof word.word === "object") {
+    // It's a nested structure, unwrap it
+    effectiveWord = word.word as any;
+  }
+
+  // Ensure targetWordString is a string
+  const targetWordString =
+    typeof effectiveWord.word === "string" ? effectiveWord.word : "error";
+
+  const targetWord = targetWordString;
   const correctAnswer = targetWord.toLowerCase();
 
   useEffect(() => {
@@ -157,420 +174,216 @@ const SpellingMode = ({ word, onAnswer }: SpellingModeProps) => {
   };
 
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        height: "100%",
-        width: "100%",
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          gap: "3rem",
-          alignItems: "center",
-          width: "100%",
-          maxWidth: "900px",
-          padding: "0 2rem",
-        }}
-      >
-        {/* 左侧：输入区域 */}
-        <div style={{ flex: 1, textAlign: "center" }}>
-          <div
-            style={{
-              background: "#fffbeb",
-              border: "1px solid #f6e05e",
-              borderRadius: "16px",
-              boxShadow: "0 8px 24px rgba(0,0,0,0.06)",
-              padding: "1.5rem",
-              marginBottom: "2rem",
-            }}
-          >
-            <div
-              style={{
-                fontSize: "2rem",
-                fontWeight: "600",
-                marginBottom: "1rem",
-                color: "#2d3748",
-                display: "flex",
-                justifyContent: "center",
-                gap: "0.5rem",
-              }}
-            >
-              {targetWord.split("").map((_, index: number) => (
-                <div
-                  key={index}
-                  style={{
-                    width: "40px",
-                    height: "50px",
-                    borderBottom: "3px solid #f6e05e",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: "1.5rem",
-                    fontWeight: "600",
-                    color: userAnswer[index] ? "#2d3748" : "#a0aec0",
-                  }}
-                >
-                  {userAnswer[index] || ""}
-                </div>
-              ))}
-              <button
-                onClick={handleBackspace}
-                disabled={showResult || userAnswer.length === 0}
-                style={{
-                  marginLeft: "0.75rem",
-                  width: "40px",
-                  height: "40px",
-                  borderRadius: "20px",
-                  border: "2px solid #d69e2e",
-                  background: "#f6e05e",
-                  color: "#1a202c",
-                  fontWeight: 700,
-                  cursor: userAnswer.length === 0 ? "not-allowed" : "pointer",
-                }}
-              >
-                ×
-              </button>
-            </div>
-
-            {!showResult && (
-              <>
-                <div
-                  style={{
-                    fontSize: "1.375rem",
-                    color: "#1f2937",
-                    marginBottom: "1rem",
-                    fontWeight: 600,
-                  }}
-                >
-                  {word.word?.meaning || "测试释义"}
-                </div>
-                <div
-                  style={{
-                    fontSize: "1.125rem",
-                    color: "#374151",
-                    marginBottom: "1rem",
-                  }}
-                >
-                  {word.word?.phonetic || "/tɛst/"}
-                </div>
-              </>
+    <div className="min-h-screen w-full flex flex-col items-center justify-center bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 p-4">
+      <div className="w-full max-w-2xl flex flex-col items-center gap-8">
+        {/* 1. Image Area */}
+        <div className="relative group animate-fade-in-up">
+          <div className="absolute -inset-1 bg-gradient-to-r from-yellow-400 to-pink-600 rounded-2xl blur opacity-25 group-hover:opacity-75 transition duration-1000 group-hover:duration-200"></div>
+          <div className="relative bg-white rounded-2xl p-6 shadow-xl flex items-center justify-center w-64 h-64 border-4 border-white/50 backdrop-blur-sm">
+            {/* Fix: Use word.imageValue and lowercase letters */}
+            {effectiveWord.hasImage && effectiveWord.imageValue ? (
+              effectiveWord.imageType === "emoji" ? (
+                <span className="text-8xl animate-bounce-slow">
+                  {effectiveWord.imageValue}
+                </span>
+              ) : effectiveWord.imageType === "url" ? (
+                <img
+                  src={effectiveWord.imageValue}
+                  alt={effectiveWord.word}
+                  className="w-full h-full object-contain rounded-lg"
+                />
+              ) : (
+                <span className="text-8xl">📚</span>
+              )
+            ) : (
+              <span className="text-8xl">🎨</span>
             )}
-
-            <button
-              onClick={playPronunciation}
-              disabled={isPlaying}
-              style={{
-                background: "rgba(255, 255, 255, 0.2)",
-                border: "1px solid rgba(255, 255, 255, 0.3)",
-                borderRadius: "50%",
-                width: "50px",
-                height: "50px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                cursor: "pointer",
-                transition: "all 0.3s ease",
-                margin: "0 auto",
-              }}
-            >
-              {isPlaying ? "🔊" : "🔈"}
-            </button>
           </div>
-
-          {showResult && isCorrect && (
-            <div
-              style={{
-                padding: "1rem",
-                borderRadius: "12px",
-                margin: "1rem 0",
-                fontWeight: "600",
-                background: "linear-gradient(135deg, #48bb78 0%, #38a169 100%)",
-                color: "white",
-              }}
-            >
-              ✓ 正确！
-            </div>
-          )}
-          {null}
         </div>
 
-        {/* 右侧：字母按钮 */}
-        <div style={{ flex: 1 }}>
-          <div style={{ marginBottom: "2rem" }}>
-            <div
-              style={{
-                fontSize: "1.125rem",
-                fontWeight: "600",
-                marginBottom: "1rem",
-                color: "#2d3748",
-              }}
-            >
-              选择字母拼写单词：
-            </div>
+        {/* 2. Word Info & Sound */}
+        <div className="flex flex-col items-center gap-2 text-white animate-fade-in-up delay-100">
+          {/* Meaning commented out as per user request */}
+          {/* {!showResult && (
+                 <>
+                    <div className="text-2xl font-bold bg-white/20 px-6 py-2 rounded-full backdrop-blur-md border border-white/30 shadow-lg">
+                        {effectiveWord.meaning}
+                    </div>
+                 </>
+             )} */}
 
-            <div>
+          {/* Pronunciation */}
+          <button
+            onClick={playPronunciation}
+            disabled={isPlaying}
+            className="mt-4 w-16 h-16 bg-yellow-400 hover:bg-yellow-300 text-yellow-900 rounded-full flex items-center justify-center shadow-lg transform transition active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed border-4 border-yellow-200"
+          >
+            {isPlaying ? (
+              <span className="text-3xl animate-pulse">🔊</span>
+            ) : (
+              <span className="text-3xl">🔈</span>
+            )}
+          </button>
+        </div>
+
+        {/* 3. Spelling Input Slots */}
+        <div className="flex flex-col items-center gap-6 w-full animate-fade-in-up delay-200">
+          <div className="flex flex-wrap justify-center gap-2 md:gap-3">
+            {targetWord.split("").map((_, index) => (
               <div
-                style={{
-                  fontSize: "0.875rem",
-                  color: "#4a5568",
-                  marginBottom: "0.5rem",
-                }}
+                key={index}
+                className={`
+                            w-12 h-14 md:w-14 md:h-16 
+                            rounded-xl border-b-4 
+                            flex items-center justify-center 
+                            text-3xl font-bold 
+                            transition-all duration-300
+                            ${
+                              userAnswer[index]
+                                ? "bg-white text-indigo-600 border-indigo-200 transform -translate-y-1 shadow-md"
+                                : "bg-white/30 text-white/50 border-white/20"
+                            }
+                        `}
               >
-                可选字母：
+                {/* Ensure input slot shows lowercase too if desired, usually input matches keyboard */}
+                {userAnswer[index] ? userAnswer[index].toLowerCase() : ""}
               </div>
-              <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+            ))}
+          </div>
+
+          {/* Delete Button - Independent Row */}
+          <button
+            onClick={handleBackspace}
+            disabled={showResult || userAnswer.length === 0}
+            className="
+                    flex items-center gap-2 px-6 py-2 
+                    bg-rose-400 hover:bg-rose-500 
+                    text-white font-bold rounded-full 
+                    shadow-lg border-b-4 border-rose-600 active:border-b-0 active:translate-y-1
+                    disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:border-b-0
+                    transition-all
+                "
+          >
+            <span>⌫</span>
+            <span>回退</span>
+          </button>
+        </div>
+
+        {/* 4. Letter Keyboard */}
+        <div className="w-full bg-white/10 backdrop-blur-md rounded-3xl p-6 border border-white/20 shadow-2xl animate-fade-in-up delay-300">
+          <div className="text-white/80 font-medium mb-4 text-center">
+            选择字母拼写单词
+          </div>
+          {!showResult ? (
+            <>
+              <div className="grid grid-cols-5 gap-3 md:gap-4 justify-items-center">
                 {availableLetters.map((letter, index) => (
                   <button
-                    key={index}
+                    key={`${letter}-${index}`}
                     onClick={() => handleLetterClick(letter)}
                     disabled={showResult}
-                    style={{
-                      width: "50px",
-                      height: "50px",
-                      background: "#f6e05e",
-                      border: "2px solid #d69e2e",
-                      borderRadius: "10px",
-                      fontSize: "1.125rem",
-                      fontWeight: "700",
-                      color: "#1a202c",
-                      cursor: "pointer",
-                      transition: "all 0.2s ease",
-                      boxShadow: "0 2px 0 #d69e2e",
-                    }}
+                    className="
+                                w-12 h-12 md:w-14 md:h-14
+                                bg-gradient-to-b from-white to-blue-50
+                                hover:from-blue-100 hover:to-blue-200
+                                text-indigo-600 text-xl font-bold
+                                rounded-xl shadow-md border-b-4 border-blue-200
+                                active:border-b-0 active:translate-y-1 active:shadow-none
+                                transition-all
+                            "
                   >
-                    {letter}
+                    {letter.toLowerCase()}
                   </button>
                 ))}
               </div>
-            </div>
-          </div>
+            </>
+          ) : (
+            <div className="flex flex-col items-center gap-6 py-4">
+              {isCorrect ? (
+                <div className="text-4xl font-bold text-green-400 animate-bounce">
+                  🎉 太棒了！
+                </div>
+              ) : (
+                <div className="text-4xl font-bold text-rose-400">
+                  💪 再接再厉
+                </div>
+              )}
 
-          {!showResult && <div style={{ height: "2rem" }}></div>}
-
-          {showResult && (
-            <div style={{ textAlign: "center" }}>
               <button
                 onClick={nextWord}
-                style={{
-                  padding: "0.75rem 2rem",
-                  background:
-                    "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "12px",
-                  fontSize: "1rem",
-                  fontWeight: "600",
-                  cursor: "pointer",
-                }}
+                className="
+                           px-8 py-4 bg-green-500 hover:bg-green-400 
+                           text-white text-xl font-bold rounded-2xl
+                           shadow-xl border-b-4 border-green-700
+                           active:border-b-0 active:translate-y-1
+                           transition-all
+                        "
               >
-                下一个单词
+                挑战下一个 →
               </button>
             </div>
           )}
         </div>
       </div>
+
+      {/* Error Overlay */}
       {showErrorOverlay && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(0,0,0,0.4)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 50,
-          }}
-        >
-          <div
-            style={{
-              width: "min(820px, 92vw)",
-              background: "white",
-              borderRadius: "20px",
-              boxShadow: "0 16px 40px rgba(0,0,0,0.2)",
-              padding: "1.75rem",
-            }}
-          >
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: "1.25rem",
-                alignItems: "center",
-              }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                {word.word?.hasImage && word.word?.imageValue ? (
-                  word.word.imageType === "emoji" ? (
-                    <span style={{ fontSize: "4rem" }}>
-                      {word.word.imageValue}
-                    </span>
-                  ) : word.word.imageType === "url" ? (
-                    <img
-                      src={word.word.imageValue || ""}
-                      alt={word.word?.word || ""}
-                      style={{ maxWidth: "300px", borderRadius: "12px" }}
-                    />
-                  ) : (
-                    <div style={{ fontSize: "3rem" }}>📚</div>
-                  )
-                ) : (
-                  <div style={{ fontSize: "3rem" }}>📚</div>
-                )}
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in">
+          <div className="w-[90vw] max-w-lg bg-white rounded-3xl shadow-2xl p-8 transform animate-scale-up">
+            <div className="flex flex-col items-center gap-6">
+              <div className="text-6xl animate-shake">😢</div>
+              <div className="text-center">
+                <h3 className="text-2xl font-bold text-slate-800 mb-2">
+                  拼写错误
+                </h3>
+                <p className="text-slate-500">
+                  别灰心，不仅仅是记住字母，更要记住发音哦！
+                </p>
               </div>
-              <div>
-                <div
-                  style={{
-                    fontSize: "2rem",
-                    fontWeight: 800,
-                    color: "#1f2937",
-                  }}
-                >
-                  {word.word?.word}
-                </div>
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.5rem",
-                    marginTop: "0.5rem",
-                  }}
-                >
-                  <div style={{ fontSize: "1.125rem", color: "#374151" }}>
-                    {word.word?.phonetic}
-                  </div>
+
+              <div className="w-full bg-slate-50 rounded-xl p-4 border border-slate-100">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm text-slate-400">正确拼写</span>
                   <button
                     onClick={playPronunciation}
-                    disabled={isPlaying}
-                    style={{
-                      background: "#fffbeb",
-                      border: "1px solid #f6e05e",
-                      borderRadius: "50%",
-                      width: "36px",
-                      height: "36px",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
+                    className="text-indigo-500 hover:text-indigo-600"
                   >
-                    {isPlaying ? "🔊" : "🔈"}
+                    🔊 播放
                   </button>
                 </div>
+                <div className="text-3xl font-bold text-indigo-600 text-center tracking-wider">
+                  {targetWord}
+                </div>
+                <div className="text-center text-slate-400 mt-1">
+                  {word.phonetic}
+                </div>
               </div>
-            </div>
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: "1.25rem",
-                marginTop: "1.5rem",
-              }}
-            >
-              <div
-                style={{
-                  background: "#f9fafb",
-                  border: "1px solid #e5e7eb",
-                  borderRadius: "12px",
-                  padding: "1rem",
-                }}
-              >
-                <div
-                  style={{
-                    fontSize: "0.95rem",
-                    color: "#6b7280",
-                    marginBottom: "0.5rem",
+
+              <div className="flex gap-4 w-full">
+                <button
+                  onClick={() => {
+                    setShowErrorOverlay(false);
+                    setShowResult(false);
+                    setIsCorrect(null);
+                    setAvailableLetters(generateSpellingLetters(targetWord));
+                    setUsedLetters([]);
+                    setUserAnswer("");
                   }}
+                  className="flex-1 py-3 bg-indigo-500 hover:bg-indigo-600 text-white font-bold rounded-xl shadow-lg border-b-4 border-indigo-700 active:border-b-0 active:translate-y-1 transition-all"
                 >
-                  释义：
-                </div>
-                <div
-                  style={{
-                    fontSize: "1.125rem",
-                    color: "#374151",
-                    marginBottom: "0.75rem",
+                  再试一次
+                </button>
+                <button
+                  onClick={() => {
+                    setShowErrorOverlay(false);
+                    setShowResult(true); // Show result to allow "Next Word"
+                    setIsCorrect(false); // Mark as wrong but allow proceed
                   }}
+                  className="px-6 py-3 text-slate-400 font-bold hover:text-slate-600 transition-colors"
                 >
-                  {word.word?.meaning}
-                </div>
-                <div
-                  style={{
-                    fontSize: "0.95rem",
-                    color: "#6b7280",
-                    marginBottom: "0.5rem",
-                  }}
-                >
-                  笔记：
-                </div>
-                {word.word?.notes ? (
-                  <div style={{ fontSize: "0.95rem", color: "#4b5563" }}>
-                    {word.word.notes}
-                  </div>
-                ) : (
-                  <div style={{ fontSize: "0.95rem", color: "#9ca3af" }}>
-                    暂无笔记
-                  </div>
-                )}
+                  跳过
+                </button>
               </div>
-              <div
-                style={{
-                  background: "#f9fafb",
-                  border: "1px solid #e5e7eb",
-                  borderRadius: "12px",
-                  padding: "1rem",
-                }}
-              >
-                <div
-                  style={{
-                    fontSize: "0.95rem",
-                    color: "#6b7280",
-                    marginBottom: "0.5rem",
-                  }}
-                >
-                  例句：
-                </div>
-                {word.word?.sentence ? (
-                  <div style={{ fontSize: "1.05rem", color: "#374151" }}>
-                    {word.word.sentence}
-                  </div>
-                ) : (
-                  <div style={{ fontSize: "0.95rem", color: "#9ca3af" }}>
-                    暂无例句
-                  </div>
-                )}
-              </div>
-            </div>
-            <div style={{ textAlign: "center", marginTop: "1.5rem" }}>
-              <button
-                onClick={() => {
-                  setShowErrorOverlay(false);
-                  setShowResult(false);
-                  setIsCorrect(null);
-                  setAvailableLetters(generateSpellingLetters(targetWord));
-                  setUsedLetters([]);
-                  setUserAnswer("");
-                }}
-                style={{
-                  padding: "0.75rem 2.25rem",
-                  background: "#f6e05e",
-                  color: "#1f2937",
-                  border: "2px solid #d69e2e",
-                  borderRadius: "9999px",
-                  fontSize: "1rem",
-                  fontWeight: 700,
-                }}
-              >
-                继续做题
-              </button>
             </div>
           </div>
         </div>
