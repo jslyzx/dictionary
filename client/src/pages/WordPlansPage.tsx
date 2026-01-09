@@ -89,7 +89,7 @@ const WordPlansPage = () => {
         dailyWordCount: formData.dailyWordCount,
         wordIds: Array.from(selectedWordIds)
       }
-      
+
       await createWordPlan(payload)
       setShowCreateModal(false)
       setShowAddWordsModal(false)
@@ -157,7 +157,7 @@ const WordPlansPage = () => {
 
   const handleStartLearning = (planId: number) => {
     // 打开新窗口进行学习
-    const learningWindow = window.open(`/learning?planId=${planId}`, '_blank', 'width=1200,height=800')
+    const learningWindow = window.open(`/learning.html?planId=${planId}`, '_blank', 'width=1200,height=800')
     if (learningWindow) {
       learningWindow.focus()
     }
@@ -219,11 +219,10 @@ const WordPlansPage = () => {
                       <p className="text-sm text-slate-600 mt-1">{plan.description}</p>
                     )}
                   </div>
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                    plan.status === 'active' 
-                      ? 'bg-green-100 text-green-800' 
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${plan.status === 'active'
+                      ? 'bg-green-100 text-green-800'
                       : 'bg-slate-100 text-slate-600'
-                  }`}>
+                    }`}>
                     {plan.status === 'active' ? '活跃' : '未激活'}
                   </span>
                 </div>
@@ -276,7 +275,7 @@ const WordPlansPage = () => {
                   <button
                     type="button"
                     onClick={() => handleStartLearning(plan.id)}
-                      className="flex-1 rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
+                    className="flex-1 rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
                   >
                     开始学习
                   </button>
@@ -327,7 +326,7 @@ const WordPlansPage = () => {
                   <input
                     type="text"
                     value={formData.name}
-                    onChange={(e) => setFormData({...formData, name: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     className="w-full rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="例如：基础词汇计划"
                   />
@@ -339,7 +338,7 @@ const WordPlansPage = () => {
                   </label>
                   <textarea
                     value={formData.description || ''}
-                    onChange={(e) => setFormData({...formData, description: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                     className="w-full rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     rows={3}
                     placeholder="描述这个计划的学习目标和内容"
@@ -353,7 +352,7 @@ const WordPlansPage = () => {
                     </label>
                     <select
                       value={formData.mode}
-                      onChange={(e) => setFormData({...formData, mode: e.target.value as 'flash-card' | 'spelling'})}
+                      onChange={(e) => setFormData({ ...formData, mode: e.target.value as 'flash-card' | 'spelling' })}
                       className="w-full rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
                       <option value="flash-card">闪卡模式</option>
@@ -368,7 +367,7 @@ const WordPlansPage = () => {
                     <input
                       type="number"
                       value={formData.targetWordCount || 10}
-                      onChange={(e) => setFormData({...formData, targetWordCount: parseInt(e.target.value) || 10})}
+                      onChange={(e) => setFormData({ ...formData, targetWordCount: parseInt(e.target.value) || 10 })}
                       className="w-full rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                       min="5"
                       max="1000"
@@ -383,7 +382,7 @@ const WordPlansPage = () => {
                   <input
                     type="number"
                     value={formData.dailyWordCount || 5}
-                    onChange={(e) => setFormData({...formData, dailyWordCount: parseInt(e.target.value) || 5})}
+                    onChange={(e) => setFormData({ ...formData, dailyWordCount: parseInt(e.target.value) || 5 })}
                     className="w-full rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     min="1"
                     max="50"
@@ -403,7 +402,7 @@ const WordPlansPage = () => {
                       添加单词
                     </button>
                   </div>
-                  
+
                   {selectedWordIds.size > 0 && (
                     <div className="bg-slate-50 rounded-lg p-3">
                       <div className="text-sm text-slate-600 mb-2">已选择的单词：</div>

@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import type { Word } from "../../types/word";
+import type { WordPlanWord } from "../../types/wordPlan";
 
 interface SpellingModeProps {
-  word: Word;
+  word: Word | WordPlanWord;
   onAnswer: (isCorrect: boolean, userAnswer: string) => void;
   onSkip?: () => void;
   progress: { current: number; total: number; percentage: number };
@@ -24,15 +25,15 @@ const SpellingMode = ({ word, onAnswer }: SpellingModeProps) => {
   // Robustly extract the effective word object.
   // If word is a nested wrapper (e.g. WordPlanWord), word.word will be an object.
   // If word is a flat Word object, word.word will be a string.
-  let effectiveWord = word;
-  if (word.word && typeof word.word === "object") {
+  let effectiveWord: any = word;
+  if (word && "word" in word && typeof word.word === "object") {
     // It's a nested structure, unwrap it
-    effectiveWord = word.word as any;
+    effectiveWord = word.word;
   }
 
   // Ensure targetWordString is a string
   const targetWordString =
-    typeof effectiveWord.word === "string" ? effectiveWord.word : "error";
+    typeof effectiveWord.word === "string" ? effectiveWord.word : "";
 
   const targetWord = targetWordString;
   const correctAnswer = targetWord.toLowerCase();
@@ -229,7 +230,7 @@ const SpellingMode = ({ word, onAnswer }: SpellingModeProps) => {
         {/* 3. Spelling Input Slots */}
         <div className="flex flex-col items-center gap-6 w-full animate-fade-in-up delay-200">
           <div className="flex flex-wrap justify-center gap-2 md:gap-3">
-            {targetWord.split("").map((_, index) => (
+            {targetWord.split("").map((_: string, index: number) => (
               <div
                 key={index}
                 className={`
@@ -238,11 +239,10 @@ const SpellingMode = ({ word, onAnswer }: SpellingModeProps) => {
                             flex items-center justify-center 
                             text-3xl font-bold 
                             transition-all duration-300
-                            ${
-                              userAnswer[index]
-                                ? "bg-white text-indigo-600 border-indigo-200 transform -translate-y-1 shadow-md"
-                                : "bg-white/30 text-white/50 border-white/20"
-                            }
+                            ${userAnswer[index]
+                    ? "bg-white text-indigo-600 border-indigo-200 transform -translate-y-1 shadow-md"
+                    : "bg-white/30 text-white/50 border-white/20"
+                  }
                         `}
               >
                 {/* Ensure input slot shows lowercase too if desired, usually input matches keyboard */}
@@ -355,7 +355,7 @@ const SpellingMode = ({ word, onAnswer }: SpellingModeProps) => {
                   {targetWord}
                 </div>
                 <div className="text-center text-slate-400 mt-1">
-                  {word.phonetic}
+                  {(effectiveWord as any).phonetic}
                 </div>
               </div>
 

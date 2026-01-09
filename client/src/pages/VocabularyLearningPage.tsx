@@ -46,7 +46,7 @@ const VocabularyLearningPage = () => {
         }
 
         setCurrentWord({
-          id: String(wordData.id),
+          id: Number(wordData.id),
           word: wordData.word as string,
           phonetic: wordData.phonetic,
           meaning: wordData.meaning,
@@ -90,7 +90,7 @@ const VocabularyLearningPage = () => {
           }
 
           setCurrentWord({
-            id: String(wordData.id),
+            id: Number(wordData.id),
             word: wordData.word as string,
             phonetic: wordData.phonetic,
             meaning: wordData.meaning,
@@ -170,7 +170,7 @@ const VocabularyLearningPage = () => {
           }
 
           setCurrentWord({
-            id: String(wordData.id),
+            id: Number(wordData.id),
             word: wordData.word as string,
             phonetic: wordData.phonetic,
             meaning: wordData.meaning,
@@ -250,7 +250,7 @@ const VocabularyLearningPage = () => {
         return (
           <SpellingMode
             word={currentWord}
-            onAnswer={(isCorrect, answer) => handleAnswerSubmit(answer)}
+            onAnswer={(_isCorrect, answer) => handleAnswerSubmit(answer)}
             onSkip={() => handleAnswerSubmit("")}
             progress={progress}
           />
